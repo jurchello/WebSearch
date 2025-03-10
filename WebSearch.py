@@ -105,7 +105,7 @@ class URLCompactnessLevel(Enum):
     COMPACT_WITH_ATTRIBUTES = "compact_with_attributes"
     LONG = "long"
 
-DEFAULT_COMPACTNESS_LEVEL = URLCompactnessLevel
+DEFAULT_URL_COMPACTNESS_LEVEL = URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value
 
 URL_PREFIXES_TO_TRIM = [
     "https://www.",
@@ -216,7 +216,7 @@ class WebSearch(Gramplet):
         self.config.register("websearch.middle_name_handling", DEFAULT_MIDDLE_NAME_HANDLING)
         self.config.register("websearch.url_prefix_replacement", DEFAULT_URL_PREFIX_REPLACEMENT)
         self.config.register("websearch.show_short_url", True)
-        self.config.register("websearch.url_compactness_level", URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value)
+        self.config.register("websearch.url_compactness_level", DEFAULT_URL_COMPACTNESS_LEVEL)
         self.config.load()
 
     def post_init(self):
@@ -284,7 +284,7 @@ class WebSearch(Gramplet):
         compactness_level = self.config.get("websearch.url_compactness_level")
         print(f"url_compactness_level:{compactness_level}")
         if compactness_level is None:
-            compactness_level = URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value
+            compactness_level = DEFAULT_URL_COMPACTNESS_LEVEL
         print(f"url_compactness_level after check:{compactness_level}")
 
         if not show_short_url:
@@ -688,14 +688,14 @@ class WebSearch(Gramplet):
         self.opts.append(show_short_url)
 
         # Compactness level for URL display
-        compactness_level = EnumeratedListOption(URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value, _("URL Compactness Level"))
+        compactness_level = EnumeratedListOption(_("URL Compactness Level"), DEFAULT_URL_COMPACTNESS_LEVEL)
         compactness_level.add_item(URLCompactnessLevel.SHORTEST.value, _("Shortest - No Prefix, No Variables"))
         compactness_level.add_item(URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value, _("Compact - No Prefix, Variables Without Attributes (Default)"))
         compactness_level.add_item(URLCompactnessLevel.COMPACT_WITH_ATTRIBUTES.value, _("Compact - No Prefix, Variables With Attributes"))
         compactness_level.add_item(URLCompactnessLevel.LONG.value, _("Long - Without Prefix on the Left"))
         saved_compactness = self.config.get("websearch.url_compactness_level")
         if saved_compactness not in [e.value for e in URLCompactnessLevel]:
-             saved_compactness = URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value
+             saved_compactness = DEFAULT_URL_COMPACTNESS_LEVEL
         compactness_level.set_value(saved_compactness)
         self.opts.append(compactness_level)
 
