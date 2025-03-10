@@ -41,7 +41,7 @@ from gramps.gen.plug import Gramplet
 from gramps.gen.const import GRAMPS_LOCALE as glocale
 from gramps.gui.display import display_url
 from gramps.gen.config import config as configman
-from gramps.gen.plug.menu import BooleanListOption, EnumeratedListOption
+from gramps.gen.plug.menu import BooleanListOption, EnumeratedListOption, StringOption
 
 COMMON_CSV_FILE_NAME = "common-links.csv"
 
@@ -98,6 +98,24 @@ class CsvColumnNames(Enum):
     IS_ENABLED = "Is enabled"
     URL = "URL"
     COMMENT = "Comment"
+
+class URLCompactnessLevel(Enum):
+    SHORTEST = "shortest"
+    COMPACT_NO_ATTRIBUTES = "compact_no_attributes"
+    COMPACT_WITH_ATTRIBUTES = "compact_with_attributes"
+    LONG = "long"
+
+DEFAULT_COMPACTNESS_LEVEL = URLCompactnessLevel
+
+URL_PREFIXES_TO_TRIM = [
+    "https://www.",
+    "http://www.",
+    "https://",
+    "http://"
+]
+
+DEFAULT_URL_PREFIX_REPLACEMENT = "."
+DEFAULT_QUERY_PARAMETERS_REPLACEMENT = "..."
 
 class PlaceDataKeys(Enum):
     PLACE = "place"
@@ -191,9 +209,14 @@ class WebSearch(Gramplet):
         _config_file = os.path.join(os.path.dirname(__file__), "WebSearch")
         if not os.path.exists(_config_file + ".ini"):
             open(_config_file + ".ini", "w").close()
+
         self.config = configman.register_manager(_config_file)
+
         self.config.register("websearch.enabled_files", [COMMON_CSV_FILE_NAME])
         self.config.register("websearch.middle_name_handling", DEFAULT_MIDDLE_NAME_HANDLING)
+        self.config.register("websearch.url_prefix_replacement", DEFAULT_URL_PREFIX_REPLACEMENT)
+        self.config.register("websearch.show_short_url", True)
+        self.config.register("websearch.url_compactness_level", URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value)
         self.config.load()
 
     def post_init(self):
@@ -247,10 +270,82 @@ class WebSearch(Gramplet):
                               f"Data: {data}.")
                     final_url = url_pattern % data
                     icon_name = CATEGORY_ICON.get(nav_type, DEFAULT_CATEGORY_ICON)
-                    self.model.append([icon_name, locale, category, final_url, comment, url_pattern, variables_json])
+                    formatted_url = self.format_url(final_url, variables)
+                    self.model.append([icon_name, locale, category, final_url, comment, url_pattern, variables_json, formatted_url])
                 except KeyError:
                     print(f"{locale}. Mismatch in template variables: {url_pattern}")
                     pass
+
+    def format_url(self, url, variables):
+        show_short_url = self.config.get("websearch.show_short_url")
+        if show_short_url is None:
+            show_short_url = True
+
+        compactness_level = self.config.get("websearch.url_compactness_level")
+        print(f"url_compactness_level:{compactness_level}")
+        if compactness_level is None:
+            compactness_level = URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value
+        print(f"url_compactness_level after check:{compactness_level}")
+
+        if not show_short_url:
+            return url
+
+        if compactness_level == URLCompactnessLevel.SHORTEST.value:
+            return self.format_url_shortest(url, variables)
+        elif compactness_level == URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value:
+            return self.format_url_compact_no_attributes(url, variables)
+        elif compactness_level == URLCompactnessLevel.COMPACT_WITH_ATTRIBUTES.value:
+            return self.format_url_compact_with_attributes(url, variables)
+        elif compactness_level == URLCompactnessLevel.LONG.value:
+            return self.format_url_long(url, variables)
+
+        return url
+
+    def format_url_shortest(self, url, variables):
+        trimmed_url = self.trim_url_prefix(url)
+        clean_url = self.remove_url_query_params(trimmed_url)
+        return clean_url
+
+    def format_url_compact_no_attributes(self, url, variables):
+        trimmed_url = self.trim_url_prefix(url)
+        clean_url = self.remove_url_query_params(trimmed_url)
+        final_url = self.append_variables_to_url(clean_url, variables, False)
+        return final_url
+
+    def format_url_compact_with_attributes(self, url, variables):
+        trimmed_url = self.trim_url_prefix(url)
+        clean_url = self.remove_url_query_params(trimmed_url)
+        final_url = self.append_variables_to_url(clean_url, variables, True)
+        return final_url
+
+    def format_url_long(self, url, variables):
+        trimmed_url = self.trim_url_prefix(url)
+        return trimmed_url
+
+    def trim_url_prefix(self, url: str) -> str:
+        for prefix in URL_PREFIXES_TO_TRIM:
+            if url.startswith(prefix):
+                replacement = self.config.get("websearch.url_prefix_replacement")
+                if replacement is None:
+                    replacement = DEFAULT_URL_PREFIX_REPLACEMENT
+                return replacement + url[len(prefix):]
+        return url
+
+    def remove_url_query_params(self, url: str) -> str:
+        return url.split('?')[0]
+
+    def append_variables_to_url(self, url: str, variables: dict, show_attribute: bool) -> str:
+        replaced_variables = variables.get('replaced_variables', [])
+        if replaced_variables:
+            formatted_vars = []
+            for var in replaced_variables:
+                for key, value in var.items():
+                    if show_attribute:
+                        formatted_vars.append(f"{key}={value}")
+                    else:
+                        formatted_vars.append(f"{value}")
+            return url + DEFAULT_QUERY_PARAMETERS_REPLACEMENT + DEFAULT_QUERY_PARAMETERS_REPLACEMENT.join(formatted_vars)
+        return url + DEFAULT_QUERY_PARAMETERS_REPLACEMENT
 
     def on_link_clicked(self, tree_view, path, column):
         tree_iter = self.model.get_iter(path)
@@ -494,7 +589,8 @@ class WebSearch(Gramplet):
             str,  # [3]. URL: Represents the URL link associated with the entry.
             str,  # [4]. Comment: Represents an optional comment or description related to the entry.
             str,  # [5]. URL pattern: Represents the URL pattern associated with the entry (could be a regex pattern or template).
-            str   # [6]. Variables JSON: Represents a JSON string containing variables related to the entry (could be replaced or empty variables).
+            str,  # [6]. Variables JSON: Represents a JSON string containing variables related to the entry (could be replaced or empty variables).
+            str   # [7]. Formatted URL: Represents the formatted URL link.
         )  # ListStore: A data model to hold the information for the tree view (each column type is 'str').
 
         tree_view = Gtk.TreeView(model=self.model)
@@ -529,7 +625,7 @@ class WebSearch(Gramplet):
 
         # Render a column for the website URL
         renderer_link = Gtk.CellRendererText()
-        column_link = Gtk.TreeViewColumn(_("Website URL"), renderer_link, text=3)
+        column_link = Gtk.TreeViewColumn(_("Website URL"), renderer_link, text=7)
         column_link.set_sort_column_id(3)
         column_link.set_resizable(True)
         column_link.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
@@ -565,6 +661,7 @@ class WebSearch(Gramplet):
     def build_options(self):
         all_files, selected_files = WebsiteLoader.get_all_and_selected_files(self.config)
         self.opts = []
+
         opt = BooleanListOption(_("Enable CSV Files"))
         for file in all_files:
             is_selected = file in selected_files
@@ -580,13 +677,55 @@ class WebSearch(Gramplet):
         middle_name_handling.set_value(saved_value)
         self.opts.append(middle_name_handling)
 
+        # Checkbox for shortened URL display
+        show_short_url = BooleanListOption(_("Show Shortened URL"))
+        value = self.config.get("websearch.show_short_url")
+        if value is None:
+            value = True
+        if isinstance(value, str):
+            value = value.lower() == 'true'
+        show_short_url.add_button(_("Shortened URL"), value)
+        self.opts.append(show_short_url)
+
+        # Compactness level for URL display
+        compactness_level = EnumeratedListOption(URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value, _("URL Compactness Level"))
+        compactness_level.add_item(URLCompactnessLevel.SHORTEST.value, _("Shortest - No Prefix, No Variables"))
+        compactness_level.add_item(URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value, _("Compact - No Prefix, Variables Without Attributes (Default)"))
+        compactness_level.add_item(URLCompactnessLevel.COMPACT_WITH_ATTRIBUTES.value, _("Compact - No Prefix, Variables With Attributes"))
+        compactness_level.add_item(URLCompactnessLevel.LONG.value, _("Long - Without Prefix on the Left"))
+        saved_compactness = self.config.get("websearch.url_compactness_level")
+        if saved_compactness not in [e.value for e in URLCompactnessLevel]:
+             saved_compactness = URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value
+        compactness_level.set_value(saved_compactness)
+        self.opts.append(compactness_level)
+
+        # Continue with the rest of the options
+        url_prefix_replacement = self.config.get("websearch.url_prefix_replacement")
+        if url_prefix_replacement is None:
+            url_prefix_replacement = DEFAULT_URL_PREFIX_REPLACEMENT
+        opt_url_prefix = StringOption(_("URL Prefix Replacement"), url_prefix_replacement)
+        self.opts.append(opt_url_prefix)
+
         list(map(self.add_option, self.opts))
 
     def save_options(self):
         self.__enabled_files = self.opts[0].get_selected()
         self.config.set("websearch.enabled_files", self.__enabled_files)
+
         middle_name_handling = self.opts[1].get_value()
         self.config.set("websearch.middle_name_handling", middle_name_handling)
+
+        show_short_url = self.opts[2].get_value()
+        if isinstance(show_short_url, str):
+            show_short_url = show_short_url.lower() == 'true'
+        self.config.set("websearch.show_short_url", show_short_url)
+
+        compactness_level = self.opts[3].get_value()
+        self.config.set("websearch.url_compactness_level", compactness_level)
+
+        url_prefix_replacement = self.opts[4].get_value()
+        self.config.set("websearch.url_prefix_replacement", url_prefix_replacement)
+
         self.config.save()
 
     def save_update_options(self, obj):
