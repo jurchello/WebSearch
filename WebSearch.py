@@ -29,6 +29,7 @@ import csv
 import string
 import re
 import json
+import hashlib
 import traceback
 import time
 from enum import Enum
@@ -42,6 +43,7 @@ from gramps.gen.const import GRAMPS_LOCALE as glocale
 from gramps.gui.display import display_url
 from gramps.gen.config import config as configman
 from gramps.gen.plug.menu import BooleanListOption, EnumeratedListOption, StringOption
+from gi.repository import GdkPixbuf
 
 COMMON_CSV_FILE_NAME = "common-links.csv"
 
@@ -117,6 +119,10 @@ URL_PREFIXES_TO_TRIM = [
 DEFAULT_URL_PREFIX_REPLACEMENT = "."
 DEFAULT_QUERY_PARAMETERS_REPLACEMENT = "..."
 
+HASH_FILE = os.path.join(os.path.dirname(__file__), "clicked_links.txt")
+ICON_VISITED_PATH = os.path.join(os.path.dirname(__file__), "icons", "emblem-default.png")
+ICON_SIZE = 16
+
 class PlaceDataKeys(Enum):
     PLACE = "place"
     ROOT_PLACE = "root_place"
@@ -159,6 +165,28 @@ class WebsiteLoader:
         all_files = [os.path.basename(f) for f in WebsiteLoader.get_csv_files()]
         selected_files = config.get("websearch.enabled_files") or []
         return all_files, selected_files
+
+    @staticmethod
+    def generate_hash(url: str) -> str:
+        print("generate_hash")
+        return hashlib.sha256(url.encode()).hexdigest()[:16]
+
+    @staticmethod
+    def has_hash_in_file(hash_value: str) -> bool:
+        print("has_hash_in_file")
+        print(HASH_FILE)
+        if not os.path.exists(HASH_FILE):
+            return False
+        with open(HASH_FILE, "r", encoding="utf-8") as file:
+            return hash_value in file.read().splitlines()
+
+    @staticmethod
+    def save_hash_to_file(hash_value: str):
+        print("save_hash_to_file")
+        if not WebsiteLoader.has_hash_in_file(hash_value):
+            with open(HASH_FILE, "a", encoding="utf-8") as file:
+                print("file.write")
+                file.write(hash_value + "\n")
 
     @classmethod
     def load_websites(cls, config):
@@ -271,7 +299,16 @@ class WebSearch(Gramplet):
                     final_url = url_pattern % data
                     icon_name = CATEGORY_ICON.get(nav_type, DEFAULT_CATEGORY_ICON)
                     formatted_url = self.format_url(final_url, variables)
-                    self.model.append([icon_name, locale, category, final_url, comment, url_pattern, variables_json, formatted_url])
+
+                    hash_value = WebsiteLoader.generate_hash(final_url)
+                    visited_icon = None
+                    if WebsiteLoader.has_hash_in_file(hash_value):
+                        try:
+                            visited_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_VISITED_PATH, ICON_SIZE, ICON_SIZE)
+                        except Exception as e:
+                            print(f"Помилка завантаження іконки: {e}")
+
+                    self.model.append([icon_name, locale, category, final_url, comment, url_pattern, variables_json, formatted_url, visited_icon])
                 except KeyError:
                     print(f"{locale}. Mismatch in template variables: {url_pattern}")
                     pass
@@ -282,10 +319,8 @@ class WebSearch(Gramplet):
             show_short_url = True
 
         compactness_level = self.config.get("websearch.url_compactness_level")
-        print(f"url_compactness_level:{compactness_level}")
         if compactness_level is None:
             compactness_level = DEFAULT_URL_COMPACTNESS_LEVEL
-        print(f"url_compactness_level after check:{compactness_level}")
 
         if not show_short_url:
             return url
@@ -350,6 +385,14 @@ class WebSearch(Gramplet):
     def on_link_clicked(self, tree_view, path, column):
         tree_iter = self.model.get_iter(path)
         url = self.model.get_value(tree_iter, 3)
+        hash_value = WebsiteLoader.generate_hash(url)
+        if not WebsiteLoader.has_hash_in_file(hash_value):
+            WebsiteLoader.save_hash_to_file(hash_value)
+            try:
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file(ICON_VISITED_PATH)
+                self.model.set_value(tree_iter, 8, pixbuf)
+            except Exception as e:
+                print(f"Помилка завантаження іконки: {e}")
         display_url(url)
 
     def active_person_changed(self, handle):
@@ -530,7 +573,11 @@ class WebSearch(Gramplet):
 
     def get_birth_event(self, person):
         try:
+            if person is None:
+                return None
             ref = person.get_birth_ref()
+            if ref is None:
+                return None
             return self.dbstate.db.get_event_from_handle(ref.get_reference_handle()) or None
         except Exception as e:
             print(traceback.format_exc())
@@ -539,6 +586,8 @@ class WebSearch(Gramplet):
     def get_death_event(self, person):
         try:
            ref = person.get_death_ref()
+           if ref is None:
+               return None
            return self.dbstate.db.get_event_from_handle(ref.get_reference_handle()) or None
         except Exception as e:
             print(traceback.format_exc())
@@ -550,6 +599,8 @@ class WebSearch(Gramplet):
 
     def get_event_place(self, event):
         try:
+            if event is None:
+                return None
             place_ref = event.get_place_handle()
             if not place_ref:
                 return None
@@ -560,6 +611,8 @@ class WebSearch(Gramplet):
 
     def get_event_exact_year(self, event):
         try:
+            if event is None:
+                return None
             date = event.get_date_object()
             if date and not date.is_compound():
                 return date.get_year() or None
@@ -590,7 +643,8 @@ class WebSearch(Gramplet):
             str,  # [4]. Comment: Represents an optional comment or description related to the entry.
             str,  # [5]. URL pattern: Represents the URL pattern associated with the entry (could be a regex pattern or template).
             str,  # [6]. Variables JSON: Represents a JSON string containing variables related to the entry (could be replaced or empty variables).
-            str   # [7]. Formatted URL: Represents the formatted URL link.
+            str,  # [7]. Formatted URL: Represents the formatted URL link.
+            GdkPixbuf.Pixbuf  # [8]. Visited icon: Stores Pixbuf instead of icon name.
         )  # ListStore: A data model to hold the information for the tree view (each column type is 'str').
 
         tree_view = Gtk.TreeView(model=self.model)
@@ -599,11 +653,16 @@ class WebSearch(Gramplet):
         tree_view.set_has_tooltip(True)
         tree_view.connect("query-tooltip", self.on_query_tooltip)
 
-        # Render a column for the icon
-        renderer_icon = Gtk.CellRendererPixbuf()
-        column_icon = Gtk.TreeViewColumn("", renderer_icon)
+        # Render a column for the icons
+        renderer_category_icon = Gtk.CellRendererPixbuf()
+        renderer_visited_icon = Gtk.CellRendererPixbuf()
+
+        column_icon = Gtk.TreeViewColumn("")
+        column_icon.pack_start(renderer_category_icon, False)
+        column_icon.pack_start(renderer_visited_icon, False)
         column_icon.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        column_icon.add_attribute(renderer_icon, "icon-name", 0)
+        column_icon.add_attribute(renderer_category_icon, "icon-name", 0)
+        column_icon.add_attribute(renderer_visited_icon, "pixbuf", 8)  # Використовуємо pixbuf замість icon-name
         column_icon.set_resizable(False)
         tree_view.append_column(column_icon)
 
