@@ -90,6 +90,15 @@ class PersonDataKeys(Enum):
     BIRTH_ROOT_PLACE = "birth_root_place"
     DEATH_ROOT_PLACE = "death_root_place"
 
+COMMON_LOCALE_SIGN = "★"
+
+class CsvColumnNames(Enum):
+    NAV_TYPE = "Navigation type"
+    CATEGORY = "Category"
+    IS_ENABLED = "Is enabled"
+    URL = "URL"
+    COMMENT = "Comment"
+
 class PlaceDataKeys(Enum):
     PLACE = "place"
     ROOT_PLACE = "root_place"
@@ -144,14 +153,27 @@ class WebsiteLoader:
 
             locale = os.path.splitext(os.path.basename(selected_file_path))[0].replace("-links", "").upper()
             if locale == "COMMON":
-                locale = "★"
+                locale = COMMON_LOCALE_SIGN
             with open(selected_file_path, "r", encoding="utf-8") as csvfile:
-                reader = csv.reader(csvfile)
-                next(reader, None)
+                reader = csv.DictReader(csvfile)
+                reader.fieldnames = [name.strip() if name else name for name in reader.fieldnames]
+
                 for row in reader:
-                    if len(row) >= 4:
-                        comment = row[4] if len(row) > 4 else None
-                        websites.append([row[0], locale, row[1], row[2], row[3], comment])
+
+                    if not row:
+                        continue
+
+                    nav_type = row.get(CsvColumnNames.NAV_TYPE.value, "").strip()
+                    category = row.get(CsvColumnNames.CATEGORY.value, "").strip()
+                    is_enabled = row.get(CsvColumnNames.IS_ENABLED.value, "").strip()
+                    url = row.get(CsvColumnNames.URL.value, "").strip()
+                    comment = row.get(CsvColumnNames.COMMENT.value, None)
+
+                    if not all([nav_type, category, is_enabled, url]):
+                        print(f"⚠️ Some data are missing in: {selected_file_path}. A row is skipped: {row}")
+                        continue
+
+                    websites.append([nav_type, locale, category, is_enabled, url, comment])
         return websites
 
 class WebSearch(Gramplet):
