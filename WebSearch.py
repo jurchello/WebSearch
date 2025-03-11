@@ -30,20 +30,20 @@ import string
 import re
 import json
 import hashlib
+import qrcode
 import traceback
 import time
-from enum import Enum
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
-
+from gi.repository import Gtk, Gdk, GdkPixbuf
+from enum import Enum
+from PIL import Image
 from gramps.gen.plug import Gramplet
 from gramps.gen.const import GRAMPS_LOCALE as glocale
 from gramps.gui.display import display_url
 from gramps.gen.config import config as configman
 from gramps.gen.plug.menu import BooleanListOption, EnumeratedListOption, StringOption
-from gi.repository import GdkPixbuf
 from gramps.gen.lib import Note, Attribute
 from gramps.gen.db import DbTxn
 
@@ -141,6 +141,22 @@ try:
 except ValueError:
     _trans = glocale.translation
 _ = _trans.gettext
+
+class QRCodeWindow(Gtk.Window):
+    def __init__(self, url):
+        super().__init__(title="QR-code")
+        self.set_default_size(300, 300)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        qr_image = self.generate_qr(url)
+
+        image_widget = Gtk.Image.new_from_pixbuf(qr_image)
+        self.add(image_widget)
+
+    def generate_qr(self, url):
+        qr = qrcode.make(url)
+        qr.save("/tmp/qrcode.png")
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size("/tmp/qrcode.png", 250, 250)
+        return pixbuf
 
 class WebsiteLoader:
 
@@ -725,6 +741,11 @@ class WebSearch(Gramplet):
         add_attribute_item.connect("activate", self.on_add_attribute)
         self.context_menu.append(add_attribute_item)
 
+        # Add "Show QR Code" option
+        show_qr_code_item = Gtk.MenuItem("Show QR-code")
+        show_qr_code_item.connect("activate", self.on_show_qr_code)
+        self.context_menu.append(show_qr_code_item)
+
         self.context_menu.show_all()
 
         # Add the event handler for right-click
@@ -775,6 +796,14 @@ class WebSearch(Gramplet):
 
         self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, 9)
         self.model.thaw_notify()
+
+    def on_show_qr_code(self, widget):
+        selection = self.tree_view.get_selection()
+        model, tree_iter = selection.get_selected()
+        if tree_iter is not None:
+            url = model[tree_iter][3]
+            qr_window = QRCodeWindow(url)
+            qr_window.show_all()
 
     def get_active_tree_iter(self, path):
         path_str = str(path)
