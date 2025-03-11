@@ -44,6 +44,8 @@ from gramps.gui.display import display_url
 from gramps.gen.config import config as configman
 from gramps.gen.plug.menu import BooleanListOption, EnumeratedListOption, StringOption
 from gi.repository import GdkPixbuf
+from gramps.gen.lib import Note, Attribute
+from gramps.gen.db import DbTxn
 
 COMMON_CSV_FILE_NAME = "common-links.csv"
 
@@ -119,8 +121,12 @@ URL_PREFIXES_TO_TRIM = [
 DEFAULT_URL_PREFIX_REPLACEMENT = "."
 DEFAULT_QUERY_PARAMETERS_REPLACEMENT = "..."
 
-HASH_FILE = os.path.join(os.path.dirname(__file__), "clicked_links.txt")
+VISITED_HASH_FILE_PATH = os.path.join(os.path.dirname(__file__), "visited_links.txt")
 ICON_VISITED_PATH = os.path.join(os.path.dirname(__file__), "icons", "emblem-default.png")
+
+SAVED_HASH_FILE_PATH = os.path.join(os.path.dirname(__file__), "saved_links.txt")
+ICON_SAVED_PATH = os.path.join(os.path.dirname(__file__), "icons", "media-floppy.png")
+
 ICON_SIZE = 16
 
 class PlaceDataKeys(Enum):
@@ -167,24 +173,20 @@ class WebsiteLoader:
         return all_files, selected_files
 
     @staticmethod
-    def generate_hash(url: str) -> str:
-        print("generate_hash")
-        return hashlib.sha256(url.encode()).hexdigest()[:16]
+    def generate_hash(string: str) -> str:
+        return hashlib.sha256(string.encode()).hexdigest()[:16]
 
     @staticmethod
-    def has_hash_in_file(hash_value: str) -> bool:
-        print("has_hash_in_file")
-        print(HASH_FILE)
-        if not os.path.exists(HASH_FILE):
+    def has_hash_in_file(hash_value: str, file_path) -> bool:
+        if not os.path.exists(file_path):
             return False
-        with open(HASH_FILE, "r", encoding="utf-8") as file:
+        with open(file_path, "r", encoding="utf-8") as file:
             return hash_value in file.read().splitlines()
 
     @staticmethod
-    def save_hash_to_file(hash_value: str):
-        print("save_hash_to_file")
-        if not WebsiteLoader.has_hash_in_file(hash_value):
-            with open(HASH_FILE, "a", encoding="utf-8") as file:
+    def save_hash_to_file(hash_value: str, file_path):
+        if not WebsiteLoader.has_hash_in_file(hash_value, file_path):
+            with open(file_path, "a", encoding="utf-8") as file:
                 print("file.write")
                 file.write(hash_value + "\n")
 
@@ -301,14 +303,22 @@ class WebSearch(Gramplet):
                     formatted_url = self.format_url(final_url, variables)
 
                     hash_value = WebsiteLoader.generate_hash(final_url)
+
                     visited_icon = None
-                    if WebsiteLoader.has_hash_in_file(hash_value):
+                    if WebsiteLoader.has_hash_in_file(hash_value, VISITED_HASH_FILE_PATH):
                         try:
                             visited_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_VISITED_PATH, ICON_SIZE, ICON_SIZE)
                         except Exception as e:
-                            print(f"Помилка завантаження іконки: {e}")
+                            print(f"❌ Error loading icon: {e}")
 
-                    self.model.append([icon_name, locale, category, final_url, comment, url_pattern, variables_json, formatted_url, visited_icon])
+                    saved_icon = None
+                    if WebsiteLoader.has_hash_in_file(hash_value, SAVED_HASH_FILE_PATH):
+                        try:
+                            saved_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_SAVED_PATH, ICON_SIZE, ICON_SIZE)
+                        except Exception as e:
+                            print(f"❌ Error loading icon: {e}")
+
+                    self.model.append([icon_name, locale, category, final_url, comment, url_pattern, variables_json, formatted_url, visited_icon, saved_icon])
                 except KeyError:
                     print(f"{locale}. Mismatch in template variables: {url_pattern}")
                     pass
@@ -385,18 +395,23 @@ class WebSearch(Gramplet):
     def on_link_clicked(self, tree_view, path, column):
         tree_iter = self.model.get_iter(path)
         url = self.model.get_value(tree_iter, 3)
-        hash_value = WebsiteLoader.generate_hash(url)
-        if not WebsiteLoader.has_hash_in_file(hash_value):
-            WebsiteLoader.save_hash_to_file(hash_value)
-            try:
-                pixbuf = GdkPixbuf.Pixbuf.new_from_file(ICON_VISITED_PATH)
-                self.model.set_value(tree_iter, 8, pixbuf)
-            except Exception as e:
-                print(f"Помилка завантаження іконки: {e}")
+        self.add_icon_event(VISITED_HASH_FILE_PATH, ICON_VISITED_PATH, tree_iter, 8)
         display_url(url)
+
+    def add_icon_event(self, file_path, icon_path, tree_iter, model_icon_pos):
+        url = self.model.get_value(tree_iter, 3)
+        hash_value = WebsiteLoader.generate_hash(url)
+        if not WebsiteLoader.has_hash_in_file(hash_value, file_path):
+            WebsiteLoader.save_hash_to_file(hash_value, file_path)
+            try:
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(icon_path, ICON_SIZE, ICON_SIZE)
+                self.model.set_value(tree_iter, model_icon_pos, pixbuf)
+            except Exception as e:
+                print(f"❌ Error loading icon: {e}")
 
     def active_person_changed(self, handle):
         person = self.dbstate.db.get_person_from_handle(handle)
+        self.person = person
         if not person:
             return
 
@@ -636,35 +651,43 @@ class WebSearch(Gramplet):
 
     def build_gui(self):
         self.model = Gtk.ListStore(
-            str,  # [0]. Icon name: Represents the name of the icon to be displayed in the first column.
-            str,  # [1]. Locale: Represents the locale (language or region) associated with the entry.
-            str,  # [2]. Name: Represents the name or title of the entry (e.g., category name).
-            str,  # [3]. URL: Represents the URL link associated with the entry.
-            str,  # [4]. Comment: Represents an optional comment or description related to the entry.
-            str,  # [5]. URL pattern: Represents the URL pattern associated with the entry (could be a regex pattern or template).
-            str,  # [6]. Variables JSON: Represents a JSON string containing variables related to the entry (could be replaced or empty variables).
-            str,  # [7]. Formatted URL: Represents the formatted URL link.
-            GdkPixbuf.Pixbuf  # [8]. Visited icon: Stores Pixbuf instead of icon name.
+            str,                # [0]. Icon name: Represents the name of the icon to be displayed in the first column.
+            str,                # [1]. Locale: Represents the locale (language or region) associated with the entry.
+            str,                # [2]. Name: Represents the name or title of the entry (e.g., category name).
+            str,                # [3]. URL: Represents the URL link associated with the entry.
+            str,                # [4]. Comment: Represents an optional comment or description related to the entry.
+            str,                # [5]. URL pattern: Represents the URL pattern associated with the entry (could be a regex pattern or template).
+            str,                # [6]. Variables JSON: Represents a JSON string containing variables related to the entry (could be replaced or empty variables).
+            str,                # [7]. Formatted URL: Represents the formatted URL link.
+            GdkPixbuf.Pixbuf,   # [8]. Visited icon: Stores Pixbuf instead of icon name.
+            GdkPixbuf.Pixbuf    # [9]. Saved icon: Stores Pixbuf instead of icon name.
         )  # ListStore: A data model to hold the information for the tree view (each column type is 'str').
 
-        tree_view = Gtk.TreeView(model=self.model)
-        tree_view.connect("row-activated", self.on_link_clicked)
+        self.tree_view = Gtk.TreeView(model=self.model)
 
-        tree_view.set_has_tooltip(True)
-        tree_view.connect("query-tooltip", self.on_query_tooltip)
+        selection = self.tree_view.get_selection()
+        selection.set_mode(Gtk.SelectionMode.SINGLE)
+
+        self.tree_view.connect("row-activated", self.on_link_clicked)
+
+        self.tree_view.set_has_tooltip(True)
+        self.tree_view.connect("query-tooltip", self.on_query_tooltip)
 
         # Render a column for the icons
         renderer_category_icon = Gtk.CellRendererPixbuf()
         renderer_visited_icon = Gtk.CellRendererPixbuf()
+        renderer_saved_icon = Gtk.CellRendererPixbuf()
 
         column_icon = Gtk.TreeViewColumn("")
         column_icon.pack_start(renderer_category_icon, False)
         column_icon.pack_start(renderer_visited_icon, False)
+        column_icon.pack_start(renderer_saved_icon, False)
         column_icon.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
         column_icon.add_attribute(renderer_category_icon, "icon-name", 0)
-        column_icon.add_attribute(renderer_visited_icon, "pixbuf", 8)  # Використовуємо pixbuf замість icon-name
+        column_icon.add_attribute(renderer_visited_icon, "pixbuf", 8)
+        column_icon.add_attribute(renderer_saved_icon, "pixbuf", 9)
         column_icon.set_resizable(False)
-        tree_view.append_column(column_icon)
+        self.tree_view.append_column(column_icon)
 
         # Render a column for the locale
         renderer_text = Gtk.CellRendererText()
@@ -672,7 +695,7 @@ class WebSearch(Gramplet):
         column_locale.set_sort_column_id(1)
         column_locale.set_resizable(False)
         column_locale.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        tree_view.append_column(column_locale)
+        self.tree_view.append_column(column_locale)
 
         # Render a column for the category name
         renderer_text = Gtk.CellRendererText()
@@ -680,7 +703,7 @@ class WebSearch(Gramplet):
         column_category.set_sort_column_id(2)
         column_category.set_resizable(True)
         column_category.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        tree_view.append_column(column_category)
+        self.tree_view.append_column(column_category)
 
         # Render a column for the website URL
         renderer_link = Gtk.CellRendererText()
@@ -688,9 +711,106 @@ class WebSearch(Gramplet):
         column_link.set_sort_column_id(3)
         column_link.set_resizable(True)
         column_link.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        tree_view.append_column(column_link)
+        self.tree_view.append_column(column_link)
 
-        return tree_view
+        self.context_menu = Gtk.Menu()
+
+        # Add "Add link to note" option
+        add_note_item = Gtk.MenuItem("Add link to note")
+        add_note_item.connect("activate", self.on_add_note)
+        self.context_menu.append(add_note_item)
+
+        # Add "Add link to attribute" option
+        add_attribute_item = Gtk.MenuItem("Add link to attribute")
+        add_attribute_item.connect("activate", self.on_add_attribute)
+        self.context_menu.append(add_attribute_item)
+
+        self.context_menu.show_all()
+
+        # Add the event handler for right-click
+        self.tree_view.connect("button-press-event", self.on_button_press)
+
+        return self.tree_view
+
+    def on_button_press(self, widget, event):
+        print("on_button_press")
+        if event.button == 3:  # Right-click mouse button
+            print("on_button_press right click")
+            path_info = widget.get_path_at_pos(event.x, event.y)
+            if path_info:
+                path, column, cell_x, cell_y = path_info
+                tree_iter = self.model.get_iter(path)
+                if not tree_iter or not self.model.iter_is_valid(tree_iter):
+                    print("❌ Error: tree_iter is already invalid!")
+                    return
+                url = self.model.get_value(tree_iter, 3)
+                self.context_menu.active_tree_path = path
+                self.context_menu.active_url = url
+                print(f"save tree path: {path}")
+                self.context_menu.popup_at_pointer(event)
+
+    def on_add_note(self, widget):
+        if not self.context_menu.active_tree_path:
+            print("❌ Error: No saved path to the iterator!")
+            return
+
+        print(f"self.context_menu.active_tree_path:{self.context_menu.active_tree_path}")
+        tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
+        if not tree_iter:
+            print("❌ Error: tree_iter is no longer valid!")
+            return
+
+        note = Note()
+        note.set(f"📌 This web link was added using the WebSearch gramplet for future reference:\n\n🔗 {self.context_menu.active_url}\n\n"
+        "You can use this link to revisit the source and verify the information related to this person.")
+        note.set_privacy(True)
+
+        self.model.freeze_notify()
+
+        with DbTxn(_("Add Web Link Note"), self.dbstate.db) as trans:
+            note_handle = self.dbstate.db.add_note(note, trans)
+            self.person.add_note(note_handle)
+            self.dbstate.db.commit_person(self.person, trans)
+
+
+        self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, 9)
+        self.model.thaw_notify()
+
+    def get_active_tree_iter(self, path):
+        path_str = str(path)
+        try:
+            tree_path = Gtk.TreePath.new_from_string(path_str)
+            self.tree_view.get_selection().select_path(tree_path)
+            self.tree_view.set_cursor(tree_path)
+            tree_iter = self.model.get_iter(tree_path)
+            return tree_iter
+        except Exception as e:
+            print(f"❌ Error in get_active_tree_iter: {e}")
+            return None
+
+    def on_add_attribute(self, widget):
+        if not self.context_menu.active_tree_path:
+            print("❌ Error: No saved path to the iterator!")
+            return
+
+        tree_iter = self.model.get_iter(self.context_menu.active_tree_path)
+        if not tree_iter:
+            print("❌ Error: tree_iter is no longer valid!")
+            return
+
+        attribute = Attribute()
+        attribute.set_type("WebSearch Link")
+        attribute.set_value(self.context_menu.active_url)
+        attribute.set_privacy(True)
+
+        with DbTxn(_("Add Web Link Note"), self.dbstate.db) as trans:
+            self.person.add_attribute(attribute)
+            self.dbstate.db.commit_person(self.person, trans)
+
+        self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, 9)
+
+    def on_download_page(self, widget):
+        pass
 
     def on_query_tooltip(self, widget, x, y, keyboard_mode, tooltip):
         path_info = widget.get_path_at_pos(x, y)
