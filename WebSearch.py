@@ -249,7 +249,7 @@ class WebSearch(Gramplet):
         self.config.register("websearch.url_compactness_level", DEFAULT_URL_COMPACTNESS_LEVEL)
         self.config.load()
 
-    def post_init(self):
+    def db_changed(self):
         self.connect_signal("Person", self.active_person_changed)
         self.connect_signal("Place", self.active_place_changed)
         self.connect_signal("Source", self.active_source_changed)
