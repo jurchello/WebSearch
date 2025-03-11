@@ -4,7 +4,7 @@ register(
     name=_("Web Search Gramplet"),
     description=_("Lists useful genealogy-related websites for research."),
     status=STABLE,
-    version="1.0.4",
+    version="1.0.5",
     fname="WebSearch.py",
     height=20,
     detached_width=400,
