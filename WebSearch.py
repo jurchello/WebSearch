@@ -36,7 +36,7 @@ import time
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GdkPixbuf
+from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, Pango
 from enum import Enum
 from PIL import Image
 from gramps.gen.plug import Gramplet
@@ -157,6 +157,67 @@ class QRCodeWindow(Gtk.Window):
         qr.save("/tmp/qrcode.png")
         pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size("/tmp/qrcode.png", 250, 250)
         return pixbuf
+
+class CopyNotificationWindow(Gtk.Window):
+    def __init__(self, message):
+        super().__init__()
+
+        screen = Gdk.Screen.get_default()
+        visual = screen.get_rgba_visual()
+        if visual:
+            self.set_visual(visual)
+        self.set_name("TransparentWindow")
+        self.apply_css()
+
+        self.set_decorated(False)
+        self.set_accept_focus(False)
+        self.set_size_request(200, -1)
+        self.set_keep_above(True)
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        box.set_margin_top(10)
+        box.set_margin_bottom(10)
+        box.set_margin_start(10)
+        box.set_margin_end(10)
+
+        label = Gtk.Label(label=message)
+        label.set_line_wrap(True)
+        label.set_max_width_chars(10)
+        label.set_ellipsize(Pango.EllipsizeMode.NONE)
+        label.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
+
+        box.pack_start(label, True, True, 0)
+        self.add(box)
+
+        self.show_all()
+
+        width, height = self.get_size()
+        self.set_size_request(100, height)
+        monitor = screen.get_monitor_geometry(0)
+        screen_width = monitor.width
+        width, height = self.get_size()
+        x = screen_width - width - 10
+        y = 10
+        self.move(x, y)
+
+        GObject.timeout_add(2000, self.close_window)
+
+    def close_window(self):
+        self.destroy()
+        return False
+
+    def apply_css(self):
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_data(b"""
+            #TransparentWindow {
+                background-color: rgba(0, 0, 0, 0.7);
+                border-radius: 10px;
+                padding: 10px;
+            }
+        """)
+        context = Gtk.StyleContext()
+        screen = Gdk.Screen.get_default()
+        context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
 class WebsiteLoader:
 
@@ -746,6 +807,11 @@ class WebSearch(Gramplet):
         show_qr_code_item.connect("activate", self.on_show_qr_code)
         self.context_menu.append(show_qr_code_item)
 
+        # Add "Copy to clipboard" option
+        copy_url_to_clipboard_item = Gtk.MenuItem("Copy link to clipboard")
+        copy_url_to_clipboard_item.connect("activate", self.on_copy_url_to_clipboard)
+        self.context_menu.append(copy_url_to_clipboard_item)
+
         self.context_menu.show_all()
 
         # Add the event handler for right-click
@@ -804,6 +870,17 @@ class WebSearch(Gramplet):
             url = model[tree_iter][3]
             qr_window = QRCodeWindow(url)
             qr_window.show_all()
+
+    def on_copy_url_to_clipboard(self, widget):
+        selection = self.tree_view.get_selection()
+        model, tree_iter = selection.get_selected()
+        if tree_iter is not None:
+            url = model[tree_iter][3]
+            clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+            clipboard.set_text(url, -1)
+            clipboard.store()
+            notification = CopyNotificationWindow(f"URL is copied to the Clipboard")
+            notification.show_all()
 
     def get_active_tree_iter(self, path):
         path_str = str(path)
