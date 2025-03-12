@@ -34,6 +34,9 @@ import qrcode
 import traceback
 import time
 import gi
+import openai
+import threading
+import keyring
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, Pango
@@ -142,6 +145,50 @@ except ValueError:
     _trans = glocale.translation
 _ = _trans.gettext
 
+class GenealogySiteFinder:
+    def __init__(self, api_key):
+        self.api_key = api_key
+
+    def find_sites(self, excluded_domains, locales, include_global):
+        system_message = (
+            "You assist in finding resources for genealogical research. "
+            "Your response must be strictly formatted as a JSON array of objects with only two keys: 'domain' and 'url'. "
+            "Do not include any additional text, explanations, or comments."
+        )
+
+        if not locales:
+            locale_text = "only globally used"
+            locales_str = "none"
+        else:
+            locale_text = "both regional and globally used" if include_global else "regional"
+            locales_str = ", ".join(locales)
+
+        excluded_domains_str = ", ".join(excluded_domains) if excluded_domains else "none"
+
+        user_message = (
+            f"I am looking for additional genealogical research websites for {locale_text} resources. "
+            f"Relevant locales: {locales_str}. "
+            f"Exclude the following domains: {excluded_domains_str}. "
+            "Provide exactly 10 relevant websites formatted as a JSON array of objects with keys 'domain' and 'url'. "
+            "Example response: [{'{\"domain\": \"example.com\", \"url\": \"https://example.com\"}'}]. "
+            "If no relevant websites are found, return an empty array [] without any explanations."
+        )
+
+        client = openai.OpenAI(api_key=self.api_key)
+        completion = client.chat.completions.create(
+            model="gpt-4-turbo",
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
+            ]
+        )
+
+        try:
+            return completion.choices[0].message.content
+        except Exception as e:
+            print(f"❌ Error parsing OpenAI response: {e}")
+            return "[]"
+
 class QRCodeWindow(Gtk.Window):
     def __init__(self, url):
         super().__init__(title="QR-code")
@@ -223,6 +270,10 @@ class WebsiteLoader:
 
     CSV_DIR = os.path.join(os.path.dirname(__file__), "csv")
 
+    locales = set()
+    domains = set()
+    include_global = False
+
     @staticmethod
     def get_csv_files():
         if not os.path.exists(WebsiteLoader.CSV_DIR):
@@ -279,6 +330,7 @@ class WebsiteLoader:
             locale = os.path.splitext(os.path.basename(selected_file_path))[0].replace("-links", "").upper()
             if locale == "COMMON":
                 locale = COMMON_LOCALE_SIGN
+
             with open(selected_file_path, "r", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
                 reader.fieldnames = [name.strip() if name else name for name in reader.fieldnames]
@@ -301,7 +353,52 @@ class WebsiteLoader:
                     websites.append([nav_type, locale, category, is_enabled, url, comment])
         return websites
 
+    @classmethod
+    def get_domains_data(cls, config):
+        selected_csv_files = cls.get_selected_csv_files(config)
+        cls.locales = set()
+        cls.domains = set()
+        cls.include_global = False
+
+        for selected_file_path in selected_csv_files:
+            if not os.path.exists(selected_file_path):
+                continue
+
+            locale = os.path.splitext(os.path.basename(selected_file_path))[0].replace("-links", "").upper()
+            if locale == "COMMON":
+                cls.include_global = True
+            else:
+                cls.locales.add(locale)
+
+            with open(selected_file_path, "r", encoding="utf-8") as csvfile:
+                reader = csv.DictReader(csvfile)
+                reader.fieldnames = [name.strip() if name else name for name in reader.fieldnames]
+
+                for row in reader:
+                    if not row:
+                        continue
+                    url = row.get(CsvColumnNames.URL.value, "").strip()
+                    domain = url.split("/")[2] if "//" in url else url
+                    cls.domains.add(domain)
+
+        return cls.locales, cls.domains, cls.include_global
+
+class WebSearchSignalEmitter(GObject.GObject):
+    __gsignals__ = {
+        "sites-fetched": (GObject.SignalFlags.RUN_FIRST, None, (object,))
+    }
+
+    def __init__(self):
+        GObject.GObject.__init__(self)
+
 class WebSearch(Gramplet):
+    __gsignals__ = {
+        "sites-fetched": (GObject.SignalFlags.RUN_FIRST, None, (object,))
+    }
+
+    def __init__(self, gui):
+        self.signal_emitter = WebSearchSignalEmitter()
+        Gramplet.__init__(self, gui)
 
     def init(self):
         self.init_config()
@@ -311,6 +408,38 @@ class WebSearch(Gramplet):
         self.gui.get_container_widget().add(self.gui.WIDGET)
         self.gui.WIDGET.show()
         self.populate_links({}, SupportedNavTypes.PEOPLE.value)
+
+    def post_init(self):
+        self.signal_emitter.connect("sites-fetched", self.on_sites_fetched)
+
+        locales, domains, include_global = WebsiteLoader.get_domains_data(self.config)
+        api_key = keyring.get_password("openai", "api_key")
+        if not api_key:
+            print("⚠️ ERROR: No OpenAI API Key found. Set OPENAI_API_KEY in environment variables.")
+            return
+
+        self.finder = GenealogySiteFinder(api_key)
+
+        threading.Thread(
+            target=self.fetch_sites_in_background,
+            args=(domains, locales, include_global),
+            daemon=True
+        ).start()
+
+    def fetch_sites_in_background(self, domains, locales, include_global):
+        print("🔄 Fetching recommended sites in background...")
+        try:
+            results = self.finder.find_sites(domains, locales, include_global)
+            GObject.idle_add(self.signal_emitter.emit, "sites-fetched", results)
+        except Exception as e:
+            print(f"❌ Error fetching sites: {e}")
+            GObject.idle_add(self.signal_emitter.emit, "sites-fetched", None)
+
+    def on_sites_fetched(self, gramplet, results):
+        if results:
+            print("✅ Sites fetched:", results)
+        else:
+            print("⚠️ No sites found or error occurred.")
 
     def init_config(self):
         _config_file = os.path.join(os.path.dirname(__file__), "WebSearch")
@@ -555,7 +684,7 @@ class WebSearch(Gramplet):
             PersonDataKeys.BIRTH_YEAR_TO.value: birth_year_to or "",
             PersonDataKeys.DEATH_YEAR_TO.value: death_year_to or "",
         }
-        print(person_data)
+        #print(person_data)
 
         return person_data
 
@@ -571,7 +700,7 @@ class WebSearch(Gramplet):
             PlaceDataKeys.PLACE.value: place_name or "",
             PlaceDataKeys.ROOT_PLACE.value: root_place_name or "",
         }
-        print(place_data)
+        #print(place_data)
 
         return place_data
 
@@ -585,7 +714,7 @@ class WebSearch(Gramplet):
         source_data = {
             SourceDataKeys.TITLE.value: title or "",
         }
-        print(source_data)
+        #print(source_data)
 
         return source_data
 
