@@ -37,6 +37,7 @@ import gi
 import openai
 import threading
 import keyring
+import webbrowser
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, Pango
@@ -129,6 +130,8 @@ ICON_VISITED_PATH = os.path.join(os.path.dirname(__file__), "icons", "emblem-def
 
 SAVED_HASH_FILE_PATH = os.path.join(os.path.dirname(__file__), "saved_links.txt")
 ICON_SAVED_PATH = os.path.join(os.path.dirname(__file__), "icons", "media-floppy.png")
+
+SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(os.path.dirname(__file__), "skipped_domain_suggestions.txt")
 
 ICON_SIZE = 16
 
@@ -318,6 +321,19 @@ class WebsiteLoader:
                 print("file.write")
                 file.write(hash_value + "\n")
 
+    @staticmethod
+    def load_skipped_domains() -> set:
+        if not os.path.exists(SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH):
+            return set()
+
+        with open(SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH, "r", encoding="utf-8") as file:
+            return {line.strip() for line in file if line.strip()}
+
+    @staticmethod
+    def save_skipped_domain(domain: str):
+        with open(SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH, "a", encoding="utf-8") as file:
+            file.write(domain + "\n")
+
     @classmethod
     def load_websites(cls, config):
         websites = []
@@ -404,9 +420,14 @@ class WebSearch(Gramplet):
         self.init_config()
         self.__enabled_files = self.config.get("websearch.enabled_files") or []
         self.gui.WIDGET = self.build_gui()
-        self.gui.get_container_widget().remove(self.gui.textview)
-        self.gui.get_container_widget().add(self.gui.WIDGET)
-        self.gui.WIDGET.show()
+
+        container = self.gui.get_container_widget()
+        if self.gui.textview in container.get_children():
+            container.remove(self.gui.textview)
+        container.add(self.gui.WIDGET)
+
+        self.gui.WIDGET.show_all()
+
         self.populate_links({}, SupportedNavTypes.PEOPLE.value)
 
     def post_init(self):
@@ -426,10 +447,15 @@ class WebSearch(Gramplet):
             daemon=True
         ).start()
 
-    def fetch_sites_in_background(self, domains, locales, include_global):
+    def fetch_sites_in_background(self, csv_domains, locales, include_global):
         print("🔄 Fetching recommended sites in background...")
+
+        skipped_domains = WebsiteLoader.load_skipped_domains()
+        all_excluded_domains = csv_domains.union(skipped_domains)
+        print(f"excluded_domains: {all_excluded_domains}")
+
         try:
-            results = self.finder.find_sites(domains, locales, include_global)
+            results = self.finder.find_sites(all_excluded_domains, locales, include_global)
             GObject.idle_add(self.signal_emitter.emit, "sites-fetched", results)
         except Exception as e:
             print(f"❌ Error fetching sites: {e}")
@@ -437,9 +463,20 @@ class WebSearch(Gramplet):
 
     def on_sites_fetched(self, gramplet, results):
         if results:
-            print("✅ Sites fetched:", results)
-        else:
-            print("⚠️ No sites found or error occurred.")
+            try:
+                sites = json.loads(results)
+                if not isinstance(sites, list):
+                    return
+                domain_url_pairs = [
+                    (site.get("domain", "").strip(), site.get("url", "").strip())
+                    for site in sites if site.get("domain") and site.get("url")
+                ]
+                if domain_url_pairs:
+                    self.populate_badges(domain_url_pairs)
+            except json.JSONDecodeError as e:
+                print(f"❌ JSON Decode Error: {e}")
+            except Exception as e:
+                print(f"❌ Error processing sites: {e}")
 
     def init_config(self):
         _config_file = os.path.join(os.path.dirname(__file__), "WebSearch")
@@ -856,97 +893,131 @@ class WebSearch(Gramplet):
             return None
 
     def build_gui(self):
+        # Load UI from XML
+        self.builder = Gtk.Builder()
+        self.builder.add_from_file(os.path.join(os.path.dirname(__file__), "interface.xml"))
+        self.builder.connect_signals(self)
+
+        # Get the main container
+        self.main_container = self.builder.get_object("main_container")
+
+
+        # Get the AI recommendations label
+        self.ai_recommendations_label = self.builder.get_object("ai_recommendations_label")
+
+        # Get the TreeView from XML
+        self.tree_view = self.builder.get_object("treeview")
+
+        # Create and set the ListStore model
         self.model = Gtk.ListStore(
-            str,                # [0]. Icon name: Represents the name of the icon to be displayed in the first column.
-            str,                # [1]. Locale: Represents the locale (language or region) associated with the entry.
-            str,                # [2]. Name: Represents the name or title of the entry (e.g., category name).
-            str,                # [3]. URL: Represents the URL link associated with the entry.
-            str,                # [4]. Comment: Represents an optional comment or description related to the entry.
-            str,                # [5]. URL pattern: Represents the URL pattern associated with the entry (could be a regex pattern or template).
-            str,                # [6]. Variables JSON: Represents a JSON string containing variables related to the entry (could be replaced or empty variables).
-            str,                # [7]. Formatted URL: Represents the formatted URL link.
-            GdkPixbuf.Pixbuf,   # [8]. Visited icon: Stores Pixbuf instead of icon name.
-            GdkPixbuf.Pixbuf    # [9]. Saved icon: Stores Pixbuf instead of icon name.
-        )  # ListStore: A data model to hold the information for the tree view (each column type is 'str').
+            str, str, str, str, str, str, str, str, GdkPixbuf.Pixbuf, GdkPixbuf.Pixbuf
+        )
+        self.tree_view.set_model(self.model)
+        self.tree_view.set_has_tooltip(True)
 
-        self.tree_view = Gtk.TreeView(model=self.model)
-
+        # Get selection object
         selection = self.tree_view.get_selection()
         selection.set_mode(Gtk.SelectionMode.SINGLE)
 
+        # Connect signals
         self.tree_view.connect("row-activated", self.on_link_clicked)
-
-        self.tree_view.set_has_tooltip(True)
         self.tree_view.connect("query-tooltip", self.on_query_tooltip)
-
-        # Render a column for the icons
-        renderer_category_icon = Gtk.CellRendererPixbuf()
-        renderer_visited_icon = Gtk.CellRendererPixbuf()
-        renderer_saved_icon = Gtk.CellRendererPixbuf()
-
-        column_icon = Gtk.TreeViewColumn("")
-        column_icon.pack_start(renderer_category_icon, False)
-        column_icon.pack_start(renderer_visited_icon, False)
-        column_icon.pack_start(renderer_saved_icon, False)
-        column_icon.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        column_icon.add_attribute(renderer_category_icon, "icon-name", 0)
-        column_icon.add_attribute(renderer_visited_icon, "pixbuf", 8)
-        column_icon.add_attribute(renderer_saved_icon, "pixbuf", 9)
-        column_icon.set_resizable(False)
-        self.tree_view.append_column(column_icon)
-
-        # Render a column for the locale
-        renderer_text = Gtk.CellRendererText()
-        column_locale = Gtk.TreeViewColumn("", renderer_text, text=1)
-        column_locale.set_sort_column_id(1)
-        column_locale.set_resizable(False)
-        column_locale.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        self.tree_view.append_column(column_locale)
-
-        # Render a column for the category name
-        renderer_text = Gtk.CellRendererText()
-        column_category = Gtk.TreeViewColumn(_("Category"), renderer_text, text=2)
-        column_category.set_sort_column_id(2)
-        column_category.set_resizable(True)
-        column_category.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        self.tree_view.append_column(column_category)
-
-        # Render a column for the website URL
-        renderer_link = Gtk.CellRendererText()
-        column_link = Gtk.TreeViewColumn(_("Website URL"), renderer_link, text=7)
-        column_link.set_sort_column_id(3)
-        column_link.set_resizable(True)
-        column_link.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-        self.tree_view.append_column(column_link)
-
-        self.context_menu = Gtk.Menu()
-
-        # Add "Add link to note" option
-        add_note_item = Gtk.MenuItem("Add link to note")
-        add_note_item.connect("activate", self.on_add_note)
-        self.context_menu.append(add_note_item)
-
-        # Add "Add link to attribute" option
-        add_attribute_item = Gtk.MenuItem("Add link to attribute")
-        add_attribute_item.connect("activate", self.on_add_attribute)
-        self.context_menu.append(add_attribute_item)
-
-        # Add "Show QR Code" option
-        show_qr_code_item = Gtk.MenuItem("Show QR-code")
-        show_qr_code_item.connect("activate", self.on_show_qr_code)
-        self.context_menu.append(show_qr_code_item)
-
-        # Add "Copy to clipboard" option
-        copy_url_to_clipboard_item = Gtk.MenuItem("Copy link to clipboard")
-        copy_url_to_clipboard_item.connect("activate", self.on_copy_url_to_clipboard)
-        self.context_menu.append(copy_url_to_clipboard_item)
-
-        self.context_menu.show_all()
-
-        # Add the event handler for right-click
         self.tree_view.connect("button-press-event", self.on_button_press)
 
-        return self.tree_view
+        # Get the columns from the TreeView
+        columns = self.tree_view.get_columns()
+
+        # Bind renderers to columns in ListStore
+        column_icon = columns[0]
+        column_icon.add_attribute(self.builder.get_object("category_icon"), "icon-name", 0)
+        column_icon.add_attribute(self.builder.get_object("visited_icon"), "pixbuf", 8)
+        column_icon.add_attribute(self.builder.get_object("saved_icon"), "pixbuf", 9)
+
+        column_locale = columns[1]
+        column_locale.add_attribute(self.builder.get_object("locale"), "text", 1)
+
+        column_category = columns[2]
+        column_category.add_attribute(self.builder.get_object("category"), "text", 2)
+
+        column_link = columns[3]
+        column_link.add_attribute(self.builder.get_object("url"), "text", 7)
+
+        # Badge container
+        self.badge_container = self.builder.get_object("badge_container")
+
+        # Get the context menu
+        self.context_menu = self.builder.get_object("context_menu")
+
+        # Apply CSS styles
+        self.apply_styles()
+
+        return self.main_container
+
+    def apply_styles(self):
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_path(os.path.join(os.path.dirname(__file__), "style.css"))
+
+        Gtk.StyleContext.add_provider_for_screen(
+            Gdk.Screen.get_default(),
+            css_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )
+
+        self.builder.get_object("badge_container").get_style_context().add_class("badge_container")
+        self.tree_view.get_style_context().add_class("treview")
+
+    def populate_badges(self, domain_url_pairs):
+
+        self.badge_container.foreach(lambda widget: self.badge_container.remove(widget))
+
+        for domain, url in domain_url_pairs:
+            badge = self.create_badge(domain, url)
+            self.badge_container.add(badge)
+
+        self.badge_container.show_all()
+
+    def create_badge(self, domain, url):
+        badge_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+        badge_box.get_style_context().add_class("badge")
+
+        label = Gtk.Label(label=domain)
+        label.get_style_context().add_class("badge-label")
+
+        close_button = Gtk.Button(label="×")
+        close_button.set_relief(Gtk.ReliefStyle.NONE)
+        close_button.set_focus_on_click(False)
+        close_button.set_size_request(16, 16)
+        close_button.get_style_context().add_class("badge-close")
+        close_button.connect("clicked", self.on_remove_badge, badge_box)
+
+        event_box = Gtk.EventBox()
+        event_box.add(label)
+        event_box.connect("button-press-event", lambda widget, event: self.open_url(url))
+
+        badge_box.pack_start(event_box, True, True, 0)
+        badge_box.pack_start(close_button, False, False, 0)
+
+        return badge_box
+
+    def open_url(self, url):
+        webbrowser.open(url)
+
+    def on_remove_badge(self, button, badge):
+        print("on_remove_badge")
+        domain_label = None
+        for child in badge.get_children():
+            print(f"Child: {child}")
+            if isinstance(child, Gtk.EventBox):
+                for sub_child in child.get_children():
+                    print(f"Sub-child: {sub_child}")
+                    if isinstance(sub_child, Gtk.Label):
+                        domain_label = sub_child.get_text().strip()
+                        print(f"Domain to skip: {domain_label}")
+                        break
+        if domain_label:
+            WebsiteLoader.save_skipped_domain(domain_label)
+
+        self.badge_container.remove(badge)
 
     def on_button_press(self, widget, event):
         print("on_button_press")
@@ -960,9 +1031,11 @@ class WebSearch(Gramplet):
                     print("❌ Error: tree_iter is already invalid!")
                     return
                 url = self.model.get_value(tree_iter, 3)
+                self.context_menu = self.builder.get_object("context_menu")
                 self.context_menu.active_tree_path = path
                 self.context_menu.active_url = url
                 print(f"save tree path: {path}")
+                self.context_menu.show_all()
                 self.context_menu.popup_at_pointer(event)
 
     def on_add_note(self, widget):
