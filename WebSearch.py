@@ -24,25 +24,34 @@
     Allows searching for genealogical resources based on the active person's, place's, or source's data.
     Integrates multiple regional websites into a single sidebar tool with customizable URL templates.
 """
+# Standard Python libraries
 import os
 import csv
 import string
 import re
 import json
+import importlib
 import hashlib
-import qrcode
 import traceback
 import time
-import gi
-import openai
 import threading
-import keyring
 import webbrowser
+from enum import Enum
 
+# Own project imports
+from utils import is_module_available
+from qr_window import QRCodeWindow
+
+# External libraries
+import openai
+import keyring
+
+# GTK
+import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, Pango
-from enum import Enum
-from PIL import Image
+
+# GRAMPS API
 from gramps.gen.plug import Gramplet
 from gramps.gen.const import GRAMPS_LOCALE as glocale
 from gramps.gui.display import display_url
@@ -192,21 +201,7 @@ class GenealogySiteFinder:
             print(f"❌ Error parsing OpenAI response: {e}")
             return "[]"
 
-class QRCodeWindow(Gtk.Window):
-    def __init__(self, url):
-        super().__init__(title="QR-code")
-        self.set_default_size(300, 300)
-        self.set_position(Gtk.WindowPosition.CENTER)
-        qr_image = self.generate_qr(url)
 
-        image_widget = Gtk.Image.new_from_pixbuf(qr_image)
-        self.add(image_widget)
-
-    def generate_qr(self, url):
-        qr = qrcode.make(url)
-        qr.save("/tmp/qrcode.png")
-        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size("/tmp/qrcode.png", 250, 250)
-        return pixbuf
 
 class CopyNotificationWindow(Gtk.Window):
     def __init__(self, message):
@@ -945,7 +940,7 @@ class WebSearch(Gramplet):
         # Badge container
         self.badge_container = self.builder.get_object("badge_container")
 
-        # Get the context menu
+        # Context menu
         self.context_menu = self.builder.get_object("context_menu")
 
         # Apply CSS styles
@@ -956,24 +951,17 @@ class WebSearch(Gramplet):
     def apply_styles(self):
         css_provider = Gtk.CssProvider()
         css_provider.load_from_path(os.path.join(os.path.dirname(__file__), "style.css"))
-
         Gtk.StyleContext.add_provider_for_screen(
             Gdk.Screen.get_default(),
             css_provider,
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
 
-        self.builder.get_object("badge_container").get_style_context().add_class("badge_container")
-        self.tree_view.get_style_context().add_class("treview")
-
     def populate_badges(self, domain_url_pairs):
-
         self.badge_container.foreach(lambda widget: self.badge_container.remove(widget))
-
         for domain, url in domain_url_pairs:
             badge = self.create_badge(domain, url)
             self.badge_container.add(badge)
-
         self.badge_container.show_all()
 
     def create_badge(self, domain, url):
