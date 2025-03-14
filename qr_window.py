@@ -21,11 +21,12 @@
 # ----------------------------------------------------------------------------
 
 import gi
+import sys
 
 try:
     import qrcode
 except ImportError:
-    print("⚠ QR codes are disabled. Please install the 'qrcode' library.")
+    print("⚠ QR codes are disabled. Install it using: `pip install qrcode[pil]`.", file=sys.stderr)
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("GdkPixbuf", "2.0")
@@ -86,5 +87,5 @@ class QRCodeWindow(Gtk.Window):
             return GdkPixbuf.Pixbuf.new_from_file_at_size("/tmp/qrcode.png", 250, 250), None
         except Exception as e:
             error_message = _("⚠ Error generating QR code:\nOriginal error: “{}”").format(e)
-            print(error_message)
+            print(error_message, file=sys.stderr)
             return None, error_message
