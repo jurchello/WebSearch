@@ -27,24 +27,25 @@
 # Standard Python libraries
 import os
 import csv
-import string
+import sys
 import re
 import json
-import importlib
-import hashlib
 import traceback
-import time
 import threading
 import webbrowser
 from enum import Enum
 
 # Own project imports
+from constants import *
 from utils import is_module_available
 from qr_window import QRCodeWindow
-
-# External libraries
-import openai
-import keyring
+from site_finder import SiteFinder
+from config_ini_manager import ConfigINIManager
+from settings_ui_manager import SettingsUIManager
+from website_loader import WebsiteLoader
+from notification import Notification
+from signals import WebSearchSignalEmitter
+from url_formatter import UrlFormatter
 
 # GTK
 import gi
@@ -60,347 +61,11 @@ from gramps.gen.plug.menu import BooleanListOption, EnumeratedListOption, String
 from gramps.gen.lib import Note, Attribute
 from gramps.gen.db import DbTxn
 
-COMMON_CSV_FILE_NAME = "common-links.csv"
-
-# Mapping of categories to their associated icons for display
-CATEGORY_ICON = {
-    "Dashboard": "gramps-gramplet",
-    "People": "gramps-person",
-    "Relationships": "gramps-relation",
-    "Families": "gramps-family",
-    "Events": "gramps-event",
-    "Ancestry": "gramps-pedigree",
-    "Places": "gramps-place",
-    "Geography": "gramps-geo",
-    "Sources": "gramps-source",
-    "Repositories": "gramps-repository",
-    "Media": "gramps-media",
-    "Notes": "gramps-notes",
-    "Citations": "gramps-citation",
-}
-DEFAULT_CATEGORY_ICON = "gramps-gramplet"
-
-class MiddleNameHandling(Enum):
-    LEAVE_ALONE = "leave alone"  # Leave middle name unchanged
-    SEPARATE = "separate"  # Separate first and middle name by space
-    REMOVE = "remove"  # Remove middle name
-
-DEFAULT_MIDDLE_NAME_HANDLING = MiddleNameHandling.REMOVE.value
-
-class SupportedNavTypes(Enum):
-    PEOPLE = "People"
-    PLACES = "Places"
-    SOURCES = "Sources"
-
-class PersonDataKeys(Enum):
-    GIVEN = "given"
-    MIDDLE = "middle"
-    SURNAME = "surname"
-    BIRTH_YEAR = "birth_year"
-    DEATH_YEAR = "death_year"
-    BIRTH_YEAR_FROM = "birth_year_from"
-    DEATH_YEAR_FROM = "death_year_from"
-    BIRTH_YEAR_TO = "birth_year_to"
-    DEATH_YEAR_TO = "death_year_to"
-    BIRTH_PLACE = "birth_place"
-    DEATH_PLACE = "death_place"
-    BIRTH_ROOT_PLACE = "birth_root_place"
-    DEATH_ROOT_PLACE = "death_root_place"
-
-COMMON_LOCALE_SIGN = "★"
-
-class CsvColumnNames(Enum):
-    NAV_TYPE = "Navigation type"
-    CATEGORY = "Category"
-    IS_ENABLED = "Is enabled"
-    URL = "URL"
-    COMMENT = "Comment"
-
-class URLCompactnessLevel(Enum):
-    SHORTEST = "shortest"
-    COMPACT_NO_ATTRIBUTES = "compact_no_attributes"
-    COMPACT_WITH_ATTRIBUTES = "compact_with_attributes"
-    LONG = "long"
-
-DEFAULT_URL_COMPACTNESS_LEVEL = URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value
-
-URL_PREFIXES_TO_TRIM = [
-    "https://www.",
-    "http://www.",
-    "https://",
-    "http://"
-]
-
-DEFAULT_URL_PREFIX_REPLACEMENT = "."
-DEFAULT_QUERY_PARAMETERS_REPLACEMENT = "..."
-
-VISITED_HASH_FILE_PATH = os.path.join(os.path.dirname(__file__), "visited_links.txt")
-ICON_VISITED_PATH = os.path.join(os.path.dirname(__file__), "icons", "emblem-default.png")
-
-SAVED_HASH_FILE_PATH = os.path.join(os.path.dirname(__file__), "saved_links.txt")
-ICON_SAVED_PATH = os.path.join(os.path.dirname(__file__), "icons", "media-floppy.png")
-
-SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(os.path.dirname(__file__), "skipped_domain_suggestions.txt")
-
-ICON_SIZE = 16
-
-class PlaceDataKeys(Enum):
-    PLACE = "place"
-    ROOT_PLACE = "root_place"
-
-class SourceDataKeys(Enum):
-    TITLE = "source_title"
-
 try:
     _trans = glocale.get_addon_translator(__file__)
 except ValueError:
     _trans = glocale.translation
 _ = _trans.gettext
-
-class GenealogySiteFinder:
-    def __init__(self, api_key):
-        self.api_key = api_key
-
-    def find_sites(self, excluded_domains, locales, include_global):
-        system_message = (
-            "You assist in finding resources for genealogical research. "
-            "Your response must be strictly formatted as a JSON array of objects with only two keys: 'domain' and 'url'. "
-            "Do not include any additional text, explanations, or comments."
-        )
-
-        if not locales:
-            locale_text = "only globally used"
-            locales_str = "none"
-        else:
-            locale_text = "both regional and globally used" if include_global else "regional"
-            locales_str = ", ".join(locales)
-
-        excluded_domains_str = ", ".join(excluded_domains) if excluded_domains else "none"
-
-        user_message = (
-            f"I am looking for additional genealogical research websites for {locale_text} resources. "
-            f"Relevant locales: {locales_str}. "
-            f"Exclude the following domains: {excluded_domains_str}. "
-            "Provide exactly 10 relevant websites formatted as a JSON array of objects with keys 'domain' and 'url'. "
-            "Example response: [{'{\"domain\": \"example.com\", \"url\": \"https://example.com\"}'}]. "
-            "If no relevant websites are found, return an empty array [] without any explanations."
-        )
-
-        client = openai.OpenAI(api_key=self.api_key)
-        completion = client.chat.completions.create(
-            model="gpt-4-turbo",
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": user_message}
-            ]
-        )
-
-        try:
-            return completion.choices[0].message.content
-        except Exception as e:
-            print(f"❌ Error parsing OpenAI response: {e}")
-            return "[]"
-
-
-
-class CopyNotificationWindow(Gtk.Window):
-    def __init__(self, message):
-        super().__init__()
-
-        screen = Gdk.Screen.get_default()
-        visual = screen.get_rgba_visual()
-        if visual:
-            self.set_visual(visual)
-        self.set_name("TransparentWindow")
-        self.apply_css()
-
-        self.set_decorated(False)
-        self.set_accept_focus(False)
-        self.set_size_request(200, -1)
-        self.set_keep_above(True)
-
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        box.set_margin_top(10)
-        box.set_margin_bottom(10)
-        box.set_margin_start(10)
-        box.set_margin_end(10)
-
-        label = Gtk.Label(label=message)
-        label.set_line_wrap(True)
-        label.set_max_width_chars(10)
-        label.set_ellipsize(Pango.EllipsizeMode.NONE)
-        label.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
-
-        box.pack_start(label, True, True, 0)
-        self.add(box)
-
-        self.show_all()
-
-        width, height = self.get_size()
-        self.set_size_request(100, height)
-        monitor = screen.get_monitor_geometry(0)
-        screen_width = monitor.width
-        width, height = self.get_size()
-        x = screen_width - width - 10
-        y = 10
-        self.move(x, y)
-
-        GObject.timeout_add(2000, self.close_window)
-
-    def close_window(self):
-        self.destroy()
-        return False
-
-    def apply_css(self):
-        css_provider = Gtk.CssProvider()
-        css_provider.load_from_data(b"""
-            #TransparentWindow {
-                background-color: rgba(0, 0, 0, 0.7);
-                border-radius: 10px;
-                padding: 10px;
-            }
-        """)
-        context = Gtk.StyleContext()
-        screen = Gdk.Screen.get_default()
-        context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-
-class WebsiteLoader:
-
-    CSV_DIR = os.path.join(os.path.dirname(__file__), "csv")
-
-    locales = set()
-    domains = set()
-    include_global = False
-
-    @staticmethod
-    def get_csv_files():
-        if not os.path.exists(WebsiteLoader.CSV_DIR):
-            return []
-
-        csv_files = [os.path.join(WebsiteLoader.CSV_DIR, f) for f in os.listdir(WebsiteLoader.CSV_DIR) if f.endswith(".csv")]
-        return csv_files
-
-    @staticmethod
-    def get_selected_csv_files(config):
-        filtered_files = []
-        csv_files = WebsiteLoader.get_csv_files()
-        selected_files = config.get("websearch.enabled_files") or []
-        for file in csv_files:
-            file_name = os.path.basename(file)
-            is_selected = file_name in selected_files
-            if is_selected:
-                filtered_files.append(file)
-        return filtered_files
-
-    @staticmethod
-    def get_all_and_selected_files(config):
-        all_files = [os.path.basename(f) for f in WebsiteLoader.get_csv_files()]
-        selected_files = config.get("websearch.enabled_files") or []
-        return all_files, selected_files
-
-    @staticmethod
-    def generate_hash(string: str) -> str:
-        return hashlib.sha256(string.encode()).hexdigest()[:16]
-
-    @staticmethod
-    def has_hash_in_file(hash_value: str, file_path) -> bool:
-        if not os.path.exists(file_path):
-            return False
-        with open(file_path, "r", encoding="utf-8") as file:
-            return hash_value in file.read().splitlines()
-
-    @staticmethod
-    def save_hash_to_file(hash_value: str, file_path):
-        if not WebsiteLoader.has_hash_in_file(hash_value, file_path):
-            with open(file_path, "a", encoding="utf-8") as file:
-                print("file.write")
-                file.write(hash_value + "\n")
-
-    @staticmethod
-    def load_skipped_domains() -> set:
-        if not os.path.exists(SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH):
-            return set()
-
-        with open(SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH, "r", encoding="utf-8") as file:
-            return {line.strip() for line in file if line.strip()}
-
-    @staticmethod
-    def save_skipped_domain(domain: str):
-        with open(SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH, "a", encoding="utf-8") as file:
-            file.write(domain + "\n")
-
-    @classmethod
-    def load_websites(cls, config):
-        websites = []
-        selected_csv_files = cls.get_selected_csv_files(config)
-
-        for selected_file_path in selected_csv_files:
-            if not os.path.exists(selected_file_path):
-                continue
-
-            locale = os.path.splitext(os.path.basename(selected_file_path))[0].replace("-links", "").upper()
-            if locale == "COMMON":
-                locale = COMMON_LOCALE_SIGN
-
-            with open(selected_file_path, "r", encoding="utf-8") as csvfile:
-                reader = csv.DictReader(csvfile)
-                reader.fieldnames = [name.strip() if name else name for name in reader.fieldnames]
-
-                for row in reader:
-
-                    if not row:
-                        continue
-
-                    nav_type = row.get(CsvColumnNames.NAV_TYPE.value, "").strip()
-                    category = row.get(CsvColumnNames.CATEGORY.value, "").strip()
-                    is_enabled = row.get(CsvColumnNames.IS_ENABLED.value, "").strip()
-                    url = row.get(CsvColumnNames.URL.value, "").strip()
-                    comment = row.get(CsvColumnNames.COMMENT.value, None)
-
-                    if not all([nav_type, category, is_enabled, url]):
-                        print(f"⚠️ Some data are missing in: {selected_file_path}. A row is skipped: {row}")
-                        continue
-
-                    websites.append([nav_type, locale, category, is_enabled, url, comment])
-        return websites
-
-    @classmethod
-    def get_domains_data(cls, config):
-        selected_csv_files = cls.get_selected_csv_files(config)
-        cls.locales = set()
-        cls.domains = set()
-        cls.include_global = False
-
-        for selected_file_path in selected_csv_files:
-            if not os.path.exists(selected_file_path):
-                continue
-
-            locale = os.path.splitext(os.path.basename(selected_file_path))[0].replace("-links", "").upper()
-            if locale == "COMMON":
-                cls.include_global = True
-            else:
-                cls.locales.add(locale)
-
-            with open(selected_file_path, "r", encoding="utf-8") as csvfile:
-                reader = csv.DictReader(csvfile)
-                reader.fieldnames = [name.strip() if name else name for name in reader.fieldnames]
-
-                for row in reader:
-                    if not row:
-                        continue
-                    url = row.get(CsvColumnNames.URL.value, "").strip()
-                    domain = url.split("/")[2] if "//" in url else url
-                    cls.domains.add(domain)
-
-        return cls.locales, cls.domains, cls.include_global
-
-class WebSearchSignalEmitter(GObject.GObject):
-    __gsignals__ = {
-        "sites-fetched": (GObject.SignalFlags.RUN_FIRST, None, (object,))
-    }
-
-    def __init__(self):
-        GObject.GObject.__init__(self)
 
 class WebSearch(Gramplet):
     __gsignals__ = {
@@ -409,33 +74,30 @@ class WebSearch(Gramplet):
 
     def __init__(self, gui):
         self.signal_emitter = WebSearchSignalEmitter()
+        self.config_ini_manager = ConfigINIManager()
+        self.settings_ui_manager = SettingsUIManager(self.config_ini_manager)
+        self.website_loader = WebsiteLoader()
+        self.url_formatter = UrlFormatter(self.config_ini_manager)
         Gramplet.__init__(self, gui)
 
     def init(self):
-        self.init_config()
-        self.__enabled_files = self.config.get("websearch.enabled_files") or []
         self.gui.WIDGET = self.build_gui()
-
         container = self.gui.get_container_widget()
         if self.gui.textview in container.get_children():
             container.remove(self.gui.textview)
         container.add(self.gui.WIDGET)
-
         self.gui.WIDGET.show_all()
-
         self.populate_links({}, SupportedNavTypes.PEOPLE.value)
 
     def post_init(self):
         self.signal_emitter.connect("sites-fetched", self.on_sites_fetched)
-
-        locales, domains, include_global = WebsiteLoader.get_domains_data(self.config)
-        api_key = keyring.get_password("openai", "api_key")
-        if not api_key:
-            print("⚠️ ERROR: No OpenAI API Key found. Set OPENAI_API_KEY in environment variables.")
+        locales, domains, include_global = self.website_loader.get_domains_data(self.config_ini_manager)
+        if not self.__use_openai:
             return
-
-        self.finder = GenealogySiteFinder(api_key)
-
+        if not self.__openai_api_key:
+            print("⚠️ ERROR: No OpenAI API Key found.", file=sys.stderr)
+            return
+        self.finder = SiteFinder(self.__openai_api_key)
         threading.Thread(
             target=self.fetch_sites_in_background,
             args=(domains, locales, include_global),
@@ -444,11 +106,8 @@ class WebSearch(Gramplet):
 
     def fetch_sites_in_background(self, csv_domains, locales, include_global):
         print("🔄 Fetching recommended sites in background...")
-
-        skipped_domains = WebsiteLoader.load_skipped_domains()
+        skipped_domains = self.website_loader.load_skipped_domains()
         all_excluded_domains = csv_domains.union(skipped_domains)
-        print(f"excluded_domains: {all_excluded_domains}")
-
         try:
             results = self.finder.find_sites(all_excluded_domains, locales, include_global)
             GObject.idle_add(self.signal_emitter.emit, "sites-fetched", results)
@@ -473,20 +132,6 @@ class WebSearch(Gramplet):
             except Exception as e:
                 print(f"❌ Error processing sites: {e}")
 
-    def init_config(self):
-        _config_file = os.path.join(os.path.dirname(__file__), "WebSearch")
-        if not os.path.exists(_config_file + ".ini"):
-            open(_config_file + ".ini", "w").close()
-
-        self.config = configman.register_manager(_config_file)
-
-        self.config.register("websearch.enabled_files", [COMMON_CSV_FILE_NAME])
-        self.config.register("websearch.middle_name_handling", DEFAULT_MIDDLE_NAME_HANDLING)
-        self.config.register("websearch.url_prefix_replacement", DEFAULT_URL_PREFIX_REPLACEMENT)
-        self.config.register("websearch.show_short_url", True)
-        self.config.register("websearch.url_compactness_level", DEFAULT_URL_COMPACTNESS_LEVEL)
-        self.config.load()
-
     def db_changed(self):
         self.connect_signal("Person", self.active_person_changed)
         self.connect_signal("Place", self.active_place_changed)
@@ -495,38 +140,16 @@ class WebSearch(Gramplet):
     def is_true(self, value):
         return str(value).strip().lower() in {"1", "true", "yes", "y"}
 
-    def check_pattern_variables(self, url_pattern, data):
-        pattern_variables = re.findall(r"%\((.*?)\)s", url_pattern)
-
-        replaced_variables = []
-        not_found_variables = []
-        empty_variables = []
-
-        for variable in pattern_variables:
-            value = data.get(variable)
-            if value is None:
-                not_found_variables.append(variable)
-            elif value == "":
-                empty_variables.append(variable)
-            else:
-                replaced_variables.append({variable: value})
-
-        return {
-           "replaced_variables": replaced_variables,
-           "not_found_variables": not_found_variables,
-           "empty_variables": empty_variables,
-       }
-
     def populate_links(self, data, nav_type):
         self.model.clear()
         if len(data) == 0:
             return
-        websites = WebsiteLoader.load_websites(self.config)
+        websites = self.website_loader.load_websites(self.config_ini_manager)
 
         for nav, locale, category, is_enabled, url_pattern, comment in websites:
             if nav == nav_type and self.is_true(is_enabled):
                 try:
-                    variables = self.check_pattern_variables(url_pattern, data)
+                    variables = self.url_formatter.check_pattern_variables(url_pattern, data)
                     variables_json = json.dumps(variables)
 
                     if len(variables["not_found_variables"]):
@@ -538,19 +161,19 @@ class WebSearch(Gramplet):
                               f"Data: {data}.")
                     final_url = url_pattern % data
                     icon_name = CATEGORY_ICON.get(nav_type, DEFAULT_CATEGORY_ICON)
-                    formatted_url = self.format_url(final_url, variables)
+                    formatted_url = self.url_formatter.format(final_url, variables)
 
-                    hash_value = WebsiteLoader.generate_hash(final_url)
+                    hash_value = self.website_loader.generate_hash(final_url)
 
                     visited_icon = None
-                    if WebsiteLoader.has_hash_in_file(hash_value, VISITED_HASH_FILE_PATH):
+                    if self.website_loader.has_hash_in_file(hash_value, VISITED_HASH_FILE_PATH):
                         try:
                             visited_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_VISITED_PATH, ICON_SIZE, ICON_SIZE)
                         except Exception as e:
                             print(f"❌ Error loading icon: {e}")
 
                     saved_icon = None
-                    if WebsiteLoader.has_hash_in_file(hash_value, SAVED_HASH_FILE_PATH):
+                    if self.website_loader.has_hash_in_file(hash_value, SAVED_HASH_FILE_PATH):
                         try:
                             saved_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_SAVED_PATH, ICON_SIZE, ICON_SIZE)
                         except Exception as e:
@@ -561,75 +184,6 @@ class WebSearch(Gramplet):
                     print(f"{locale}. Mismatch in template variables: {url_pattern}")
                     pass
 
-    def format_url(self, url, variables):
-        show_short_url = self.config.get("websearch.show_short_url")
-        if show_short_url is None:
-            show_short_url = True
-
-        compactness_level = self.config.get("websearch.url_compactness_level")
-        if compactness_level is None:
-            compactness_level = DEFAULT_URL_COMPACTNESS_LEVEL
-
-        if not show_short_url:
-            return url
-
-        if compactness_level == URLCompactnessLevel.SHORTEST.value:
-            return self.format_url_shortest(url, variables)
-        elif compactness_level == URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value:
-            return self.format_url_compact_no_attributes(url, variables)
-        elif compactness_level == URLCompactnessLevel.COMPACT_WITH_ATTRIBUTES.value:
-            return self.format_url_compact_with_attributes(url, variables)
-        elif compactness_level == URLCompactnessLevel.LONG.value:
-            return self.format_url_long(url, variables)
-
-        return url
-
-    def format_url_shortest(self, url, variables):
-        trimmed_url = self.trim_url_prefix(url)
-        clean_url = self.remove_url_query_params(trimmed_url)
-        return clean_url
-
-    def format_url_compact_no_attributes(self, url, variables):
-        trimmed_url = self.trim_url_prefix(url)
-        clean_url = self.remove_url_query_params(trimmed_url)
-        final_url = self.append_variables_to_url(clean_url, variables, False)
-        return final_url
-
-    def format_url_compact_with_attributes(self, url, variables):
-        trimmed_url = self.trim_url_prefix(url)
-        clean_url = self.remove_url_query_params(trimmed_url)
-        final_url = self.append_variables_to_url(clean_url, variables, True)
-        return final_url
-
-    def format_url_long(self, url, variables):
-        trimmed_url = self.trim_url_prefix(url)
-        return trimmed_url
-
-    def trim_url_prefix(self, url: str) -> str:
-        for prefix in URL_PREFIXES_TO_TRIM:
-            if url.startswith(prefix):
-                replacement = self.config.get("websearch.url_prefix_replacement")
-                if replacement is None:
-                    replacement = DEFAULT_URL_PREFIX_REPLACEMENT
-                return replacement + url[len(prefix):]
-        return url
-
-    def remove_url_query_params(self, url: str) -> str:
-        return url.split('?')[0]
-
-    def append_variables_to_url(self, url: str, variables: dict, show_attribute: bool) -> str:
-        replaced_variables = variables.get('replaced_variables', [])
-        if replaced_variables:
-            formatted_vars = []
-            for var in replaced_variables:
-                for key, value in var.items():
-                    if show_attribute:
-                        formatted_vars.append(f"{key}={value}")
-                    else:
-                        formatted_vars.append(f"{value}")
-            return url + DEFAULT_QUERY_PARAMETERS_REPLACEMENT + DEFAULT_QUERY_PARAMETERS_REPLACEMENT.join(formatted_vars)
-        return url + DEFAULT_QUERY_PARAMETERS_REPLACEMENT
-
     def on_link_clicked(self, tree_view, path, column):
         tree_iter = self.model.get_iter(path)
         url = self.model.get_value(tree_iter, 3)
@@ -638,9 +192,9 @@ class WebSearch(Gramplet):
 
     def add_icon_event(self, file_path, icon_path, tree_iter, model_icon_pos):
         url = self.model.get_value(tree_iter, 3)
-        hash_value = WebsiteLoader.generate_hash(url)
-        if not WebsiteLoader.has_hash_in_file(hash_value, file_path):
-            WebsiteLoader.save_hash_to_file(hash_value, file_path)
+        hash_value = self.website_loader.generate_hash(url)
+        if not self.website_loader.has_hash_in_file(hash_value, file_path):
+            self.website_loader.save_hash_to_file(hash_value, file_path)
             try:
                 pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(icon_path, ICON_SIZE, ICON_SIZE)
                 self.model.set_value(tree_iter, model_icon_pos, pixbuf)
@@ -681,7 +235,9 @@ class WebSearch(Gramplet):
     def get_person_data(self, person):
         try:
             name = person.get_primary_name().get_first_name().strip()
-            middle_name_handling = self.config.get("websearch.middle_name_handling")
+            middle_name_handling = self.config_ini_manager.get_enum(
+                "websearch.middle_name_handling", MiddleNameHandling, DEFAULT_MIDDLE_NAME_HANDLING
+            )
 
             if middle_name_handling == MiddleNameHandling.SEPARATE.value:
                 given, middle = (name.split(" ", 1) + [None])[:2] if name else (None, None)
@@ -991,7 +547,6 @@ class WebSearch(Gramplet):
         webbrowser.open(url)
 
     def on_remove_badge(self, button, badge):
-        print("on_remove_badge")
         domain_label = None
         for child in badge.get_children():
             print(f"Child: {child}")
@@ -1003,12 +558,11 @@ class WebSearch(Gramplet):
                         print(f"Domain to skip: {domain_label}")
                         break
         if domain_label:
-            WebsiteLoader.save_skipped_domain(domain_label)
+            self.website_loader.save_skipped_domain(domain_label)
 
         self.badge_container.remove(badge)
 
     def on_button_press(self, widget, event):
-        print("on_button_press")
         if event.button == 3:  # Right-click mouse button
             print("on_button_press right click")
             path_info = widget.get_path_at_pos(event.x, event.y)
@@ -1069,8 +623,13 @@ class WebSearch(Gramplet):
             clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
             clipboard.set_text(url, -1)
             clipboard.store()
-            notification = CopyNotificationWindow(f"URL is copied to the Clipboard")
+            notification = self.show_notification(f"URL is copied to the Clipboard")
             notification.show_all()
+
+    def show_notification(self, message):
+        notification = Notification(message)
+        notification.show_all()
+        return notification
 
     def get_active_tree_iter(self, path):
         path_str = str(path)
@@ -1134,78 +693,33 @@ class WebSearch(Gramplet):
         return False
 
     def build_options(self):
-        all_files, selected_files = WebsiteLoader.get_all_and_selected_files(self.config)
-        self.opts = []
-
-        opt = BooleanListOption(_("Enable CSV Files"))
-        for file in all_files:
-            is_selected = file in selected_files
-            opt.add_button(file, is_selected)
-        self.opts.append(opt)
-
-        middle_name_handling = EnumeratedListOption(_("Middle Name Handling"), DEFAULT_MIDDLE_NAME_HANDLING)
-        for option in MiddleNameHandling:
-            middle_name_handling.add_item(option.value, option.value)
-        saved_value = self.config.get("websearch.middle_name_handling")
-        if saved_value not in [e.value for e in MiddleNameHandling]:
-            saved_value = DEFAULT_MIDDLE_NAME_HANDLING
-        middle_name_handling.set_value(saved_value)
-        self.opts.append(middle_name_handling)
-
-        # Checkbox for shortened URL display
-        show_short_url = BooleanListOption(_("Show Shortened URL"))
-        value = self.config.get("websearch.show_short_url")
-        if value is None:
-            value = True
-        if isinstance(value, str):
-            value = value.lower() == 'true'
-        show_short_url.add_button(_("Shortened URL"), value)
-        self.opts.append(show_short_url)
-
-        # Compactness level for URL display
-        compactness_level = EnumeratedListOption(_("URL Compactness Level"), DEFAULT_URL_COMPACTNESS_LEVEL)
-        compactness_level.add_item(URLCompactnessLevel.SHORTEST.value, _("Shortest - No Prefix, No Variables"))
-        compactness_level.add_item(URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value, _("Compact - No Prefix, Variables Without Attributes (Default)"))
-        compactness_level.add_item(URLCompactnessLevel.COMPACT_WITH_ATTRIBUTES.value, _("Compact - No Prefix, Variables With Attributes"))
-        compactness_level.add_item(URLCompactnessLevel.LONG.value, _("Long - Without Prefix on the Left"))
-        saved_compactness = self.config.get("websearch.url_compactness_level")
-        if saved_compactness not in [e.value for e in URLCompactnessLevel]:
-             saved_compactness = DEFAULT_URL_COMPACTNESS_LEVEL
-        compactness_level.set_value(saved_compactness)
-        self.opts.append(compactness_level)
-
-        # Continue with the rest of the options
-        url_prefix_replacement = self.config.get("websearch.url_prefix_replacement")
-        if url_prefix_replacement is None:
-            url_prefix_replacement = DEFAULT_URL_PREFIX_REPLACEMENT
-        opt_url_prefix = StringOption(_("URL Prefix Replacement"), url_prefix_replacement)
-        self.opts.append(opt_url_prefix)
-
+        self.opts = self.settings_ui_manager.build_options()
         list(map(self.add_option, self.opts))
+        #self.settings_ui_manager.print_settings()
+        #self.config_ini_manager.print_config()
 
     def save_options(self):
-        self.__enabled_files = self.opts[0].get_selected()
-        self.config.set("websearch.enabled_files", self.__enabled_files)
-
-        middle_name_handling = self.opts[1].get_value()
-        self.config.set("websearch.middle_name_handling", middle_name_handling)
-
-        show_short_url = self.opts[2].get_value()
-        if isinstance(show_short_url, str):
-            show_short_url = show_short_url.lower() == 'true'
-        self.config.set("websearch.show_short_url", show_short_url)
-
-        compactness_level = self.opts[3].get_value()
-        self.config.set("websearch.url_compactness_level", compactness_level)
-
-        url_prefix_replacement = self.opts[4].get_value()
-        self.config.set("websearch.url_prefix_replacement", url_prefix_replacement)
-
-        self.config.save()
+        self.config_ini_manager.set_boolean_list("websearch.enabled_files", self.opts[0].get_selected())
+        self.config_ini_manager.set_enum("websearch.middle_name_handling", self.opts[1].get_value())
+        self.config_ini_manager.set_boolean_option("websearch.show_short_url", self.opts[2].get_value())
+        self.config_ini_manager.set_enum("websearch.url_compactness_level", self.opts[3].get_value())
+        self.config_ini_manager.set_string("websearch.url_prefix_replacement", self.opts[4].get_value())
+        self.config_ini_manager.set_boolean_option("websearch.use_openai", self.opts[5].get_value())
+        self.config_ini_manager.set_string("websearch.openai_api_key", self.opts[6].get_value())
+        self.config_ini_manager.save()
 
     def save_update_options(self, obj):
         self.save_options()
         self.update()
+        self.on_load()
+        #self.settings_ui_manager.print_settings()
+        #self.config_ini_manager.print_config()
 
     def on_load(self):
-        self.__enabled_files = self.config.get("websearch.enabled_files") or []
+        self.__enabled_files = self.config_ini_manager.get_list("websearch.enabled_files", DEFAULT_ENABLED_FILES)
+        self.__use_openai = self.config_ini_manager.get_boolean_option("websearch.use_openai", DEFAULT_USE_OPEN_AI)
+        self.__openai_api_key = self.config_ini_manager.get_string("websearch.openai_api_key")
+        self.__middle_name_handling = self.config_ini_manager.get_enum("websearch.middle_name_handling", MiddleNameHandling, DEFAULT_MIDDLE_NAME_HANDLING)
+        self.__show_short_url = self.config_ini_manager.get_boolean_option("websearch.show_short_url", DEFAULT_SHOW_SHORT_URL)
+        self.__url_compactness_level = self.config_ini_manager.get_enum("websearch.url_compactness_level", URLCompactnessLevel, DEFAULT_URL_COMPACTNESS_LEVEL)
+        self.__url_prefix_replacement = self.config_ini_manager.get_string("websearch.url_prefix_replacement", DEFAULT_URL_PREFIX_REPLACEMENT)
