@@ -4,7 +4,7 @@ register(
     name=_("Web Search Gramplet"),
     description=_("Lists useful genealogy-related websites for research."),
     status=STABLE,
-    version="0.9.7",
+    version="0.10.7",
     fname="web_search.py",
     height=20,
     detached_width=400,
@@ -13,6 +13,6 @@ register(
     gramplet="WebSearch",
     gramplet_title=_("Web Search"),
     gramps_target_version="5.2",
-    navtypes=["Person", "Place", "Source"],
+    navtypes=["Person", "Place", "Source", "Family"],
     include_in_listing=True,
 )

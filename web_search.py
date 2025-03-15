@@ -59,6 +59,7 @@ from gramps.gen.config import config as configman
 from gramps.gen.plug.menu import BooleanListOption, EnumeratedListOption, StringOption
 from gramps.gen.lib import Note, Attribute, Date
 from gramps.gen.db import DbTxn
+from gramps.gen.lib.eventtype import EventType
 
 try:
     _trans = glocale.get_addon_translator(__file__)
@@ -135,6 +136,7 @@ class WebSearch(Gramplet):
         self.connect_signal("Person", self.active_person_changed)
         self.connect_signal("Place", self.active_place_changed)
         self.connect_signal("Source", self.active_source_changed)
+        self.connect_signal("Family", self.active_family_changed)
 
     def is_true(self, value):
         return str(value).strip().lower() in {"1", "true", "yes", "y"}
@@ -231,6 +233,16 @@ class WebSearch(Gramplet):
         self.populate_links(source_data, SupportedNavTypes.SOURCES.value)
         self.update()
 
+    def active_family_changed(self, handle):
+        family = self.dbstate.db.get_family_from_handle(handle)
+        self.family = family
+        if not family:
+            return
+
+        family_data = self.get_family_data(family)
+        self.populate_links(family_data, SupportedNavTypes.FAMILIES.value)
+        self.update()
+
     def get_person_data(self, person):
         try:
             name = person.get_primary_name().get_first_name().strip()
@@ -278,6 +290,93 @@ class WebSearch(Gramplet):
         #print(person_data)
 
         return person_data
+
+    def get_family_data(self, family):
+        father = self.dbstate.db.get_person_from_handle(family.get_father_handle()) if family.get_father_handle() else None
+        mother = self.dbstate.db.get_person_from_handle(family.get_mother_handle()) if family.get_mother_handle() else None
+
+        father_data = self.get_person_data(father) if father else {}
+        mother_data = self.get_person_data(mother) if mother else {}
+
+        marriage_year = marriage_year_from = marriage_year_to = marriage_year_before = marriage_year_after = ""
+        marriage_place = marriage_root_place = None
+
+        divorce_year = divorce_year_from = divorce_year_to = divorce_year_before = divorce_year_after = ""
+        divorce_place = divorce_root_place = None
+
+        event_ref_list = family.get_event_ref_list()
+        for event_ref in event_ref_list:
+            event = self.dbstate.db.get_event_from_handle(event_ref.get_reference_handle())
+            event_type = event.get_type()
+            event_place = self.get_event_place(event)
+            event_root_place = self.get_root_place_name(event_place)
+            print(event_type)
+            print(EventType.MARRIAGE)
+            print(EventType.DIVORCE)
+            if event_type == EventType.MARRIAGE:
+                marriage_year, marriage_year_from, marriage_year_to, marriage_year_before, marriage_year_after = self.get_event_years(event)
+                marriage_place = self.get_place_name(event_place)
+                marriage_root_place = event_root_place
+            if event_type == EventType.DIVORCE:
+                divorce_year, divorce_year_from, divorce_year_to, divorce_year_before, divorce_year_after = self.get_event_years(event)
+                divorce_place = self.get_place_name(event_place)
+                divorce_root_place = event_root_place
+
+        family_data = {
+            FamilyDataKeys.FATHER_GIVEN.value: father_data.get(PersonDataKeys.GIVEN.value, ""),
+            FamilyDataKeys.FATHER_MIDDLE.value: father_data.get(PersonDataKeys.MIDDLE.value, ""),
+            FamilyDataKeys.FATHER_SURNAME.value: father_data.get(PersonDataKeys.SURNAME.value, ""),
+            FamilyDataKeys.FATHER_BIRTH_YEAR.value: father_data.get(PersonDataKeys.BIRTH_YEAR.value, ""),
+            FamilyDataKeys.FATHER_BIRTH_YEAR_FROM.value: father_data.get(PersonDataKeys.BIRTH_YEAR_FROM.value, ""),
+            FamilyDataKeys.FATHER_BIRTH_YEAR_TO.value: father_data.get(PersonDataKeys.BIRTH_YEAR_TO.value, ""),
+            FamilyDataKeys.FATHER_BIRTH_YEAR_BEFORE.value: father_data.get(PersonDataKeys.BIRTH_YEAR_BEFORE.value, ""),
+            FamilyDataKeys.FATHER_BIRTH_YEAR_AFTER.value: father_data.get(PersonDataKeys.BIRTH_YEAR_AFTER.value, ""),
+            FamilyDataKeys.FATHER_DEATH_YEAR.value: father_data.get(PersonDataKeys.DEATH_YEAR.value, ""),
+            FamilyDataKeys.FATHER_DEATH_YEAR_FROM.value: father_data.get(PersonDataKeys.DEATH_YEAR_FROM.value, ""),
+            FamilyDataKeys.FATHER_DEATH_YEAR_TO.value: father_data.get(PersonDataKeys.DEATH_YEAR_TO.value, ""),
+            FamilyDataKeys.FATHER_DEATH_YEAR_BEFORE.value: father_data.get(PersonDataKeys.DEATH_YEAR_BEFORE.value, ""),
+            FamilyDataKeys.FATHER_DEATH_YEAR_AFTER.value: father_data.get(PersonDataKeys.DEATH_YEAR_AFTER.value, ""),
+            FamilyDataKeys.FATHER_BIRTH_PLACE.value: father_data.get(PersonDataKeys.BIRTH_PLACE.value, ""),
+            FamilyDataKeys.FATHER_BIRTH_ROOT_PLACE.value: father_data.get(PersonDataKeys.BIRTH_ROOT_PLACE.value, ""),
+            FamilyDataKeys.FATHER_DEATH_PLACE.value: father_data.get(PersonDataKeys.DEATH_PLACE.value, ""),
+            FamilyDataKeys.FATHER_DEATH_ROOT_PLACE.value: father_data.get(PersonDataKeys.DEATH_ROOT_PLACE.value, ""),
+
+            FamilyDataKeys.MOTHER_GIVEN.value: mother_data.get(PersonDataKeys.GIVEN.value, ""),
+            FamilyDataKeys.MOTHER_MIDDLE.value: mother_data.get(PersonDataKeys.MIDDLE.value, ""),
+            FamilyDataKeys.MOTHER_SURNAME.value: mother_data.get(PersonDataKeys.SURNAME.value, ""),
+            FamilyDataKeys.MOTHER_BIRTH_YEAR.value: mother_data.get(PersonDataKeys.BIRTH_YEAR.value, ""),
+            FamilyDataKeys.MOTHER_BIRTH_YEAR_FROM.value: mother_data.get(PersonDataKeys.BIRTH_YEAR_FROM.value, ""),
+            FamilyDataKeys.MOTHER_BIRTH_YEAR_TO.value: mother_data.get(PersonDataKeys.BIRTH_YEAR_TO.value, ""),
+            FamilyDataKeys.MOTHER_BIRTH_YEAR_BEFORE.value: mother_data.get(PersonDataKeys.BIRTH_YEAR_BEFORE.value, ""),
+            FamilyDataKeys.MOTHER_BIRTH_YEAR_AFTER.value: mother_data.get(PersonDataKeys.BIRTH_YEAR_AFTER.value, ""),
+            FamilyDataKeys.MOTHER_DEATH_YEAR.value: mother_data.get(PersonDataKeys.DEATH_YEAR.value, ""),
+            FamilyDataKeys.MOTHER_DEATH_YEAR_FROM.value: mother_data.get(PersonDataKeys.DEATH_YEAR_FROM.value, ""),
+            FamilyDataKeys.MOTHER_DEATH_YEAR_TO.value: mother_data.get(PersonDataKeys.DEATH_YEAR_TO.value, ""),
+            FamilyDataKeys.MOTHER_DEATH_YEAR_BEFORE.value: mother_data.get(PersonDataKeys.DEATH_YEAR_BEFORE.value, ""),
+            FamilyDataKeys.MOTHER_DEATH_YEAR_AFTER.value: mother_data.get(PersonDataKeys.DEATH_YEAR_AFTER.value, ""),
+            FamilyDataKeys.MOTHER_BIRTH_PLACE.value: mother_data.get(PersonDataKeys.BIRTH_PLACE.value, ""),
+            FamilyDataKeys.MOTHER_BIRTH_ROOT_PLACE.value: mother_data.get(PersonDataKeys.BIRTH_ROOT_PLACE.value, ""),
+            FamilyDataKeys.MOTHER_DEATH_PLACE.value: mother_data.get(PersonDataKeys.DEATH_PLACE.value, ""),
+            FamilyDataKeys.MOTHER_DEATH_ROOT_PLACE.value: mother_data.get(PersonDataKeys.DEATH_ROOT_PLACE.value, ""),
+
+            FamilyDataKeys.MARRIAGE_YEAR.value: marriage_year or "",
+            FamilyDataKeys.MARRIAGE_YEAR_FROM.value: marriage_year_from or "",
+            FamilyDataKeys.MARRIAGE_YEAR_TO.value: marriage_year_to or "",
+            FamilyDataKeys.MARRIAGE_YEAR_BEFORE.value: marriage_year_before or "",
+            FamilyDataKeys.MARRIAGE_YEAR_AFTER.value: marriage_year_after or "",
+            FamilyDataKeys.MARRIAGE_PLACE.value: marriage_place or "",
+            FamilyDataKeys.MARRIAGE_ROOT_PLACE.value: marriage_root_place or "",
+
+            FamilyDataKeys.DIVORCE_YEAR.value: divorce_year or "",
+            FamilyDataKeys.DIVORCE_YEAR_FROM.value: divorce_year_from or "",
+            FamilyDataKeys.DIVORCE_YEAR_TO.value: divorce_year_to or "",
+            FamilyDataKeys.DIVORCE_YEAR_BEFORE.value: divorce_year_before or "",
+            FamilyDataKeys.DIVORCE_YEAR_AFTER.value: divorce_year_after or "",
+            FamilyDataKeys.DIVORCE_PLACE.value: divorce_place or "",
+            FamilyDataKeys.DIVORCE_ROOT_PLACE.value: divorce_root_place or "",
+        }
+
+        return family_data
 
     def get_place_data(self, place):
         try:
