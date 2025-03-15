@@ -20,13 +20,13 @@
 
 # ----------------------------------------------------------------------------
 
+import json
+import sys
+
 try:
     import openai
 except ImportError:
     print("⚠ OpenAI module is missing. Install it using: `pip install openai`.", file=sys.stderr)
-
-import json
-import sys
 
 class SiteFinder:
     """
