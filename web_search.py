@@ -57,7 +57,7 @@ from gramps.gen.const import GRAMPS_LOCALE as glocale
 from gramps.gui.display import display_url
 from gramps.gen.config import config as configman
 from gramps.gen.plug.menu import BooleanListOption, EnumeratedListOption, StringOption
-from gramps.gen.lib import Note, Attribute
+from gramps.gen.lib import Note, Attribute, Date
 from gramps.gen.db import DbTxn
 
 try:
@@ -253,23 +253,27 @@ class WebSearch(Gramplet):
             print(traceback.format_exc())
             given, middle, surname = None, None, None
 
-        birth_year_from, birth_year_to = self.get_birth_years_range(person)
-        death_year_from, death_year_to = self.get_death_years_range(person)
+        birth_year, birth_year_from, birth_year_to, birth_year_before, birth_year_after = self.get_birth_years(person)
+        death_year, death_year_from, death_year_to, death_year_before, death_year_after = self.get_death_years(person)
 
         person_data = {
             PersonDataKeys.GIVEN.value: given or "",
             PersonDataKeys.MIDDLE.value: middle or "",
             PersonDataKeys.SURNAME.value: surname or "",
-            PersonDataKeys.BIRTH_YEAR.value: self.get_birth_year(person) or "",
-            PersonDataKeys.DEATH_YEAR.value: self.get_death_year(person) or "",
+            PersonDataKeys.BIRTH_YEAR.value: birth_year or "",
+            PersonDataKeys.BIRTH_YEAR_FROM.value: birth_year_from or "",
+            PersonDataKeys.BIRTH_YEAR_TO.value: birth_year_to or "",
+            PersonDataKeys.BIRTH_YEAR_BEFORE.value: birth_year_before or "",
+            PersonDataKeys.BIRTH_YEAR_AFTER.value: birth_year_after or "",
+            PersonDataKeys.DEATH_YEAR.value: death_year or "",
+            PersonDataKeys.DEATH_YEAR_FROM.value: death_year_from or "",
+            PersonDataKeys.DEATH_YEAR_TO.value: death_year_to or "",
+            PersonDataKeys.DEATH_YEAR_BEFORE.value: death_year_before or "",
+            PersonDataKeys.DEATH_YEAR_AFTER.value: death_year_after or "",
             PersonDataKeys.BIRTH_PLACE.value: self.get_birth_place(person) or "",
             PersonDataKeys.BIRTH_ROOT_PLACE.value: self.get_birth_root_place(person) or "",
             PersonDataKeys.DEATH_PLACE.value: self.get_death_place(person) or "",
             PersonDataKeys.DEATH_ROOT_PLACE.value: self.get_death_root_place(person) or "",
-            PersonDataKeys.BIRTH_YEAR_FROM.value: birth_year_from or "",
-            PersonDataKeys.DEATH_YEAR_FROM.value: death_year_from or "",
-            PersonDataKeys.BIRTH_YEAR_TO.value: birth_year_to or "",
-            PersonDataKeys.DEATH_YEAR_TO.value: death_year_to or "",
         }
         #print(person_data)
 
@@ -331,33 +335,48 @@ class WebSearch(Gramplet):
         event = self.get_birth_event(person)
         return self.get_event_exact_year(event)
 
-    def get_birth_years_range(self, person):
+    def get_birth_years(self, person):
         event = self.get_birth_event(person)
-        year_from, year_to = self.get_event_years_range(event)
-        return year_from, year_to
+        year, year_from, year_to, year_before, year_after = self.get_event_years(event)
+        return year, year_from, year_to, year_before, year_after
 
-    def get_death_years_range(self, person):
+    def get_death_years(self, person):
         event = self.get_death_event(person)
-        year_from, year_to = self.get_event_years_range(event)
-        return year_from, year_to
+        year, year_from, year_to, year_before, year_after = self.get_event_years(event)
+        return year, year_from, year_to, year_before, year_after
 
-    def get_event_years_range(self, event):
+    def get_event_years(self, event):
+
+        year = None
+        year_from = None
+        year_to = None
+        year_before = None
+        year_after = None
+
+        if not event:
+            return year, year_from, year_to, year_before, year_after
+        date = event.get_date_object()
+        if not date or date.is_empty():
+            return year, year_from, year_to, year_before, year_after
         try:
-            if not event:
-                return None, None
-            date = event.get_date_object()
-            if date and not date.is_compound():
-                exact_year = date.get_year() or None
-                return exact_year, exact_year
-            if date and date.is_compound():
+            modifier = date.get_modifier()
+            if modifier in [Date.MOD_NONE, Date.MOD_ABOUT]:
+                year = date.get_year() or None
+                year_from = date.get_year() or None
+                year_to = date.get_year() or None
+            if modifier in [Date.MOD_AFTER]:
+                year_after = date.get_year() or None
+            if modifier in [Date.MOD_BEFORE]:
+                year_before = date.get_year() or None
+            if modifier in [Date.MOD_SPAN, Date.MOD_RANGE]:
                 start_date = date.get_start_date()
                 stop_date = date.get_stop_date()
                 year_from = start_date[2] if start_date else None
                 year_to = stop_date[2] if stop_date else None
-                return year_from, year_to
+            return year, year_from, year_to, year_before, year_after
         except Exception as e:
             print(traceback.format_exc())
-        return None, None
+        return year, year_from, year_to, year_before, year_after
 
     def get_birth_place(self, person):
         event = self.get_birth_event(person)
