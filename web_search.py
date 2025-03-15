@@ -37,7 +37,6 @@ from enum import Enum
 
 # Own project imports
 from constants import *
-from utils import is_module_available
 from qr_window import QRCodeWindow
 from site_finder import SiteFinder
 from config_ini_manager import ConfigINIManager
