@@ -1,3 +1,25 @@
+#
+# Gramps - a GTK+/GNOME based genealogy program
+#
+# Copyright (C) 2025 Yurii Liubymyi <jurchello@gmail.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+
+# ----------------------------------------------------------------------------
+
 from gramps.gen.const import GRAMPS_LOCALE as glocale
 from gramps.gen.plug.menu import BooleanListOption, EnumeratedListOption, StringOption
 from constants import *
@@ -10,6 +32,31 @@ except ValueError:
 _ = _trans.gettext
 
 class SettingsUIManager:
+    """
+    SettingsUIManager class for managing user configuration options.
+
+    This class handles the creation and management of user-configurable settings
+    for the WebSearch gramplet in Gramps. It builds various types of options such
+    as boolean toggles, enumerated lists, and string inputs.
+
+    Key Features:
+    - Manages and organizes configuration settings.
+    - Supports enabling/disabling specific CSV files for web searches.
+    - Allows customization of name handling, URL formats, and OpenAI integration.
+    - Provides a method to print the current settings for debugging.
+
+    Attributes:
+    - config_ini_manager: Manages reading and writing settings to the configuration file.
+    - opts: A list of option objects representing different settings.
+
+    Methods:
+    - build_options(): Constructs and returns a list of settings options.
+    - add_csv_files_option(): Adds an option to enable/disable CSV files for searches.
+    - add_boolean_option(): Adds a boolean toggle option.
+    - add_enum_option(): Adds an enumerated list option with localized descriptions.
+    - add_string_option(): Adds a string input option.
+    - print_settings(): Prints the current settings for debugging purposes.
+    """
     def __init__(self, config_ini_manager):
         self.config_ini_manager = config_ini_manager
         self.opts = []
@@ -19,7 +66,7 @@ class SettingsUIManager:
         self.add_csv_files_option()
         self.add_enum_option(
             "websearch.middle_name_handling",
-            "Middle Name Handling",
+            _("Middle Name Handling"),
             MiddleNameHandling,
             DEFAULT_MIDDLE_NAME_HANDLING,
             descriptions={
@@ -31,7 +78,7 @@ class SettingsUIManager:
         self.add_boolean_option("websearch.show_short_url", "Show Shortened URL", DEFAULT_SHOW_SHORT_URL)
         self.add_enum_option(
             "websearch.url_compactness_level",
-            "URL Compactness Level",
+            _("URL Compactness Level"),
             URLCompactnessLevel,
             DEFAULT_URL_COMPACTNESS_LEVEL,
             descriptions={
@@ -41,19 +88,15 @@ class SettingsUIManager:
                 URLCompactnessLevel.LONG.value: _("Long - Without Prefix on the Left"),
             }
         )
-        self.add_string_option("websearch.url_prefix_replacement", "URL Prefix Replacement", DEFAULT_URL_PREFIX_REPLACEMENT)
-        self.add_boolean_option("websearch.use_openai", "Use OpenAI", DEFAULT_USE_OPEN_AI)
-        self.add_string_option("websearch.openai_api_key", "OpenAI API Key")
+        self.add_string_option("websearch.url_prefix_replacement", _("URL Prefix Replacement"), DEFAULT_URL_PREFIX_REPLACEMENT)
+        self.add_boolean_option("websearch.use_openai", _("Use OpenAI"), DEFAULT_USE_OPEN_AI)
+        self.add_string_option("websearch.openai_api_key", _("OpenAI API Key"))
 
         return self.opts
 
     def add_csv_files_option(self):
         all_files, selected_files = WebsiteLoader.get_all_and_selected_files(self.config_ini_manager)
-
-        print(f"All CSV Files: {all_files}")
-        print(f"Selected CSV Files: {selected_files}")
-
-        opt = BooleanListOption("Enable CSV Files")
+        opt = BooleanListOption(_("Enable CSV Files"))
         for file in all_files:
             opt.add_button(file, file in selected_files)
         self.opts.append(opt)
@@ -78,6 +121,11 @@ class SettingsUIManager:
         self.opts.append(opt)
 
     def print_settings(self):
+        """
+        Debugging method: Prints the current settings in a readable format.
+        This method is intended for developers to check configuration values
+        during development and troubleshooting. It is not used in normal operation.
+        """
         print("\n=== SettingsUIManager Settings ===")
         for opt in self.opts:
             option_name = opt.get_label()

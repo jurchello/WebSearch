@@ -1,3 +1,25 @@
+#
+# Gramps - a GTK+/GNOME based genealogy program
+#
+# Copyright (C) 2025 Yurii Liubymyi <jurchello@gmail.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+
+# ----------------------------------------------------------------------------
+
 try:
     import openai
 except ImportError:
@@ -8,12 +30,22 @@ import sys
 
 class SiteFinder:
     """
-    A class for retrieving genealogy-related websites using OpenAI.
+    SiteFinder class for retrieving genealogy-related websites using OpenAI.
+
+    This class interacts with OpenAI's API to fetch a list of genealogy research websites
+    while excluding certain domains and filtering results based on locale preferences.
+
+    Key Features:
+    - Uses OpenAI to generate a list of relevant genealogy research sites.
+    - Accepts excluded domains and locale-based filters.
+    - Returns results in strict JSON format with "domain" and "url" keys.
+
     Attributes:
-        api_key (str): API key for OpenAI authentication.
+    - api_key (str): API key for OpenAI authentication.
+
     Methods:
-        find_sites(excluded_domains, locales, include_global):
-            Sends a query to OpenAI and returns a list of genealogy research websites.
+    - find_sites(excluded_domains, locales, include_global):
+        Sends a query to OpenAI and returns a JSON-formatted list of relevant genealogy websites.
     """
     def __init__(self, api_key):
         self.api_key = api_key

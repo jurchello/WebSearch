@@ -1,7 +1,56 @@
+#
+# Gramps - a GTK+/GNOME based genealogy program
+#
+# Copyright (C) 2025 Yurii Liubymyi <jurchello@gmail.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+
+# ----------------------------------------------------------------------------
+
 import re
 from constants import *
 
 class UrlFormatter:
+    """
+    UrlFormatter class for formatting genealogy-related search URLs.
+
+    This class provides methods to process and format URLs for genealogy search queries.
+    It removes unnecessary query parameters, trims prefixes, and compacts URLs based on
+    user-defined settings.
+
+    Key Features:
+    - Supports multiple URL compactness levels (shortest, compact, long).
+    - Removes query parameters for a cleaner URL representation.
+    - Allows prefix replacement for better readability.
+    - Extracts and validates pattern variables within URL templates.
+
+    Attributes:
+    - config_ini_manager: Manages configuration settings for URL formatting.
+
+    Methods:
+    - format(url, variables): Formats the given URL based on user settings.
+    - format_shortest(url): Returns a trimmed URL with removed query parameters.
+    - format_compact_no_attributes(url, variables): Compacts URL while keeping only relevant variables.
+    - format_compact_with_attributes(url, variables): Compacts URL, keeping both variables and attributes.
+    - format_long(url): Returns the full URL with trimmed prefixes.
+    - trim_url_prefix(url): Removes unnecessary prefixes from URLs.
+    - remove_url_query_params(url): Strips query parameters from the URL.
+    - append_variables_to_url(url, variables, show_attribute): Appends formatted variables to the URL.
+    - check_pattern_variables(url_pattern, data): Checks and validates pattern variables in URL templates.
+    """
     def __init__(self, config_ini_manager):
         self.config_ini_manager = config_ini_manager
         self.init(self.config_ini_manager)

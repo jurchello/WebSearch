@@ -62,7 +62,7 @@ class QRCodeWindow(Gtk.Window):
             Returns a GdkPixbuf image if successful or an error message if it fails.
     """
     def __init__(self, url):
-        super().__init__(title="QR-code")
+        super().__init__(title=_("QR-code"))
         self.set_default_size(300, 300)
         self.set_position(Gtk.WindowPosition.CENTER)
 

@@ -68,6 +68,18 @@ except ValueError:
 _ = _trans.gettext
 
 class WebSearch(Gramplet):
+    """
+    WebSearch is a Gramplet for Gramps that provides an interface to search genealogy-related websites.
+    It integrates with various online resources, formats search URLs based on genealogical data,
+    and allows users to track visited and saved links.
+
+    Features:
+    - Fetches recommended genealogy websites based on provided data.
+    - Supports both predefined CSV-based links and AI-suggested links.
+    - Tracks visited and saved links with icons.
+    - Allows users to add links as notes or attributes in Gramps.
+    - Provides a graphical interface using GTK.
+    """
     __gsignals__ = {
         "sites-fetched": (GObject.SignalFlags.RUN_FIRST, None, (object,))
     }
@@ -105,14 +117,13 @@ class WebSearch(Gramplet):
         ).start()
 
     def fetch_sites_in_background(self, csv_domains, locales, include_global):
-        print("🔄 Fetching recommended sites in background...")
         skipped_domains = self.website_loader.load_skipped_domains()
         all_excluded_domains = csv_domains.union(skipped_domains)
         try:
             results = self.finder.find_sites(all_excluded_domains, locales, include_global)
             GObject.idle_add(self.signal_emitter.emit, "sites-fetched", results)
         except Exception as e:
-            print(f"❌ Error fetching sites: {e}")
+            print(f"❌ Error fetching sites: {e}", file=sys.stderr)
             GObject.idle_add(self.signal_emitter.emit, "sites-fetched", None)
 
     def on_sites_fetched(self, gramplet, results):
@@ -128,9 +139,9 @@ class WebSearch(Gramplet):
                 if domain_url_pairs:
                     self.populate_badges(domain_url_pairs)
             except json.JSONDecodeError as e:
-                print(f"❌ JSON Decode Error: {e}")
+                print(f"❌ JSON Decode Error: {e}", file=sys.stderr)
             except Exception as e:
-                print(f"❌ Error processing sites: {e}")
+                print(f"❌ Error processing sites: {e}", file=sys.stderr)
 
     def db_changed(self):
         self.connect_signal("Person", self.active_person_changed)
@@ -171,18 +182,18 @@ class WebSearch(Gramplet):
                         try:
                             visited_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_VISITED_PATH, ICON_SIZE, ICON_SIZE)
                         except Exception as e:
-                            print(f"❌ Error loading icon: {e}")
+                            print(f"❌ Error loading icon: {e}", file=sys.stderr)
 
                     saved_icon = None
                     if self.website_loader.has_hash_in_file(hash_value, SAVED_HASH_FILE_PATH):
                         try:
                             saved_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_SAVED_PATH, ICON_SIZE, ICON_SIZE)
                         except Exception as e:
-                            print(f"❌ Error loading icon: {e}")
+                            print(f"❌ Error loading icon: {e}", file=sys.stderr)
 
                     self.model.append([icon_name, locale, category, final_url, comment, url_pattern, variables_json, formatted_url, visited_icon, saved_icon])
                 except KeyError:
-                    print(f"{locale}. Mismatch in template variables: {url_pattern}")
+                    print(f"❌ {locale}. Mismatch in template variables: {url_pattern}", file=sys.stderr)
                     pass
 
     def on_link_clicked(self, tree_view, path, column):
@@ -200,7 +211,7 @@ class WebSearch(Gramplet):
                 pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(icon_path, ICON_SIZE, ICON_SIZE)
                 self.model.set_value(tree_iter, model_icon_pos, pixbuf)
             except Exception as e:
-                print(f"❌ Error loading icon: {e}")
+                print(f"❌ Error loading icon: {e}", file=sys.stderr)
 
     def active_person_changed(self, handle):
         person = self.dbstate.db.get_person_from_handle(handle)
@@ -222,7 +233,7 @@ class WebSearch(Gramplet):
             self.populate_links(place_data, SupportedNavTypes.PLACES.value)
             self.update()
         except Exception as e:
-            print(traceback.format_exc())
+            print(traceback.format_exc(), file=sys.stderr)
 
     def active_source_changed(self, handle):
         source = self.dbstate.db.get_source_from_handle(handle)
@@ -262,7 +273,7 @@ class WebSearch(Gramplet):
 
             surname = person.get_primary_name().get_primary().strip() or None
         except Exception as e:
-            print(traceback.format_exc())
+            print(traceback.format_exc(), file=sys.stderr)
             given, middle, surname = None, None, None
 
         birth_year, birth_year_from, birth_year_to, birth_year_before, birth_year_after = self.get_birth_years(person)
@@ -287,7 +298,6 @@ class WebSearch(Gramplet):
             PersonDataKeys.DEATH_PLACE.value: self.get_death_place(person) or "",
             PersonDataKeys.DEATH_ROOT_PLACE.value: self.get_death_root_place(person) or "",
         }
-        #print(person_data)
 
         return person_data
 
@@ -310,9 +320,6 @@ class WebSearch(Gramplet):
             event_type = event.get_type()
             event_place = self.get_event_place(event)
             event_root_place = self.get_root_place_name(event_place)
-            print(event_type)
-            print(EventType.MARRIAGE)
-            print(EventType.DIVORCE)
             if event_type == EventType.MARRIAGE:
                 marriage_year, marriage_year_from, marriage_year_to, marriage_year_before, marriage_year_after = self.get_event_years(event)
                 marriage_place = self.get_place_name(event_place)
@@ -383,14 +390,13 @@ class WebSearch(Gramplet):
             place_name = self.get_place_name(place)
             root_place_name = self.get_root_place_name(place)
         except Exception as e:
-            print(traceback.format_exc())
+            print(traceback.format_exc(), file=sys.stderr)
             place_name = None
 
         place_data = {
             PlaceDataKeys.PLACE.value: place_name or "",
             PlaceDataKeys.ROOT_PLACE.value: root_place_name or "",
         }
-        #print(place_data)
 
         return place_data
 
@@ -398,13 +404,12 @@ class WebSearch(Gramplet):
         try:
             title = source.get_title() or None
         except Exception as e:
-            print(traceback.format_exc())
+            print(traceback.format_exc(), file=sys.stderr)
             title = None
 
         source_data = {
             SourceDataKeys.TITLE.value: title or "",
         }
-        #print(source_data)
 
         return source_data
 
@@ -425,7 +430,7 @@ class WebSearch(Gramplet):
                 else:
                     break
         except Exception as e:
-            print(traceback.format_exc())
+            print(traceback.format_exc(), file=sys.stderr)
             return None
 
         return root_place_name
@@ -474,7 +479,7 @@ class WebSearch(Gramplet):
                 year_to = stop_date[2] if stop_date else None
             return year, year_from, year_to, year_before, year_after
         except Exception as e:
-            print(traceback.format_exc())
+            print(traceback.format_exc(), file=sys.stderr)
         return year, year_from, year_to, year_before, year_after
 
     def get_birth_place(self, person):
@@ -506,7 +511,7 @@ class WebSearch(Gramplet):
                 return None
             return self.dbstate.db.get_event_from_handle(ref.get_reference_handle()) or None
         except Exception as e:
-            print(traceback.format_exc())
+            print(traceback.format_exc(), file=sys.stderr)
             return None
 
     def get_death_event(self, person):
@@ -516,7 +521,7 @@ class WebSearch(Gramplet):
                return None
            return self.dbstate.db.get_event_from_handle(ref.get_reference_handle()) or None
         except Exception as e:
-            print(traceback.format_exc())
+            print(traceback.format_exc(), file=sys.stderr)
             return None
 
     def get_death_year(self, person):
@@ -532,7 +537,7 @@ class WebSearch(Gramplet):
                 return None
             return self.dbstate.db.get_place_from_handle(place_ref) or None
         except Exception as e:
-            print(traceback.format_exc())
+            print(traceback.format_exc(), file=sys.stderr)
             return None
 
     def get_event_exact_year(self, event):
@@ -543,7 +548,7 @@ class WebSearch(Gramplet):
             if date and not date.is_compound():
                 return date.get_year() or None
         except Exception as e:
-            print(traceback.format_exc())
+            print(traceback.format_exc(), file=sys.stderr)
             pass
         return None
 
@@ -557,7 +562,7 @@ class WebSearch(Gramplet):
             value = name.get_value()
             return value or None
         except Exception as e:
-            print(traceback.format_exc())
+            print(traceback.format_exc(), file=sys.stderr)
             return None
 
     def build_gui(self):
@@ -666,13 +671,10 @@ class WebSearch(Gramplet):
     def on_remove_badge(self, button, badge):
         domain_label = None
         for child in badge.get_children():
-            print(f"Child: {child}")
             if isinstance(child, Gtk.EventBox):
                 for sub_child in child.get_children():
-                    print(f"Sub-child: {sub_child}")
                     if isinstance(sub_child, Gtk.Label):
                         domain_label = sub_child.get_text().strip()
-                        print(f"Domain to skip: {domain_label}")
                         break
         if domain_label:
             self.website_loader.save_skipped_domain(domain_label)
@@ -681,36 +683,33 @@ class WebSearch(Gramplet):
 
     def on_button_press(self, widget, event):
         if event.button == 3:  # Right-click mouse button
-            print("on_button_press right click")
             path_info = widget.get_path_at_pos(event.x, event.y)
             if path_info:
                 path, column, cell_x, cell_y = path_info
                 tree_iter = self.model.get_iter(path)
                 if not tree_iter or not self.model.iter_is_valid(tree_iter):
-                    print("❌ Error: tree_iter is already invalid!")
                     return
                 url = self.model.get_value(tree_iter, 3)
                 self.context_menu = self.builder.get_object("context_menu")
                 self.context_menu.active_tree_path = path
                 self.context_menu.active_url = url
-                print(f"save tree path: {path}")
                 self.context_menu.show_all()
                 self.context_menu.popup_at_pointer(event)
 
     def on_add_note(self, widget):
         if not self.context_menu.active_tree_path:
-            print("❌ Error: No saved path to the iterator!")
+            print("❌ Error: No saved path to the iterator!", file=sys.stderr)
             return
 
-        print(f"self.context_menu.active_tree_path:{self.context_menu.active_tree_path}")
         tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
         if not tree_iter:
-            print("❌ Error: tree_iter is no longer valid!")
+            print("❌ Error: tree_iter is no longer valid!", file=sys.stderr)
             return
 
         note = Note()
-        note.set(f"📌 This web link was added using the WebSearch gramplet for future reference:\n\n🔗 {self.context_menu.active_url}\n\n"
-        "You can use this link to revisit the source and verify the information related to this person.")
+        note.set(_("📌 This web link was added using the WebSearch gramplet for future reference:\n\n🔗 {url}\n\n"
+                   "You can use this link to revisit the source and verify the information related to this person.")
+                 .format(url=self.context_menu.active_url))
         note.set_privacy(True)
 
         self.model.freeze_notify()
@@ -740,7 +739,7 @@ class WebSearch(Gramplet):
             clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
             clipboard.set_text(url, -1)
             clipboard.store()
-            notification = self.show_notification(f"URL is copied to the Clipboard")
+            notification = self.show_notification(_("URL is copied to the Clipboard"))
             notification.show_all()
 
     def show_notification(self, message):
@@ -757,21 +756,21 @@ class WebSearch(Gramplet):
             tree_iter = self.model.get_iter(tree_path)
             return tree_iter
         except Exception as e:
-            print(f"❌ Error in get_active_tree_iter: {e}")
+            print(f"❌ Error in get_active_tree_iter: {e}", file=sys.stderr)
             return None
 
     def on_add_attribute(self, widget):
         if not self.context_menu.active_tree_path:
-            print("❌ Error: No saved path to the iterator!")
+            print("❌ Error: No saved path to the iterator!", file=sys.stderr)
             return
 
         tree_iter = self.model.get_iter(self.context_menu.active_tree_path)
         if not tree_iter:
-            print("❌ Error: tree_iter is no longer valid!")
+            print("❌ Error: tree_iter is no longer valid!", file=sys.stderr)
             return
 
         attribute = Attribute()
-        attribute.set_type("WebSearch Link")
+        attribute.set_type(_("WebSearch Link"))
         attribute.set_value(self.context_menu.active_url)
         attribute.set_privacy(True)
 
@@ -797,13 +796,13 @@ class WebSearch(Gramplet):
             replaced_variables = [f"{key}={value}" for var in variables['replaced_variables'] for key, value in var.items()]
             empty_variables = [var for var in variables['empty_variables']]
 
-            tooltip_text = _(f"Category: {category}\n")
+            tooltip_text = _("Category: {category}\n").format(category=category)
             if replaced_variables:
-                tooltip_text += _(f"Replaced: {', '.join(replaced_variables)}\n")
+                tooltip_text += _("Replaced: {variables}\n").format(variables=", ".join(replaced_variables))
             if empty_variables:
-                tooltip_text += _(f"Empty: {', '.join(empty_variables)}\n")
+                tooltip_text += _("Empty: {variables}\n").format(variables=", ".join(empty_variables))
             if comment:
-                tooltip_text += _(f"Comment: {comment}\n")
+                tooltip_text += _("Comment: {comment}\n").format(comment=comment)
             tooltip_text = tooltip_text.rstrip()
             tooltip.set_text(tooltip_text)
             return True
@@ -812,8 +811,6 @@ class WebSearch(Gramplet):
     def build_options(self):
         self.opts = self.settings_ui_manager.build_options()
         list(map(self.add_option, self.opts))
-        #self.settings_ui_manager.print_settings()
-        #self.config_ini_manager.print_config()
 
     def save_options(self):
         self.config_ini_manager.set_boolean_list("websearch.enabled_files", self.opts[0].get_selected())
@@ -829,8 +826,6 @@ class WebSearch(Gramplet):
         self.save_options()
         self.update()
         self.on_load()
-        #self.settings_ui_manager.print_settings()
-        #self.config_ini_manager.print_config()
 
     def on_load(self):
         self.__enabled_files = self.config_ini_manager.get_list("websearch.enabled_files", DEFAULT_ENABLED_FILES)

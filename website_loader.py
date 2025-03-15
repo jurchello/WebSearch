@@ -1,10 +1,44 @@
+#
+# Gramps - a GTK+/GNOME based genealogy program
+#
+# Copyright (C) 2025 Yurii Liubymyi <jurchello@gmail.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+
+# ----------------------------------------------------------------------------
+
 import os
 import csv
+import sys
 import hashlib
 
 from constants import *
 
 class WebsiteLoader:
+    """
+    WebsiteLoader is responsible for managing genealogy-related websites stored in CSV files.
+    It provides methods to load, filter, and retrieve websites based on user settings.
+
+    Features:
+    - Reads website data from CSV files stored in the `assets/csv` directory.
+    - Supports enabling/disabling websites via user-defined configuration.
+    - Generates unique hash values for tracking visited and saved websites.
+    - Maintains a list of skipped domains to avoid irrelevant suggestions.
+    - Extracts domains and locales for AI-based recommendations.
+    """
     CSV_DIR = os.path.join(os.path.dirname(__file__), "assets", "csv")
 
     locales = set()
@@ -86,7 +120,7 @@ class WebsiteLoader:
                     comment = row.get(CsvColumnNames.COMMENT.value, None)
 
                     if not all([nav_type, category, is_enabled, url]):
-                        print(f"⚠️ Some data are missing in: {selected_file_path}. A row is skipped: {row}")
+                        print(f"⚠️ Some data are missing in: {selected_file_path}. A row is skipped: {row}", file=sys.stderr)
                         continue
 
                     websites.append([nav_type, locale, category, is_enabled, url, comment])

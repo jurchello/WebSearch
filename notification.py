@@ -1,8 +1,48 @@
+#
+# Gramps - a GTK+/GNOME based genealogy program
+#
+# Copyright (C) 2025 Yurii Liubymyi <jurchello@gmail.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+
+# ----------------------------------------------------------------------------
+
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GObject, Pango
 
 class Notification(Gtk.Window):
+    """
+    Notification class for displaying temporary pop-up messages.
+
+    This class creates a small floating window that displays a message and
+    automatically disappears after a few seconds. It is designed to be used
+    for brief notifications in the Gramps WebSearch Gramplet.
+
+    Key Features:
+    - Transparent background with rounded corners.
+    - Auto-closes after 2 seconds.
+    - Appears at the top-right corner of the screen.
+    - Uses GTK and Pango for text formatting.
+
+    Methods:
+    - __init__(message): Initializes the notification window with the given message.
+    - close_window(): Closes the notification window after a timeout.
+    - apply_css(): Applies custom CSS for transparency and styling.
+    """
     def __init__(self, message):
         super().__init__()
 
