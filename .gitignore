@@ -3,3 +3,4 @@ __pycache__
 WebSearch.ini
 saved_links.txt
 visited_links.txt
+skipped_domain_suggestions.txt

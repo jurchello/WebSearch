@@ -42,6 +42,8 @@
                         <child>
                             <object class="GtkTreeViewColumn">
                                 <property name="title">Category</property>
+                                <property name="resizable">True</property>
+                                <property name="expand">True</property>
                                 <child>
                                     <object class="GtkCellRendererText" id="category"/>
                                 </child>
