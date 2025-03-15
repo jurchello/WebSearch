@@ -5,7 +5,7 @@ from constants import *
 
 class ConfigINIManager:
     def __init__(self):
-        self.config_file = os.path.join(os.path.dirname(__file__), "WebSearch")
+        self.config_file = os.path.join(os.path.dirname(__file__), "config")
         if not os.path.exists(self.config_file + ".ini"):
             open(self.config_file + ".ini", "w").close()
 

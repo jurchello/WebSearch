@@ -59,11 +59,11 @@ ICON_SIZE = 16
 URL_PREFIXES_TO_TRIM = ["https://www.", "http://www.", "https://", "http://"]
 COMMON_CSV_FILE_NAME = "common-links.csv"
 
-VISITED_HASH_FILE_PATH = os.path.join(os.path.dirname(__file__), "visited_links.txt")
-ICON_VISITED_PATH = os.path.join(os.path.dirname(__file__), "icons", "emblem-default.png")
-SAVED_HASH_FILE_PATH = os.path.join(os.path.dirname(__file__), "saved_links.txt")
-ICON_SAVED_PATH = os.path.join(os.path.dirname(__file__), "icons", "media-floppy.png")
-SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(os.path.dirname(__file__), "skipped_domain_suggestions.txt")
+VISITED_HASH_FILE_PATH = os.path.join(os.path.dirname(__file__), "data", "visited_links.txt")
+ICON_VISITED_PATH = os.path.join(os.path.dirname(__file__), "assets", "icons", "emblem-default.png")
+SAVED_HASH_FILE_PATH = os.path.join(os.path.dirname(__file__), "data", "saved_links.txt")
+ICON_SAVED_PATH = os.path.join(os.path.dirname(__file__), "assets", "icons", "media-floppy.png")
+SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(os.path.dirname(__file__), "data", "skipped_domain_suggestions.txt")
 
 DEFAULT_CATEGORY_ICON = "gramps-gramplet"
 DEFAULT_SHOW_SHORT_URL = True

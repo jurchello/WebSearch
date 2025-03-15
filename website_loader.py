@@ -4,11 +4,8 @@ import hashlib
 
 from constants import *
 
-COMMON_LOCALE_SIGN = "★"
-SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(os.path.dirname(__file__), "skipped_domain_suggestions.txt")
-
 class WebsiteLoader:
-    CSV_DIR = os.path.join(os.path.dirname(__file__), "csv")
+    CSV_DIR = os.path.join(os.path.dirname(__file__), "assets", "csv")
 
     locales = set()
     domains = set()

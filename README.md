@@ -43,7 +43,7 @@ The Gramplet uses the following data keys:
 
 The Gramplet has a configurable settings interface. To access it, click the button **"Configure the active view"** in the Gramplet's menu.
 
-![Configure Button](img/settings%20button.png)
+![Configure Button](assets/img/settings%20button.png)
 
 ### Settings
 
@@ -56,11 +56,11 @@ Within the settings window, you can configure:
     - **Remove**: Remove the middle name completely.
 
 #### Screenshots of settings
-![Settings](img/settings.png)
+![Settings](assets/img/settings.png)
 
 ## 4. User Interface
 
-![Settings](img/ui.png)
+![Settings](assets/img/ui.png)
 
 The Gramplet's interface consists of the following columns:
 
@@ -68,7 +68,7 @@ The Gramplet's interface consists of the following columns:
 2. **Locale**: Shows the locale or region associated with the website. This field can be sorted alphabetically to help organize links by region.
 3. **Category**: Represents the category to which the website belongs. This field is sortable, allowing you to arrange links by their respective categories.  
    For ease of use, it is recommended to list the variables used in the URL template by their initial letters, as shown in the screenshot. This way, you can add several similar links with different sets of input parameters and quickly navigate through them. This greatly simplifies the search and convenient use of different template variations.  
-   ![Settings](img/variables%20list.png)  
+   ![Settings](assets/img/variables%20list.png)  
    For example, the letters shown in the screenshot represent:
   - **g** - Given name
   - **m** - Middle name
@@ -80,7 +80,7 @@ The Gramplet's interface consists of the following columns:
 
 ### Tooltip Information
 
-![Settings](img/tooltip.png)
+![Settings](assets/img/tooltip.png)
 
 When hovering over a row in the table, the tooltip will display:
 - **Category**: The category of the website.
@@ -92,9 +92,9 @@ When hovering over a row in the table, the tooltip will display:
 
 ## 6. Handling CSV Files
 
-![Settings](img/csv.png)
+![Settings](assets/img/csv.png)
 
-The CSV files are loaded from the directory `csv/` inside the Gramplet's directory. The filenames must end with `.csv`, and each file should follow the following format:
+The CSV files are loaded from the directory `assets/csv/` inside the Gramplet's directory. The filenames must end with `.csv`, and each file should follow the following format:
 The Gramplet will automatically load these files and display the URLs based on the active entity (Person, Place, Source, ...).
 
 **Is Enabled**: This column in the CSV file allows the user to enable or disable individual links without deleting them. This provides flexibility to manage which links are active while keeping all the available URLs in the file.
