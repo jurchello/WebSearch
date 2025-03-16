@@ -5,11 +5,11 @@ from constants import *
 
 class ConfigINIManager:
     def __init__(self):
-        self.config_file = os.path.join(os.path.dirname(__file__), "config")
-        if not os.path.exists(self.config_file + ".ini"):
-            open(self.config_file + ".ini", "w").close()
+        self.config_file = CONFIG_FILE_PATH
+        if not os.path.exists(self.config_file):
+            open(self.config_file, "w").close()
 
-        self.config = configman.register_manager(self.config_file)
+        self.config = configman.register_manager(os.path.join(CONFIGS_DIR, "config"))
         self.config.register("websearch.enabled_files", DEFAULT_ENABLED_FILES)
         self.config.register("websearch.middle_name_handling", DEFAULT_MIDDLE_NAME_HANDLING)
         self.config.register("websearch.url_prefix_replacement", DEFAULT_URL_PREFIX_REPLACEMENT)

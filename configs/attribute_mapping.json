@@ -1,0 +1,38 @@
+[
+  {
+    "nav_type": "Person",
+    "attribute_name": "profile",
+    "url_regex": ".*familysearch\\.org/.*/tree/person/details/.*",
+    "variable_name": "fs_person_uid"
+  },
+  {
+    "nav_type": "Person",
+    "attribute_name": "sources",
+    "url_regex": ".*familysearch\\.org.*",
+    "variable_name": "fs_source_uid"
+  },
+  {
+    "nav_type": "Person",
+    "attribute_name": "profile",
+    "url_regex": ".*wikitree\\.com.*",
+    "variable_name": "wt_profile_uid"
+  },
+  {
+    "nav_type": "Person",
+    "attribute_name": "memorial",
+    "url_regex": ".*findagrave\\.com/memorial/.*",
+    "variable_name": "fg_memorial_uid"
+  },
+  {
+    "nav_type": "Person",
+    "attribute_name": "cemetery",
+    "url_regex": ".*findagrave\\.com/cemetery.*",
+    "variable_name": "fg_cemetery_uid"
+  },
+  {
+    "nav_type": "Person",
+    "attribute_name": "graver",
+    "url_regex": "(?i).*findagrave\\.com/user.*",
+    "variable_name": "fg_graver_uid"
+  }
+]

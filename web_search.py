@@ -45,6 +45,7 @@ from website_loader import WebsiteLoader
 from notification import Notification
 from signals import WebSearchSignalEmitter
 from url_formatter import UrlFormatter
+from attribute_mapping_loader import AttributeMappingLoader
 
 # GTK
 import gi
@@ -85,8 +86,9 @@ class WebSearch(Gramplet):
     }
 
     def __init__(self, gui):
-        self.make_data_dir()
+        self.make_directories()
         self.signal_emitter = WebSearchSignalEmitter()
+        self.attribute_loader = AttributeMappingLoader()
         self.config_ini_manager = ConfigINIManager()
         self.settings_ui_manager = SettingsUIManager(self.config_ini_manager)
         self.website_loader = WebsiteLoader()
@@ -100,7 +102,7 @@ class WebSearch(Gramplet):
             container.remove(self.gui.textview)
         container.add(self.gui.WIDGET)
         self.gui.WIDGET.show_all()
-        self.populate_links({}, SupportedNavTypes.PEOPLE.value)
+        self.populate_links({}, {}, SupportedNavTypes.PEOPLE.value)
 
     def post_init(self):
         self.signal_emitter.connect("sites-fetched", self.on_sites_fetched)
@@ -117,10 +119,10 @@ class WebSearch(Gramplet):
             daemon=True
         ).start()
 
-    def make_data_dir(self):
-        self.data_directory = os.path.join(os.path.dirname(__file__), 'data')
-        if not os.path.exists(self.data_directory):
-            os.makedirs(self.data_directory)
+    def make_directories(self):
+        for directory in [DATA_DIR, CONFIGS_DIR]:
+            if not os.path.exists(directory):
+                os.makedirs(directory)
 
     def fetch_sites_in_background(self, csv_domains, locales, include_global):
         skipped_domains = self.website_loader.load_skipped_domains()
@@ -158,15 +160,14 @@ class WebSearch(Gramplet):
     def is_true(self, value):
         return str(value).strip().lower() in {"1", "true", "yes", "y"}
 
-    def populate_links(self, data, nav_type):
+    def populate_links(self, entity_data, uids_data, nav_type):
         self.model.clear()
-        if len(data) == 0:
-            return
         websites = self.website_loader.load_websites(self.config_ini_manager)
 
         for nav, locale, category, is_enabled, url_pattern, comment in websites:
             if nav == nav_type and self.is_true(is_enabled):
                 try:
+                    data = self.attribute_loader.add_matching_variables_to_data(entity_data.copy(), uids_data, url_pattern)
                     variables = self.url_formatter.check_pattern_variables(url_pattern, data)
                     variables_json = json.dumps(variables)
 
@@ -180,7 +181,6 @@ class WebSearch(Gramplet):
                     final_url = url_pattern % data
                     icon_name = CATEGORY_ICON.get(nav_type, DEFAULT_CATEGORY_ICON)
                     formatted_url = self.url_formatter.format(final_url, variables)
-
                     hash_value = self.website_loader.generate_hash(final_url)
 
                     visited_icon = None
@@ -225,8 +225,8 @@ class WebSearch(Gramplet):
         if not person:
             return
 
-        person_data = self.get_person_data(person)
-        self.populate_links(person_data, SupportedNavTypes.PEOPLE.value)
+        person_data, uids_data = self.get_person_data(person)
+        self.populate_links(person_data, uids_data, SupportedNavTypes.PEOPLE.value)
         self.update()
 
     def active_place_changed(self, handle):
@@ -236,7 +236,7 @@ class WebSearch(Gramplet):
                 return
 
             place_data = self.get_place_data(place)
-            self.populate_links(place_data, SupportedNavTypes.PLACES.value)
+            self.populate_links(place_data, {}, SupportedNavTypes.PLACES.value)
             self.update()
         except Exception as e:
             print(traceback.format_exc(), file=sys.stderr)
@@ -247,7 +247,7 @@ class WebSearch(Gramplet):
             return
 
         source_data = self.get_source_data(source)
-        self.populate_links(source_data, SupportedNavTypes.SOURCES.value)
+        self.populate_links(source_data, {}, SupportedNavTypes.SOURCES.value)
         self.update()
 
     def active_family_changed(self, handle):
@@ -257,7 +257,7 @@ class WebSearch(Gramplet):
             return
 
         family_data = self.get_family_data(family)
-        self.populate_links(family_data, SupportedNavTypes.FAMILIES.value)
+        self.populate_links(family_data, {}, SupportedNavTypes.FAMILIES.value)
         self.update()
 
     def get_person_data(self, person):
@@ -305,14 +305,17 @@ class WebSearch(Gramplet):
             PersonDataKeys.DEATH_ROOT_PLACE.value: self.get_death_root_place(person) or "",
         }
 
-        return person_data
+        uids_data = self.attribute_loader.get_attributes_for_nav_type('Person', person)
+        print(f"uids_data:{uids_data}")
+
+        return person_data, uids_data
 
     def get_family_data(self, family):
         father = self.dbstate.db.get_person_from_handle(family.get_father_handle()) if family.get_father_handle() else None
         mother = self.dbstate.db.get_person_from_handle(family.get_mother_handle()) if family.get_mother_handle() else None
 
-        father_data = self.get_person_data(father) if father else {}
-        mother_data = self.get_person_data(mother) if mother else {}
+        father_data, father_uids_data = self.get_person_data(father) if father else {}
+        mother_data, mother_uids_data = self.get_person_data(mother) if mother else {}
 
         marriage_year = marriage_year_from = marriage_year_to = marriage_year_before = marriage_year_after = ""
         marriage_place = marriage_root_place = None
