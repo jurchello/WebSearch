@@ -85,6 +85,7 @@ class WebSearch(Gramplet):
     }
 
     def __init__(self, gui):
+        self.make_data_dir()
         self.signal_emitter = WebSearchSignalEmitter()
         self.config_ini_manager = ConfigINIManager()
         self.settings_ui_manager = SettingsUIManager(self.config_ini_manager)
@@ -115,6 +116,11 @@ class WebSearch(Gramplet):
             args=(domains, locales, include_global),
             daemon=True
         ).start()
+
+    def make_data_dir(self):
+        self.data_directory = os.path.join(os.path.dirname(__file__), 'data')
+        if not os.path.exists(self.data_directory):
+            os.makedirs(self.data_directory)
 
     def fetch_sites_in_background(self, csv_domains, locales, include_global):
         skipped_domains = self.website_loader.load_skipped_domains()
