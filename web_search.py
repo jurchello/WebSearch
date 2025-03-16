@@ -167,7 +167,10 @@ class WebSearch(Gramplet):
         for nav, locale, category, is_enabled, url_pattern, comment in websites:
             if nav == nav_type and self.is_true(is_enabled):
                 try:
-                    data = self.attribute_loader.add_matching_variables_to_data(entity_data.copy(), uids_data, url_pattern)
+                    filtered_uids_data = self.attribute_loader.add_matching_variables_to_data(uids_data, url_pattern)
+                    data = entity_data.copy()
+                    data.update(filtered_uids_data)
+
                     variables = self.url_formatter.check_pattern_variables(url_pattern, data)
                     variables_json = json.dumps(variables)
 
@@ -197,7 +200,20 @@ class WebSearch(Gramplet):
                         except Exception as e:
                             print(f"❌ Error loading icon: {e}", file=sys.stderr)
 
-                    self.model.append([icon_name, locale, category, final_url, comment, url_pattern, variables_json, formatted_url, visited_icon, saved_icon])
+                    uid_icon = None
+                    uid_visible = False
+                    replaced_vars_set = {list(var.keys())[0] for var in variables["replaced_variables"]}
+                    if any(var in replaced_vars_set for var in filtered_uids_data.keys()):
+                        try:
+                            uid_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT)
+                            uid_visible = True
+                        except Exception as e:
+                            print(f"❌ Error loading UID icon: {e}", file=sys.stderr)
+
+                    self.model.append([
+                        icon_name, locale, category, final_url, comment, url_pattern, variables_json, formatted_url,
+                        visited_icon, saved_icon, uid_icon, uid_visible
+                    ])
                 except KeyError:
                     print(f"❌ {locale}. Mismatch in template variables: {url_pattern}", file=sys.stderr)
                     pass
@@ -592,7 +608,7 @@ class WebSearch(Gramplet):
 
         # Create and set the ListStore model
         self.model = Gtk.ListStore(
-            str, str, str, str, str, str, str, str, GdkPixbuf.Pixbuf, GdkPixbuf.Pixbuf
+            str, str, str, str, str, str, str, str, GdkPixbuf.Pixbuf, GdkPixbuf.Pixbuf, GdkPixbuf.Pixbuf, bool
         )
         self.tree_view.set_model(self.model)
         self.tree_view.set_has_tooltip(True)
@@ -622,6 +638,8 @@ class WebSearch(Gramplet):
         column_category.add_attribute(self.builder.get_object("category"), "text", 2)
 
         column_link = columns[3]
+        column_link.add_attribute(self.builder.get_object("uid_icon"), "pixbuf", 10)
+        column_link.add_attribute(self.builder.get_object("uid_icon"), "visible", 11)
         column_link.add_attribute(self.builder.get_object("url"), "text", 7)
 
         # Badge container

@@ -157,6 +157,8 @@ class SourceDataKeys(Enum):
 
 COMMON_LOCALE_SIGN = "★"
 ICON_SIZE = 16
+UID_ICON_WIDTH = 32
+UID_ICON_HEIGHT = 12
 URL_PREFIXES_TO_TRIM = ["https://www.", "http://www.", "https://", "http://"]
 COMMON_CSV_FILE_NAME = "common-links.csv"
 
@@ -171,6 +173,7 @@ SAVED_HASH_FILE_PATH = os.path.join(DATA_DIR, "saved_links.txt")
 SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(DATA_DIR, "skipped_domain_suggestions.txt")
 ICON_VISITED_PATH = os.path.join(ASSETS_DIR, "icons", "emblem-default.png")
 ICON_SAVED_PATH = os.path.join(ASSETS_DIR, "icons", "media-floppy.png")
+ICON_UID_PATH = os.path.join(ASSETS_DIR, "icons", "uid.png")
 
 DEFAULT_CATEGORY_ICON = "gramps-gramplet"
 DEFAULT_SHOW_SHORT_URL = True

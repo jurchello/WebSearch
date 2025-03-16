@@ -48,12 +48,13 @@ class AttributeMappingLoader:
 
         return uids_data
 
-    def add_matching_variables_to_data(self, data, uids_data, url_pattern):
+    def add_matching_variables_to_data(self, uids_data, url_pattern):
+        filtered_uids_data = {}
         try:
             for uid_entry in uids_data:
                 if re.match(uid_entry["url_regex"], url_pattern, re.IGNORECASE):
-                    data[uid_entry["variable_name"]] = uid_entry["value"]
+                    filtered_uids_data[uid_entry["variable_name"]] = uid_entry["value"]
         except Exception as e:
             print(f"❌ Error adding matching variables: {e}", file=sys.stderr)
 
-        return data
+        return filtered_uids_data

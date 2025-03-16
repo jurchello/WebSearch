@@ -54,6 +54,9 @@
                             <object class="GtkTreeViewColumn">
                                 <property name="title">Website URL</property>
                                 <child>
+                                    <object class="GtkCellRendererPixbuf" id="uid_icon"/>
+                                </child>
+                                <child>
                                     <object class="GtkCellRendererText" id="url"/>
                                 </child>
                             </object>
