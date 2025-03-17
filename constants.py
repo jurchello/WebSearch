@@ -147,6 +147,10 @@ class URLCompactnessLevel(Enum):
 class PlaceDataKeys(Enum):
     PLACE = "place"
     ROOT_PLACE = "root_place"
+    LATITUDE = "latitude"
+    LONGITUDE = "longitude"
+    TYPE = "type"
+    TITLE = "title"
 
 class SourceDataKeys(Enum):
     TITLE = "source_title"

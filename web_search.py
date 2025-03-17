@@ -61,6 +61,7 @@ from gramps.gen.plug.menu import BooleanListOption, EnumeratedListOption, String
 from gramps.gen.lib import Note, Attribute, Date
 from gramps.gen.db import DbTxn
 from gramps.gen.lib.eventtype import EventType
+from gramps.gen.lib.placetype import PlaceType
 
 try:
     _trans = glocale.get_addon_translator(__file__)
@@ -252,6 +253,7 @@ class WebSearch(Gramplet):
                 return
 
             place_data = self.get_place_data(place)
+            print(place_data)
             self.populate_links(place_data, {}, SupportedNavTypes.PLACES.value)
             self.update()
         except Exception as e:
@@ -411,19 +413,65 @@ class WebSearch(Gramplet):
         return family_data
 
     def get_place_data(self, place):
+        place_name = root_place_name = latitude = longitude = type = None
         try:
             place_name = self.get_place_name(place)
             root_place_name = self.get_root_place_name(place)
+            place_title = self.get_place_title(place)
+            latitude = self.get_place_latitude(place)
+            longitude = self.get_place_longitude(place)
+            type = self.get_place_type(place)
         except Exception as e:
             print(traceback.format_exc(), file=sys.stderr)
-            place_name = None
 
         place_data = {
             PlaceDataKeys.PLACE.value: place_name or "",
             PlaceDataKeys.ROOT_PLACE.value: root_place_name or "",
+            PlaceDataKeys.LATITUDE.value: latitude or "",
+            PlaceDataKeys.LONGITUDE.value: longitude or "",
+            PlaceDataKeys.TYPE.value: type or "",
+            PlaceDataKeys.TITLE.value: place_title or "",
         }
 
         return place_data
+
+    def get_place_latitude(self, place):
+        try:
+            if place is None:
+                return None
+            latitude = place.get_latitude()
+        except Exception as e:
+            print(traceback.format_exc(), file=sys.stderr)
+            return None
+        return latitude
+
+    def get_place_longitude(self, place):
+        try:
+            if place is None:
+                return None
+            longitude = place.get_longitude()
+        except Exception as e:
+            print(traceback.format_exc(), file=sys.stderr)
+            return None
+        return longitude
+
+    def get_place_type(self, place):
+        try:
+            if place is None:
+                return None
+
+            place_type = place.get_type()
+            if isinstance(place_type, str):
+                place_type_value = place_type
+            elif isinstance(place_type, PlaceType):
+                place_type_value = place_type.xml_str()
+            else:
+                place_type_value = None
+
+        except Exception as e:
+            print(traceback.format_exc(), file=sys.stderr)
+            return None
+        return place_type_value
 
     def get_source_data(self, source):
         try:
@@ -459,6 +507,28 @@ class WebSearch(Gramplet):
             return None
 
         return root_place_name
+
+    def get_place_title(self, place):
+        try:
+            if not place:
+                return ""
+            name = place.get_name()
+            if not name:
+                return ""
+            place_names = [name.get_value()]
+            place_ref = place.get_placeref_list()[0] if place.get_placeref_list() else None
+            while place_ref:
+                parent_place = self.dbstate.db.get_place_from_handle(place_ref.get_reference_handle())
+                if parent_place:
+                    place_names.append(parent_place.get_name().get_value())
+                    place_ref = parent_place.get_placeref_list()[0] if parent_place.get_placeref_list() else None
+                else:
+                    break
+
+            return ", ".join(place_names) if place_names else ""
+        except Exception as e:
+            print(traceback.format_exc(), file=sys.stderr)
+            return ""
 
     def get_birth_year(self, person):
         event = self.get_birth_event(person)
