@@ -104,6 +104,8 @@ class WebsiteLoader:
             locale = os.path.splitext(os.path.basename(selected_file_path))[0].replace("-links", "").upper()
             if locale == "COMMON":
                 locale = COMMON_LOCALE_SIGN
+            if locale == "UID":
+                locale = COMMON_UID_SIGN
 
             with open(selected_file_path, "r", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)

@@ -159,12 +159,14 @@ class SourceDataKeys(Enum):
 # CONSTANTS
 # --------------------------
 
-COMMON_LOCALE_SIGN = "★"
+COMMON_LOCALE_SIGN = "🌍"
+COMMON_UID_SIGN = "🆔"
 ICON_SIZE = 16
 UID_ICON_WIDTH = 32
 UID_ICON_HEIGHT = 12
 URL_PREFIXES_TO_TRIM = ["https://www.", "http://www.", "https://", "http://"]
 COMMON_CSV_FILE_NAME = "common-links.csv"
+UID_CSV_FILE_NAME = "uid-links.csv"
 
 CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -186,7 +188,7 @@ DEFAULT_URL_PREFIX_REPLACEMENT = ""
 DEFAULT_QUERY_PARAMETERS_REPLACEMENT = "..."
 DEFAULT_URL_COMPACTNESS_LEVEL = URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value
 DEFAULT_MIDDLE_NAME_HANDLING = MiddleNameHandling.SEPARATE.value
-DEFAULT_ENABLED_FILES = [COMMON_CSV_FILE_NAME]
+DEFAULT_ENABLED_FILES = [COMMON_CSV_FILE_NAME, UID_CSV_FILE_NAME]
 
 CATEGORY_ICON = {
     "Dashboard": "gramps-gramplet",
