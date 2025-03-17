@@ -78,6 +78,8 @@ class PersonDataKeys(Enum):
     BIRTH_ROOT_PLACE = "birth_root_place"
     DEATH_ROOT_PLACE = "death_root_place"
 
+    SYSTEM_LOCALE = "locale"
+
 class FamilyDataKeys(Enum):
     FATHER_GIVEN = "father_given"
     FATHER_MIDDLE = "father_middle"
@@ -131,6 +133,8 @@ class FamilyDataKeys(Enum):
     DIVORCE_PLACE = "divorce_place"
     DIVORCE_ROOT_PLACE = "divorce_root_place"
 
+    SYSTEM_LOCALE = "locale"
+
 class CsvColumnNames(Enum):
     NAV_TYPE = "Navigation type"
     CATEGORY = "Category"
@@ -151,9 +155,11 @@ class PlaceDataKeys(Enum):
     LONGITUDE = "longitude"
     TYPE = "type"
     TITLE = "title"
+    SYSTEM_LOCALE = "locale"
 
 class SourceDataKeys(Enum):
     TITLE = "source_title"
+    SYSTEM_LOCALE = "locale"
 
 # --------------------------
 # CONSTANTS

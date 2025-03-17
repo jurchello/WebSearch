@@ -87,6 +87,7 @@ class WebSearch(Gramplet):
     }
 
     def __init__(self, gui):
+        self.system_locale = glocale.language[0] if isinstance(glocale.language, list) else glocale.language
         self.gui = gui
         self.make_directories()
         self.signal_emitter = WebSearchSignalEmitter()
@@ -360,6 +361,7 @@ class WebSearch(Gramplet):
             PersonDataKeys.BIRTH_ROOT_PLACE.value: self.get_birth_root_place(person) or "",
             PersonDataKeys.DEATH_PLACE.value: self.get_death_place(person) or "",
             PersonDataKeys.DEATH_ROOT_PLACE.value: self.get_death_root_place(person) or "",
+            PersonDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
         }
 
         uids_data = self.attribute_loader.get_attributes_for_nav_type('Person', person)
@@ -446,6 +448,8 @@ class WebSearch(Gramplet):
             FamilyDataKeys.DIVORCE_YEAR_AFTER.value: divorce_year_after or "",
             FamilyDataKeys.DIVORCE_PLACE.value: divorce_place or "",
             FamilyDataKeys.DIVORCE_ROOT_PLACE.value: divorce_root_place or "",
+
+            FamilyDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
         }
 
         return family_data
@@ -469,6 +473,7 @@ class WebSearch(Gramplet):
             PlaceDataKeys.LONGITUDE.value: longitude or "",
             PlaceDataKeys.TYPE.value: type or "",
             PlaceDataKeys.TITLE.value: place_title or "",
+            PlaceDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
         }
 
         return place_data
@@ -520,6 +525,7 @@ class WebSearch(Gramplet):
 
         source_data = {
             SourceDataKeys.TITLE.value: title or "",
+            SourceDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
         }
 
         return source_data
