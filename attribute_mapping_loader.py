@@ -29,7 +29,7 @@ class AttributeMappingLoader:
 
         try:
             for attribute in entity.get_attribute_list():
-                attr_name = attribute.get_type().type2base().lower()
+                attr_name = attribute.get_type().type2base()
                 attr_value = attribute.get_value()
 
                 for mapping in self.mappings:
