@@ -31,8 +31,6 @@ class AttributeMappingLoader:
             for attribute in entity.get_attribute_list():
                 attr_name = attribute.get_type().type2base().lower()
                 attr_value = attribute.get_value()
-                print(f"attr_name:{attr_name}")
-                print(f"attr_value:{attr_value}")
 
                 for mapping in self.mappings:
                     if mapping["nav_type"] == nav_type and attr_name == mapping["attribute_name"]:

@@ -87,6 +87,7 @@ class WebSearch(Gramplet):
     }
 
     def __init__(self, gui):
+        self.gui = gui
         self.make_directories()
         self.signal_emitter = WebSearchSignalEmitter()
         self.attribute_loader = AttributeMappingLoader()
@@ -103,7 +104,6 @@ class WebSearch(Gramplet):
             container.remove(self.gui.textview)
         container.add(self.gui.WIDGET)
         self.gui.WIDGET.show_all()
-        self.populate_links({}, {}, SupportedNavTypes.PEOPLE.value)
 
     def post_init(self):
         self.signal_emitter.connect("sites-fetched", self.on_sites_fetched)
@@ -157,6 +157,20 @@ class WebSearch(Gramplet):
         self.connect_signal("Place", self.active_place_changed)
         self.connect_signal("Source", self.active_source_changed)
         self.connect_signal("Family", self.active_family_changed)
+
+        active_person_handle = self.gui.uistate.get_active("Person")
+        active_place_handle = self.gui.uistate.get_active("Place")
+        active_source_handle = self.gui.uistate.get_active("Source")
+        active_family_handle = self.gui.uistate.get_active("Family")
+
+        if active_person_handle:
+            self.active_person_changed(active_person_handle)
+        elif active_place_handle:
+            self.active_place_changed(active_place_handle)
+        elif active_source_handle:
+            self.active_source_changed(active_source_handle)
+        elif active_family_handle:
+            self.active_family_changed(active_family_handle)
 
     def is_true(self, value):
         return str(value).strip().lower() in {"1", "true", "yes", "y"}
@@ -324,7 +338,6 @@ class WebSearch(Gramplet):
         }
 
         uids_data = self.attribute_loader.get_attributes_for_nav_type('Person', person)
-        print(f"uids_data:{uids_data}")
 
         return person_data, uids_data
 
