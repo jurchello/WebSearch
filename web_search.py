@@ -231,7 +231,7 @@ class WebSearch(Gramplet):
 
                     self.model.append([
                         icon_name, locale, category, final_url, comment, url_pattern, variables_json, formatted_url,
-                        visited_icon, saved_icon, uid_icon, uid_visible
+                        visited_icon, saved_icon, uid_icon, uid_visible, nav_type
                     ])
                 except KeyError as e:
                     print(f"❌ {locale}. KeyError in template variables: {url_pattern}. Missing key: {e}", file=sys.stderr)
@@ -287,6 +287,7 @@ class WebSearch(Gramplet):
     def active_place_changed(self, handle):
         try:
             place = self.dbstate.db.get_place_from_handle(handle)
+            self.place = place
             if not place:
                 return
 
@@ -298,6 +299,7 @@ class WebSearch(Gramplet):
 
     def active_source_changed(self, handle):
         source = self.dbstate.db.get_source_from_handle(handle)
+        self.source = source
         if not source:
             return
 
@@ -714,7 +716,7 @@ class WebSearch(Gramplet):
 
         # Create and set the ListStore model
         self.model = Gtk.ListStore(
-            str, str, str, str, str, str, str, str, GdkPixbuf.Pixbuf, GdkPixbuf.Pixbuf, GdkPixbuf.Pixbuf, bool
+            str, str, str, str, str, str, str, str, GdkPixbuf.Pixbuf, GdkPixbuf.Pixbuf, GdkPixbuf.Pixbuf, bool, str
         )
         self.tree_view.set_model(self.model)
         self.tree_view.set_has_tooltip(True)
@@ -823,10 +825,22 @@ class WebSearch(Gramplet):
                 if not tree_iter or not self.model.iter_is_valid(tree_iter):
                     return
                 url = self.model.get_value(tree_iter, 3)
+                nav_type = self.model.get_value(tree_iter, 12)
+
                 self.context_menu = self.builder.get_object("context_menu")
                 self.context_menu.active_tree_path = path
                 self.context_menu.active_url = url
                 self.context_menu.show_all()
+                add_attribute_item = self.builder.get_object("AddAttribute")
+                add_note_item = self.builder.get_object("AddNote")
+
+                if nav_type == SupportedNavTypes.PEOPLE.value:
+                    add_attribute_item.show()
+                    add_note_item.show()
+                else:
+                    add_attribute_item.hide()
+                    add_note_item.hide()
+
                 self.context_menu.popup_at_pointer(event)
 
     def on_add_note(self, widget):
@@ -840,10 +854,14 @@ class WebSearch(Gramplet):
                  .format(url=self.context_menu.active_url))
         note.set_privacy(True)
 
+        tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
+        nav_type = self.model.get_value(tree_iter, 12)
+
         with DbTxn(_("Add Web Link Note"), self.dbstate.db) as trans:
             note_handle = self.dbstate.db.add_note(note, trans)
-            self.person.add_note(note_handle)
-            self.dbstate.db.commit_person(self.person, trans)
+            if nav_type == SupportedNavTypes.PEOPLE.value:
+                self.person.add_note(note_handle)
+                self.dbstate.db.commit_person(self.person, trans)
 
         tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
         self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, 9)
@@ -894,9 +912,13 @@ class WebSearch(Gramplet):
         attribute.set_value(self.context_menu.active_url)
         attribute.set_privacy(True)
 
-        with DbTxn(_("Add Web Link Note"), self.dbstate.db) as trans:
-            self.person.add_attribute(attribute)
-            self.dbstate.db.commit_person(self.person, trans)
+        tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
+        nav_type = self.model.get_value(tree_iter, 12)
+
+        with DbTxn(_("Add Web Link Attribute"), self.dbstate.db) as trans:
+            if nav_type == SupportedNavTypes.PEOPLE.value:
+                self.person.add_attribute(attribute)
+                self.dbstate.db.commit_person(self.person, trans)
 
         tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
         self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, 9)
