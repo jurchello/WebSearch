@@ -269,6 +269,8 @@ class WebSearch(Gramplet):
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
 
     def active_person_changed(self, handle):
+        self.close_context_menu()
+
         person = self.dbstate.db.get_person_from_handle(handle)
         self.person = person
         if not person:
@@ -278,6 +280,10 @@ class WebSearch(Gramplet):
         self.populate_links(person_data, uids_data, SupportedNavTypes.PEOPLE.value)
         self.update()
 
+    def close_context_menu(self):
+        if self.context_menu and self.context_menu.get_visible():
+            self.context_menu.hide()
+
     def active_place_changed(self, handle):
         try:
             place = self.dbstate.db.get_place_from_handle(handle)
@@ -285,7 +291,6 @@ class WebSearch(Gramplet):
                 return
 
             place_data = self.get_place_data(place)
-            print(place_data)
             self.populate_links(place_data, {}, SupportedNavTypes.PLACES.value)
             self.update()
         except Exception as e:
@@ -829,27 +834,19 @@ class WebSearch(Gramplet):
             print("❌ Error: No saved path to the iterator!", file=sys.stderr)
             return
 
-        tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
-        if not tree_iter:
-            print("❌ Error: tree_iter is no longer valid!", file=sys.stderr)
-            return
-
         note = Note()
         note.set(_("📌 This web link was added using the WebSearch gramplet for future reference:\n\n🔗 {url}\n\n"
                    "You can use this link to revisit the source and verify the information related to this person.")
                  .format(url=self.context_menu.active_url))
         note.set_privacy(True)
 
-        self.model.freeze_notify()
-
         with DbTxn(_("Add Web Link Note"), self.dbstate.db) as trans:
             note_handle = self.dbstate.db.add_note(note, trans)
             self.person.add_note(note_handle)
             self.dbstate.db.commit_person(self.person, trans)
 
-
+        tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
         self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, 9)
-        self.model.thaw_notify()
 
     def on_show_qr_code(self, widget):
         selection = self.tree_view.get_selection()
@@ -892,11 +889,6 @@ class WebSearch(Gramplet):
             print("❌ Error: No saved path to the iterator!", file=sys.stderr)
             return
 
-        tree_iter = self.model.get_iter(self.context_menu.active_tree_path)
-        if not tree_iter:
-            print("❌ Error: tree_iter is no longer valid!", file=sys.stderr)
-            return
-
         attribute = Attribute()
         attribute.set_type(_("WebSearch Link"))
         attribute.set_value(self.context_menu.active_url)
@@ -906,6 +898,7 @@ class WebSearch(Gramplet):
             self.person.add_attribute(attribute)
             self.dbstate.db.commit_person(self.person, trans)
 
+        tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
         self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, 9)
 
     def on_download_page(self, widget):
