@@ -18,6 +18,7 @@
                         <child>
                             <object class="GtkTreeViewColumn">
                                 <property name="title"></property>
+                                <property name="clickable">True</property>
                                 <child>
                                     <object class="GtkCellRendererPixbuf" id="category_icon"/>
                                 </child>
@@ -33,6 +34,7 @@
                         <child>
                             <object class="GtkTreeViewColumn">
                                 <property name="title"></property>
+                                <property name="clickable">True</property>
                                 <child>
                                     <object class="GtkCellRendererText" id="locale"/>
                                 </child>
@@ -42,6 +44,7 @@
                         <child>
                             <object class="GtkTreeViewColumn">
                                 <property name="title">Category</property>
+                                <property name="clickable">True</property>
                                 <property name="resizable">True</property>
                                 <property name="expand">True</property>
                                 <child>
@@ -53,6 +56,7 @@
                         <child>
                             <object class="GtkTreeViewColumn">
                                 <property name="title">Website URL</property>
+                                <property name="clickable">True</property>
                                 <child>
                                     <object class="GtkCellRendererPixbuf" id="uid_icon"/>
                                 </child>

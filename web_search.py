@@ -739,6 +739,10 @@ class WebSearch(Gramplet):
         # Get the columns from the TreeView
         columns = self.tree_view.get_columns()
 
+        self.add_sorting(columns[1], 1)
+        self.add_sorting(columns[2], 2)
+        self.add_sorting(columns[3], 7)
+
         # Bind renderers to columns in ListStore
         column_icon = columns[0]
         column_icon.add_attribute(self.builder.get_object("category_icon"), "icon-name", 0)
@@ -766,6 +770,10 @@ class WebSearch(Gramplet):
         self.apply_styles()
 
         return self.main_container
+
+    def add_sorting(self, column, index):
+        column.set_sort_column_id(index)
+        self.model.set_sort_column_id(index, Gtk.SortType.ASCENDING)
 
     def apply_styles(self):
         css_provider = Gtk.CssProvider()
