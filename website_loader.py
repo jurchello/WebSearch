@@ -106,6 +106,8 @@ class WebsiteLoader:
                 locale = COMMON_LOCALE_SIGN
             if locale == "UID":
                 locale = COMMON_UID_SIGN
+            if locale == "STATIC":
+                locale = COMMON_STATIC_SIGN
 
             with open(selected_file_path, "r", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)

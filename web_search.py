@@ -182,23 +182,37 @@ class WebSearch(Gramplet):
         for nav, locale, category, is_enabled, url_pattern, comment in websites:
             if nav == nav_type and self.is_true(is_enabled):
                 try:
-                    filtered_uids_data = self.attribute_loader.add_matching_variables_to_data(uids_data, url_pattern)
-                    data = entity_data.copy()
-                    data.update(filtered_uids_data)
 
-                    variables = self.url_formatter.check_pattern_variables(url_pattern, data)
-                    variables_json = json.dumps(variables)
+                    if locale == COMMON_STATIC_SIGN:
+                        final_url = url_pattern
+                        formatted_url = url_pattern
+                        uid_icon = None
+                        uid_visible = False
+                        variables_json = json.dumps({
+                            "replaced_variables": [],
+                            "not_found_variables": [],
+                            "empty_variables": []
+                        })
+                    else:
+                        filtered_uids_data = self.attribute_loader.add_matching_variables_to_data(uids_data, url_pattern)
+                        data = entity_data.copy()
+                        data.update(filtered_uids_data)
 
-                    if len(variables["not_found_variables"]):
-                        print(f"Locale: {locale}.\n"
-                              f"Pattern: {url_pattern}.\n"
-                              f"Replaced variables: {variables['replaced_variables']}.\n"
-                              f"Not found variables: {variables['not_found_variables']}.\n"
-                              f"Empty variables: {variables['empty_variables']}.\n"
-                              f"Data: {data}.")
-                    final_url = url_pattern % data
+                        variables = self.url_formatter.check_pattern_variables(url_pattern, data)
+                        variables_json = json.dumps(variables)
+
+                        if len(variables["not_found_variables"]):
+                            print(f"Locale: {locale}.\n"
+                                  f"Pattern: {url_pattern}.\n"
+                                  f"Replaced variables: {variables['replaced_variables']}.\n"
+                                  f"Not found variables: {variables['not_found_variables']}.\n"
+                                  f"Empty variables: {variables['empty_variables']}.\n"
+                                  f"Data: {data}.")
+                        final_url = url_pattern % data
+                        formatted_url = self.url_formatter.format(final_url, variables)
+                        uid_icon, uid_visible = self.get_uid_icon_data(variables['replaced_variables'], filtered_uids_data)
+
                     icon_name = CATEGORY_ICON.get(nav_type, DEFAULT_CATEGORY_ICON)
-                    formatted_url = self.url_formatter.format(final_url, variables)
                     hash_value = self.website_loader.generate_hash(final_url)
 
                     visited_icon = None
@@ -215,23 +229,27 @@ class WebSearch(Gramplet):
                         except Exception as e:
                             print(f"❌ Error loading icon: {e}", file=sys.stderr)
 
-                    uid_icon = None
-                    uid_visible = False
-                    replaced_vars_set = {list(var.keys())[0] for var in variables["replaced_variables"]}
-                    if any(var in replaced_vars_set for var in filtered_uids_data.keys()):
-                        try:
-                            uid_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT)
-                            uid_visible = True
-                        except Exception as e:
-                            print(f"❌ Error loading UID icon: {e}", file=sys.stderr)
-
                     self.model.append([
                         icon_name, locale, category, final_url, comment, url_pattern, variables_json, formatted_url,
                         visited_icon, saved_icon, uid_icon, uid_visible
                     ])
-                except KeyError:
-                    print(f"❌ {locale}. Mismatch in template variables: {url_pattern}", file=sys.stderr)
+                except KeyError as e:
+                    print(f"❌ {locale}. KeyError in template variables: {url_pattern}. Missing key: {e}", file=sys.stderr)
                     pass
+
+    def get_uid_icon_data(self, replaced_variables, filtered_uids_data):
+        uid_icon = None
+        uid_visible = False
+
+        try:
+            replaced_vars_set = {list(var.keys())[0] for var in replaced_variables}
+            if any(var in replaced_vars_set for var in filtered_uids_data.keys()):
+                uid_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT)
+                uid_visible = True
+        except Exception as e:
+            print(f"❌ Error loading UID icon: {e}", file=sys.stderr)
+
+        return uid_icon, uid_visible
 
     def on_link_clicked(self, tree_view, path, column):
         tree_iter = self.model.get_iter(path)
