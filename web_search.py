@@ -794,7 +794,7 @@ class WebSearch(Gramplet):
 
         column_link = columns[3]
         column_link.add_attribute(self.builder.get_object("uid_icon"), "pixbuf", 10)
-        column_link.add_attribute(self.builder.get_object("uid_icon"), "visible", 11)
+        column_link.add_attribute(self.builder.get_object("uid_icon"), "visible", False)
         column_link.add_attribute(self.builder.get_object("url"), "text", 7)
 
         # Badge container
