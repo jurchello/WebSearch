@@ -41,6 +41,7 @@ Each **Navigation Type** has its own set of supported **Variables** that can be 
 - `birth_root_place`: This field represents the "root" birth place, which is the highest-level location in the place hierarchy. The `birth_root_place` encompasses the `birth_place`, meaning it includes the broader geographic area (e.g., a region, state, or country) that the specific `birth_place` falls under. The `birth_root_place` helps identify the broader context or administrative region to which the birth place belongs.
 - `death_root_place`: Just like `birth_root_place`, this field represents the "root" death place, which is the highest-level location in the place hierarchy. It encompasses the `death_place`, representing the broader geographic region (e.g., region, state, or country) that the `death_place` is part of. The `death_root_place` provides context for the `death_place` by identifying the larger geographical area or administrative region it belongs to.
 
+##### Better understand places <!-- {#better-understand-places} -->
 To better understand the difference between `place` and `root place`, see the example below:
 
 ![Place vs Root Place](assets/img/place.png)
@@ -50,8 +51,8 @@ To better understand the difference between `place` and `root place`, see the ex
 
 #### 2.1.2. **Variables** for the "Places" **Navigation Type**:
 
-- `place`: The specific location associated with an event (e.g., birth, death, marriage). For a more detailed explanation, including a visual demonstration, see [**Variables for the "People" Navigation Type**](#211-variables-for-the-people-navigation-type).
-- `root_place`: The highest-level location in the place hierarchy that encompasses the `place`. For a more detailed explanation, including a visual demonstration, see [**Variables for the "People" Navigation Type**](#211-variables-for-the-people-navigation-type).
+- `place`: The specific location associated with an event (e.g., birth, death, marriage). For a more detailed explanation, including a visual demonstration, read [**here**](#better-understand-places).
+- `root_place`: The highest-level location in the place hierarchy that encompasses the `place`. For a more detailed explanation, including a visual demonstration, read [**here**](#better-understand-places).
 - `latitude`: The latitude of the place, if available.
 - `longitude`: The longitude of the place, if available.
 - `type`: The type of the place (e.g., city, village, region, etc.).
