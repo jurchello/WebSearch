@@ -295,6 +295,9 @@ Open the `attribute_mapping.json` file and add the following block:
 4. Double-click the link to open the FamilySearch profile page in your default browser.
 
 From now on, all individuals with `_FSFTID` will automatically generate links to their FamilySearch profiles.  
+
+![person.png](assets%2Fimg%2Fperson.png)
+
 This allows users to quickly navigate between Gramps and FamilySearch, enhancing research efficiency! 🚀
 
 ---
@@ -343,6 +346,8 @@ This removes the specific URL path that was different in both cases, making the 
 This example is fully analogous to Example 1 and does not require additional explanations.
 Simply save the configuration files, restart Gramps or the WebSearch Gramplet, and enjoy the new automatically generated FamilySearch link.
 
+![pedigree.png](assets%2Fimg%2Fpedigree.png)
+
 ---
 
 ###### Example 3: Using Custom Attributes in Search Queries
@@ -379,6 +384,8 @@ Now, add the following JSON entry inside `attribute_mapping.json`:
 - Select a person who has the "Caste" attribute in their profile.
 - The WebSearch Gramplet will generate a Google search link containing their caste information.
 - Click the link, and Google will refine the search results, showing not just generic results for "John Doe" but specifically those related to a particular caste.
+
+![caste.png](assets%2Fimg%2Fcaste.png)
 
 🚀 This method allows you to dynamically generate search links using any attribute stored in Gramps, making your genealogy research more effective!
 
