@@ -492,3 +492,22 @@ To contribute:
     - Any **specific navigation type or attributes** required
 
 By submitting new links this way, **other users won’t need to do the same work again**, ensuring that all commonly useful genealogy search links are readily available in WebSearch Gramplet by default. 🚀
+
+## 9. Dependencies
+
+The WebSearch Gramplet works **without additional dependencies**, but certain **non-core features** require additional packages:
+
+- **QR Code Generation** → Requires `qrcode`
+- **OpenAI Integration** → Requires `openai`
+
+### Installing Dependencies
+
+Dependencies can be installed easily via **pip**, and the process is the same across all operating systems (**Windows, macOS, and Ubuntu**).
+
+```
+pip install qrcode
+pip install openai
+```
+
+The core functionality of the WebSearch Gramplet remains fully operational even without these dependencies.
+
