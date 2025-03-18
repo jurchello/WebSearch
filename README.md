@@ -230,8 +230,71 @@ The URL templates added in CSV files are validated against the specified regex p
 
 ##### Examples of Configuration and Expected Output
 
-###### Example 1
-_(Placeholder for explanation and illustration)_
+###### Example 1: Integrating PersonFS FamilySearch Identifiers into WebSearch Gramplet
+
+Users who use the **PersonFS Gramplet** in Gramps have an attribute named **`_FSFTID`** for individuals in their database.  
+This attribute stores the **FamilySearch unique identifier** that links a person in Gramps to their corresponding record in FamilySearch.
+
+For example, let’s say a person is available in FamilySearch at the following external link:  
+**`https://www.familysearch.org/en/tree/person/details/GP4V-3K8`**  
+In this case, in the **Gramps database**, we expect this person to have an attribute **`_FSFTID`** with the value **`GP4V-3K8`**.
+
+Now, let’s configure the **WebSearch Gramplet** to automatically generate FamilySearch profile links using this identifier.
+
+**Step 1: Add the URL to a CSV file**
+To integrate FamilySearch links into WebSearch, we need to modify one of the CSV files used by the Gramplet.  
+For FamilySearch identifiers, the most suitable file is `uid-links.csv`, but technically, any regional CSV or even `common-links.csv` can be used.
+Open `uid-links.csv` (or another preferred CSV file) and add the following line:
+
+```
+https://www.familysearch.org/en/tree/person/details/%(FamilySearch.personID)s
+```
+Here, instead of inserting a static FamilySearch ID, we use the custom variable **%(FamilySearch.personID)s**.
+You can use a different variable name if you prefer.
+
+**Step 2: Modify `attribute_mapping.json`**
+Now, we need to configure how the WebSearch Gramplet extracts the FamilySearch ID (`_FSFTID`) from individuals in Gramps and assigns it to a variable.
+Open the `attribute_mapping.json` file and add the following block:
+
+```
+{
+  "nav_type": "People",
+  "attribute_name": "_FSFTID",
+  "url_regex": ".*familysearch\\.org/.*/tree/person/details/.*",
+  "variable_name": "FamilySearch.personID"
+}
+```
+
+**Explanation of Each Field**
+
+- **`nav_type`** → Always "People" because the attribute **`_FSFTID`** is stored at the individual level in Gramps.
+- **`attribute_name`** → This is the **attribute name** in Gramps where the FamilySearch ID (`GP4V-3K8`) is stored.
+- **`url_regex`** → A **regular expression (regex)** that matches the target FamilySearch URL format.
+    - The beginning, ending, and locale parts of the URL are replaced with `.*`, which matches any characters of any length.
+    - Dots (`.`) in URLs must be escaped with double backslashes (`\\.`).
+    - This ensures the URL template remains flexible and works for different FamilySearch links.
+- **`variable_name`** → This is the custom variable name (`FamilySearch.personID`) we used in **Step 1**.
+
+ ⚠ **Important JSON Formatting Rules**
+- Each block in the JSON array must be separated by a comma, except the last one.
+- No comma after the last block—otherwise, the JSON file will be invalid.
+
+**Step 3: Save the Changes**
+- Save `uid-links.csv` (or your chosen CSV file).
+- Save `attribute_mapping.json`, ensuring there are no formatting errors.
+
+**Step 4: Restart Gramps or Reload the WebSearch Gramplet**
+- Either restart Gramps entirely or simply reload the WebSearch Gramplet to apply the changes.
+
+**Step 5: Verify the Integration**
+1. Find an individual in Gramps who has the `_FSFTID` attribute.
+2. Click once on the person to activate them.
+3. The WebSearch Gramplet should now automatically generate a link to their FamilySearch profile.
+4. Double-click the link to open the FamilySearch profile page in your default browser.
+
+From now on, all individuals with `_FSFTID` will automatically generate links to their FamilySearch profiles.  
+This allows users to quickly navigate between Gramps and FamilySearch, enhancing research efficiency! 🚀
+
 
 ###### Example 2
 _(Placeholder for explanation and illustration)_

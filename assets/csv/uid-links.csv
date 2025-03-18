@@ -1,2 +1,2 @@
 Navigation type,Category,Is enabled,URL                                                                                                                                         ,Comment
-People,For testing,1,https://www.familysearch.org/en/tree/person/details/%(FamilySearch.person_-uid)s,
+People,FS Person,1,https://www.familysearch.org/en/tree/person/details/%(FamilySearch.personID)s,

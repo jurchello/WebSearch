@@ -1,8 +1,8 @@
 [
   {
     "nav_type": "Person",
-    "attribute_name": "FS_uid",
+    "attribute_name": "_FSFTID",
     "url_regex": ".*familysearch\\.org/.*/tree/person/details/.*",
-    "variable_name": "FamilySearch.person_-uid"
+    "variable_name": "FamilySearch.personID"
   }
 ]
