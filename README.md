@@ -35,24 +35,15 @@ Each **Navigation Type** has its own set of supported **Variables** that can be 
 - `death_year_before`: The latest possible death year before a given date.
 - `death_year_after`: The earliest possible death year after a given date.
 - `locale`: The system locale detected in Gramps. Some examples of locale values: `en`, `de`, `fr`, `uk`, `es`, `it`, `pl`, `nl`, ...
-
 - `birth_place`: This field stores the place where the person was born. It corresponds to the specific location selected from the list of available places. It represents the direct birth place, which could be a city, town, or any defined geographical area.
 - `death_place`: Similar to `birth_place`, this field stores the place where the person passed away. It corresponds to the specific location selected from the list of available places. It represents the direct death place, which could also be a city, town, or any other defined geographical location.
 - `birth_root_place`: This field represents the "root" birth place, which is the highest-level location in the place hierarchy. The `birth_root_place` encompasses the `birth_place`, meaning it includes the broader geographic area (e.g., a region, state, or country) that the specific `birth_place` falls under. The `birth_root_place` helps identify the broader context or administrative region to which the birth place belongs.
 - `death_root_place`: Just like `birth_root_place`, this field represents the "root" death place, which is the highest-level location in the place hierarchy. It encompasses the `death_place`, representing the broader geographic region (e.g., region, state, or country) that the `death_place` is part of. The `death_root_place` provides context for the `death_place` by identifying the larger geographical area or administrative region it belongs to.
 
-##### Better understand places <!-- {#better-understand-places} -->
-To better understand the difference between `place` and `root place`, see the example below:
-
-![Place vs Root Place](assets/img/place.png)
-
-- The **place** (e.g., "Los Angeles") refers to the specific city, town, or village.
-- The **root place** (e.g., "USA") represents the highest-level geographical entity containing the place.
-
 #### 2.1.2. **Variables** for the "Places" **Navigation Type**:
 
-- `place`: The specific location associated with an event (e.g., birth, death, marriage). For a more detailed explanation, including a visual demonstration, read [**here**](#better-understand-places).
-- `root_place`: The highest-level location in the place hierarchy that encompasses the `place`. For a more detailed explanation, including a visual demonstration, read [**here**](#better-understand-places).
+- `place`: The specific location associated with an event (e.g., birth, death, marriage). For a more detailed explanation, including a visual demonstration, see [**Variables for the "People" Navigation Type**](#211-variables-for-the-people-navigation-type).
+- `root_place`: The highest-level location in the place hierarchy that encompasses the `place`. For a more detailed explanation, including a visual demonstration, see [**Variables for the "People" Navigation Type**](#211-variables-for-the-people-navigation-type).
 - `latitude`: The latitude of the place, if available.
 - `longitude`: The longitude of the place, if available.
 - `type`: The type of the place (e.g., city, village, region, etc.).
@@ -60,8 +51,6 @@ To better understand the difference between `place` and `root place`, see the ex
 - `locale`: The system locale detected in Gramps. Some examples of locale values: `en`, `de`, `fr`, `uk`, `es`, `it`, `pl`, `nl`, ...
 
 #### 2.1.3. **Variables** for the "Families" **Navigation Type**:
-The Gramplet WebSearch supports navigation for family records using the following variables:
-
 
 - `father_given` – This field represents the first name of the father.
 - `father_middle` – Middle name. This field represents the middle name of the father. The handling of middle names is configurable, and the exact mechanics for extracting and displaying the middle name are described in more detail in the Settings section of the Gramplet.
@@ -116,6 +105,28 @@ The Gramplet WebSearch supports navigation for family records using the followin
 #### 2.1.4. **Variables** for the "Sources" **Navigation Type**:
 - `source_title`: Source title.
 - `locale`: The system locale detected in Gramps. Some examples of locale values: `en`, `de`, `fr`, `uk`, `es`, `it`, `pl`, `nl`, ...
+
+### 2.2 More details about some **variables**
+#### 2.2.1 `place` VS `root_place`
+To better understand the difference between `place` and `root place`, see the example below:
+
+![Place vs Root Place](assets/img/place.png)
+
+- The **place** (e.g., "Los Angeles") refers to the specific city, town, or village.
+- The **root place** (e.g., "USA") represents the highest-level geographical entity containing the place.
+
+#### 2.2.2 The `middle` **Variable**
+The `middle` variable is not used everywhere. It represents the **middle name** of a person and is typically relevant in cultures and naming conventions where middle names play an important role.
+
+##### **Who and when can use `middle`?**
+- **Genealogical databases**: Some databases allow searching by full name, including the middle name, while others do not support it.
+- **Legal and historical records**: Middle names may be crucial for distinguishing individuals with the same first and last names.
+- **Regions where middle names are common**: Some cultures (e.g., the United States, Russia, Ukraine) frequently use middle names, while others may not.
+
+##### **Configuring Middle Name Handling**
+The way the `middle` variable is extracted from personal data **can be configured** in the settings interface. This setting is called **Middle Name Handling** and allows users to adjust how middle names appear in search queries.
+
+For a more detailed explanation of this configuration, see the section [**config.ini – General Configuration**](#31-configini--general-configuration).
 
 ## 3. Configuration
 
