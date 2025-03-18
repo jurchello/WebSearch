@@ -1,2 +1,3 @@
 Navigation type,Category,Is enabled,URL                                                                                                                                         ,Comment
 People,FS Person,1,https://www.familysearch.org/en/tree/person/details/%(FamilySearch.personID)s,
+People,FS Pedigree,1,https://www.familysearch.org/en/tree/pedigree/landscape/%(FamilySearch.personID)s,

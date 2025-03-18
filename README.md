@@ -230,6 +230,8 @@ The URL templates added in CSV files are validated against the specified regex p
 
 ##### Examples of Configuration and Expected Output
 
+---
+
 ###### Example 1: Integrating PersonFS FamilySearch Identifiers into WebSearch Gramplet
 
 Users who use the **PersonFS Gramplet** in Gramps have an attribute named **`_FSFTID`** for individuals in their database.  
@@ -295,12 +297,58 @@ Open the `attribute_mapping.json` file and add the following block:
 From now on, all individuals with `_FSFTID` will automatically generate links to their FamilySearch profiles.  
 This allows users to quickly navigate between Gramps and FamilySearch, enhancing research efficiency! 🚀
 
+---
 
-###### Example 2
-_(Placeholder for explanation and illustration)_
+###### Example 2: Using the Same Identifier for a Different FamilySearch Link
+
+Example 2 is a logical continuation of **Example 1**.  
+We will use the same FamilySearch identifier but in a different URL — this time, a link to the person's genealogy tree on FamilySearch:
+
+`https://www.familysearch.org/en/tree/pedigree/landscape/GP4V-3K8`
+
+Since we have already configured the `_FSFTID` attribute in **Example 1**, we can reuse it for this new link.
+
+**Step 1: Add the URL to a CSV file**
+Open the CSV file (e.g., `uid-links.csv`) and add the following line:
+
+`https://www.familysearch.org/en/tree/pedigree/landscape/%(FamilySearch.personID)s`
+
+**Step 2: Modify `attribute_mapping.json`**
+
+Add the following JSON block to `attribute_mapping.json`:
+
+```
+{
+  "nav_type": "Person",
+  "attribute_name": "_FSFTID",
+  "url_regex": ".*familysearch\\.org/.*/tree/pedigree/landscape/.*",
+  "variable_name": "FamilySearch.personID"
+}
+```
+**Alternative Approach: Using a Generalized Rule**
+
+Instead of defining separate rules for different FamilySearch URLs, we can simplify the configuration by using a more general rule:
+
+```
+{
+  "nav_type": "Person",
+  "attribute_name": "_FSFTID",
+  "url_regex": ".*familysearch\\.org/.*",
+  "variable_name": "FamilySearch.personID"
+}
+```
+
+This removes the specific URL path that was different in both cases, making the rule more flexible and applicable to any FamilySearch link related to the person.
+
+This example is fully analogous to Example 1 and does not require additional explanations.
+Simply save the configuration files, restart Gramps or the WebSearch Gramplet, and enjoy the new automatically generated FamilySearch link.
+
+---
 
 ###### Example 3
 _(Placeholder for explanation and illustration)_
+
+---
 
 ## 4. User Interface
 

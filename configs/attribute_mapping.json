@@ -4,5 +4,11 @@
     "attribute_name": "_FSFTID",
     "url_regex": ".*familysearch\\.org/.*/tree/person/details/.*",
     "variable_name": "FamilySearch.personID"
+  },
+  {
+    "nav_type": "Person",
+    "attribute_name": "_FSFTID",
+    "url_regex": ".*familysearch\\.org/.*/tree/pedigree/landscape/.*",
+    "variable_name": "FamilySearch.personID"
   }
 ]
