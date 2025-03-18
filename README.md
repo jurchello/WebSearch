@@ -134,7 +134,7 @@ Users can assign any name to the output **Variable**. Here are some examples, th
 - `familysearch_person_id`
 - `_FS-ID`
 
-In the JSON file, these names should be specified in the `variable_name` field. Users can utilize them like any other variables listed in [**2. Navigation Types and Supported Variables**](#2-navigation-types-and-supported-variables).
+In the JSON file, these names should be specified in the `variable_name` field. Users can utilize them like any other **Variables** listed in [**2. Navigation Types and Supported Variables**](#2-navigation-types-and-supported-variables).
 
 ##### **Example of using a custom variable**
 A user-defined variable can be inserted into a URL template of a csv file as follows:
@@ -155,25 +155,37 @@ These configuration files are located in the `configs` directory:
 
 The `config.ini` file contains various settings that control how the Gramplet operates. Here are the key options:
 
-- **`websearch.enabled_files`** – List of enabled CSV files that store website templates.
-- **`websearch.middle_name_handling`** – Defines how middle names should be handled in URL templates:
-    - **"leave alone"** – Keep the middle name unchanged.
-    - **"separate"** – Separate the first and middle names with a space.
-    - **"remove"** – Remove the middle name entirely.
-- **`websearch.url_prefix_replacement`** – Replacement for URL prefixes (e.g., removing `https://www.`).
-- **`websearch.show_short_url`** – If `true`, URLs are displayed in a shortened format.
-- **`websearch.url_compactness_level`** – Controls how URLs are formatted:
-    - **"shortest"** – Minimal URL, no prefix and no extra parameters.
-    - **"compact_no_attributes"** – Compact format, excludes attributes.
-    - **"compact_with_attributes"** – Compact format, includes attributes.
-    - **"long"** – Full URL with all details.
-- **`websearch.use_openai`** – If `true`, enables integration with OpenAI for website recommendations.
-- **`websearch.openai_api_key`** – API key for OpenAI services (if used).
+#### **Enable CSV Files (`websearch.enabled_files`)**
+A list of CSV files that store website templates. The selected files define which sources are available for search queries.
 
-These settings can be modified manually in `config.ini` or through the Gramplet's settings interface. Most settings take effect immediately. However, the following two options require a restart, as OpenAI is only initialized once when the application starts:
+#### **Middle Name Handling (`websearch.middle_name_handling`)**
+Defines how middle names should be handled in URL templates:
+- **Leave Alone** – Keep the middle name unchanged.
+- **Separate** – Separate the first and middle names with a space.
+- **Remove** – Remove the middle name entirely.
 
-- **`websearch.use_openai`** –
-- **`websearch.openai_api_key`**
+#### **Show Shortened URL (`websearch.show_short_url`)**
+If enabled, URLs will be displayed in a shortened format. Corresponds to `websearch.show_short_url = true/false` in the configuration file.
+
+#### **URL Compactness Level (`websearch.url_compactness_level`)**
+Controls how URLs are formatted:
+- **Shortest** – Minimal URL, no prefix and no extra parameters.
+- **Compact - No Prefix, Variables Without Attributes** – Compact format, excludes attributes.
+- **Compact - With Attributes** – Compact format, includes attributes.
+- **Long** – Full URL with all details.
+
+#### **URL Prefix Replacement (`websearch.url_prefix_replacement`)**
+Allows users to replace or remove certain URL prefixes (e.g., removing `https://www.`).
+
+#### **Use OpenAI (`websearch.use_openai`)**
+If enabled, OpenAI will be used to generate additional genealogy research suggestions.
+
+#### **OpenAI API Key (`websearch.openai_api_key`)**
+The API key required to use OpenAI services for generating additional research links.
+
+Most settings take effect immediately. However, the following two settings require a restart, as OpenAI is only initialized once when the application starts:
+- **Use OpenAI**
+- **OpenAI API Key**
 
 For details on how OpenAI is used, the costs associated with it, and what data is transmitted, see the [OpenAI Integration](#openai-integration) section.
 
