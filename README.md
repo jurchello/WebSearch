@@ -125,6 +125,23 @@ The way the `middle` **Variable** is extracted from personal data **can be confi
 
 For a more detailed explanation of this configuration, see the section [**config.ini – General Configuration**](#31-configini--general-configuration).
 
+#### 2.2.3 Custom Variables
+
+Users can define their own **Variables** in the `attribute_mapping.json` file. These **Variables** will store values from the attributes of the active object. Currently, only **Person** attributes are supported.
+
+Users can assign any name to the output **Variable**. Here are some examples, though any other naming convention can be used:
+- `FamilySearch.UID`
+- `familysearch_person_id`
+- `_FS-ID`
+
+In the JSON file, these names should be specified in the `variable_name` field. Users can utilize them like any other variables listed in [**2. Navigation Types and Supported Variables**](#2-navigation-types-and-supported-variables).
+
+##### **Example of using a custom variable**
+A user-defined variable can be inserted into a URL template of a csv file as follows:
+```
+https://www.familysearch.org/en/tree/person/details/%(FamilySearch.UID)s
+```
+
 ## 3. Configuration
 
 The WebSearch Gramplet uses two configuration files, each serving a specific purpose:
