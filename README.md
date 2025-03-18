@@ -345,10 +345,43 @@ Simply save the configuration files, restart Gramps or the WebSearch Gramplet, a
 
 ---
 
-###### Example 3
-_(Placeholder for explanation and illustration)_
+###### Example 3: Using Custom Attributes in Search Queries
 
----
+You can use any attributes you wish for this task. You can pass them as custom variables inside URLs.  
+For example, let’s assume you need to pass the value of the "Caste" attribute into a search query to refine search conditions.  
+For simplicity, let’s use a Google search URL.
+
+**Step 1: Add the URL to a CSV file**
+Open your **CSV file** and add the following line:
+
+```
+https://www.google.com/search?q=%(caste)s %(surname)s %(given)s %(middle)s
+```
+
+
+This ensures that the search query will contain the **Caste, Surname, Given Name, and Middle Name** of the selected person.
+
+**Step 2: Modify attribute_mapping.json**
+Now, add the following JSON entry inside `attribute_mapping.json`:
+
+```
+{
+  "nav_type": "Person",
+  "attribute_name": "Caste",
+  "url_regex": ".*google\\.com/search.*",
+  "variable_name": "caste"
+}
+```
+
+**Step 3: Save and Test**
+- Save both the modified CSV and JSON files.
+- Restart Gramps or the WebSearch Gramplet to apply the changes.
+- Select a person who has the "Caste" attribute in their profile.
+- The WebSearch Gramplet will generate a Google search link containing their caste information.
+- Click the link, and Google will refine the search results, showing not just generic results for "John Doe" but specifically those related to a particular caste.
+
+🚀 This method allows you to dynamically generate search links using any attribute stored in Gramps, making your genealogy research more effective!
+
 
 ## 4. User Interface
 
