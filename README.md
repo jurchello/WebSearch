@@ -116,15 +116,12 @@ To better understand the difference between `place` and `root place`, see the ex
 - The **root place** (e.g., "USA") represents the highest-level geographical entity containing the place.
 
 #### 2.2.2 The `middle` **Variable**
-The `middle` variable is not used everywhere. It represents the **middle name** of a person and is typically relevant in cultures and naming conventions where middle names play an important role.
-
-##### **Who and when can use `middle`?**
-- **Genealogical databases**: Some databases allow searching by full name, including the middle name, while others do not support it.
-- **Legal and historical records**: Middle names may be crucial for distinguishing individuals with the same first and last names.
-- **Regions where middle names are common**: Some cultures (e.g., the United States, Russia, Ukraine) frequently use middle names, while others may not.
+The `middle` **Variable** is not used everywhere. It represents the **middle name** of a person and is typically relevant in cultures and naming conventions where middle names play an important role. Some cultures frequently use middle names, while others may not.
+It is expected that users enter middle names in the **Given** field, separated by a space from the first name.
+If other methods of storing middle names are used, such as including them in the **Surnames** field, the middle name detection mechanism will not work, and the 'middle' **Variable** will remain empty.
 
 ##### **Configuring Middle Name Handling**
-The way the `middle` variable is extracted from personal data **can be configured** in the settings interface. This setting is called **Middle Name Handling** and allows users to adjust how middle names appear in search queries.
+The way the `middle` **Variable** is extracted from personal data **can be configured** in the settings interface. This setting is called **Middle Name Handling** and allows users to adjust how middle names appear in search queries.
 
 For a more detailed explanation of this configuration, see the section [**config.ini – General Configuration**](#31-configini--general-configuration).
 
