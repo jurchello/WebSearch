@@ -277,6 +277,7 @@ When hovering over a row in the table, the tooltip will display:
 - **Comment**: Any comment associated with the website. These comments can be included in a separate column in the CSV file, allowing you to add additional context or information about each link.
 
 ## 5. Context Menu
+![Menu](assets/img/menu.png)
 
 Right-clicking on an active link within the Gramplet opens the **context menu**, which provides additional actions for working with the selected link. The following options are available:
 
@@ -288,6 +289,7 @@ After saving a link to a note, a **floppy disk icon** appears in the icons colum
 
 ### **5.2 Show QR-code**
 Selecting this option generates and displays a **QR code** for the selected link. This enables users to quickly scan the QR code with a mobile device and open the link on a phone or tablet without manually copying and pasting it.
+![QR](assets/img/qr.png)
 
 ### **5.3 Copy link to clipboard**
 This option copies the selected link to the clipboard, allowing the user to easily paste it into another application, browser, or document. This is useful for quickly sharing or storing links outside of Gramps.
