@@ -193,7 +193,7 @@ For details on how OpenAI is used, the costs associated with it, and what data i
 
 ### 3.2. attribute_mapping.json – Attribute Mapping Rules
 
-The `attribute_mapping.json` file defines how attributes from Gramps navigation types are mapped to URL variables. It ensures that specific fields (such as user-defined attributes) are correctly included in search queries.
+The `attribute_mapping.json` file defines how attributes from Gramps **Navigation Types** are mapped to URL **Variables**. It ensures that specific fields (such as user-defined attributes) are correctly included in search queries.
 
 Each entry follows this structure:
 
@@ -214,18 +214,18 @@ Each entry follows this structure:
 ]
 ```
 
-- **`nav_type`** – The navigation type to which the attribute belongs (`People`, `Places`, `Sources`, etc.). **Currently, only attributes for `People` are supported.**
+- **`nav_type`** – The **Navigation Type** to which the attribute belongs (`People`, `Places`, `Sources`, etc.). **Currently, only attributes for `People` are supported.**
 - **`attribute_name`** – The name of the attribute in Gramps.
 - **`url_regex`** – A regular expression to match relevant URLs.
-- **`variable_name`** – The name of the variable that will be substituted in the URL template.
+- **`variable_name`** – The name of the **Variable** that will be substituted in the URL template.
 
 After making changes, restart Gramps for them to take effect.
 More details on how this mechanism works, including how identifiers from attributes are used in links, can be found [here](#how-attribute-mapping-works).
 
 #### 3.2.1. How Attribute Mapping Works
 
-The URL templates added in CSV files are **validated against the specified regex patterns**. If a URL matches a defined pattern, the system will check whether the active person has an attribute with the name specified in `attribute_name`.
-- If such an attribute exists, a **new variable** will be created with the name specified in `variable_name`, containing the value from that attribute.
+The URL templates added in CSV files are validated against the specified regex patterns. If a URL matches a defined pattern, the system will check whether the active person has an attribute with the name specified in `attribute_name`.
+- If such an attribute exists, a new **Variable** will be created with the name specified in `variable_name`, containing the value from that attribute.
 - This value will be inserted into the appropriate place in the URL from the CSV file.
 
 ##### Examples of Configuration and Expected Output
