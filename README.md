@@ -153,6 +153,8 @@ These configuration files are located in the `configs` directory:
 
 ### 3.1. config.ini – General Configuration
 
+![Settings](assets/img/settings.png)
+
 The `config.ini` file contains various settings that control how the Gramplet operates. Here are the key options:
 
 #### **Enable CSV Files (`websearch.enabled_files`)**
