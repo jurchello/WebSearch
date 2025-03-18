@@ -246,7 +246,11 @@ _(Placeholder for explanation and illustration)_
 The Gramplet's interface consists of the following columns:
 
 1. **Icons**: Displays the icon associated with the **Navigation Type** (e.g., People, Places, Sources).
-   In addition to these, other icons may also be displayed, representing additional functionalities or link types. These icons are described in detail in [**Section 5. Context Menu**](#5-context-menu).
+   In addition to these, other icons may also be displayed, representing additional functionalities or link types. One of these icons are described in detail in [**Section 5. Context Menu**](#5-context-menu).
+Double-clicking on a URL in the Gramplet opens the associated website in the default system browser. After a link has been opened, it is marked with another icon, indicating that it has already been visited. ![Visited Link](assets/icons/emblem-default.png)
+
+![Icons](assets/img/icons.png)
+
 2. **Locale**: Shows the locale or region associated with the website. This field can be sorted alphabetically to help organize links by region. In addition to locale names, certain links are marked with specific icons to indicate their type:
 
     - **`🌍` COMMON_LOCALE_SIGN** – Represents general links that are **suitable for all regions**. These links are found in **`common-links.csv`**.
@@ -296,8 +300,6 @@ This option copies the selected link to the clipboard, allowing the user to easi
 
 The **context menu** enhances usability by providing quick access to commonly used actions related to genealogy research links.
 
-
-
 ## 6. Handling CSV Files
 
 ![Settings](assets/img/csv.png)
@@ -312,6 +314,7 @@ You can select which CSV files to use by enabling or disabling them in the Gramp
 
 ## 7. OpenAI Usage
 ![Settings](assets/img/ai.png)
+
 This section provides an overview of how OpenAI is integrated into the WebSearch Gramplet. It covers:
 - **Usage of OpenAI**: The Gramplet interacts with OpenAI’s API to retrieve relevant genealogy websites based on user queries. The integration makes a **single API call** per request. OpenAI suggests **only those genealogy resources that are not already included** in the activated CSV files configured by the user.
 - **Data Transmission**: OpenAI receives **only** the following information:
