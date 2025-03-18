@@ -19,14 +19,23 @@
                             <object class="GtkTreeViewColumn">
                                 <property name="title"></property>
                                 <property name="clickable">True</property>
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
+                                <property name="expand">False</property>
                                 <child>
-                                    <object class="GtkCellRendererPixbuf" id="category_icon"/>
+                                    <object class="GtkCellRendererPixbuf" id="category_icon">
+                                        <property name="xalign">0.0</property>
+                                    </object>
                                 </child>
                                 <child>
-                                    <object class="GtkCellRendererPixbuf" id="visited_icon"/>
+                                    <object class="GtkCellRendererPixbuf" id="visited_icon">
+                                        <property name="xalign">0.0</property>
+                                    </object>
                                 </child>
                                 <child>
-                                    <object class="GtkCellRendererPixbuf" id="saved_icon"/>
+                                    <object class="GtkCellRendererPixbuf" id="saved_icon">
+                                        <property name="xalign">0.0</property>
+                                    </object>
                                 </child>
                             </object>
                         </child>
@@ -122,12 +131,12 @@
                 <signal name="activate" handler="on_add_note"/>
             </object>
         </child>
-        <child>
+        <!-- <child>
             <object class="GtkMenuItem" id="AddAttribute">
                 <property name="label">Add link to attribute</property>
                 <signal name="activate" handler="on_add_attribute"/>
             </object>
-        </child>
+        </child> -->
         <child>
             <object class="GtkMenuItem" id="ShowQR">
                 <property name="label">Show QR-code</property>

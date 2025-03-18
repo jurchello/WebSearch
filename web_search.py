@@ -178,7 +178,7 @@ class WebSearch(Gramplet):
     def is_true(self, value):
         return str(value).strip().lower() in {"1", "true", "yes", "y"}
 
-    def populate_links(self, entity_data, uids_data, nav_type):
+    def populate_links(self, entity_data, uids_data, nav_type, obj):
         self.model.clear()
         websites = self.website_loader.load_websites(self.config_ini_manager)
 
@@ -216,29 +216,41 @@ class WebSearch(Gramplet):
                         uid_icon, uid_visible = self.get_uid_icon_data(variables['replaced_variables'], filtered_uids_data)
 
                     icon_name = CATEGORY_ICON.get(nav_type, DEFAULT_CATEGORY_ICON)
-                    hash_value = self.website_loader.generate_hash(final_url)
-
-                    visited_icon = None
-                    if self.website_loader.has_hash_in_file(hash_value, VISITED_HASH_FILE_PATH):
-                        try:
-                            visited_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_VISITED_PATH, ICON_SIZE, ICON_SIZE)
-                        except Exception as e:
-                            print(f"❌ Error loading icon: {e}", file=sys.stderr)
-
-                    saved_icon = None
-                    if self.website_loader.has_hash_in_file(hash_value, SAVED_HASH_FILE_PATH):
-                        try:
-                            saved_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_SAVED_PATH, ICON_SIZE, ICON_SIZE)
-                        except Exception as e:
-                            print(f"❌ Error loading icon: {e}", file=sys.stderr)
+                    obj_handle = obj.get_handle()
+                    hash_value = self.website_loader.generate_hash(f"{final_url}|{obj_handle}")
+                    visited_icon, visited_icon_visible = self.get_visited_icon_data(hash_value)
+                    saved_icon, saved_icon_visible = self.get_saved_icon_data(hash_value)
 
                     self.model.append([
                         icon_name, locale, category, final_url, comment, url_pattern, variables_json, formatted_url,
-                        visited_icon, saved_icon, uid_icon, uid_visible, nav_type
+                        visited_icon, saved_icon, uid_icon, uid_visible, nav_type, visited_icon_visible, saved_icon_visible,
+                        obj_handle
                     ])
                 except KeyError as e:
                     print(f"❌ {locale}. KeyError in template variables: {url_pattern}. Missing key: {e}", file=sys.stderr)
                     pass
+
+    def get_visited_icon_data(self, hash_value):
+        visited_icon = None
+        visited_icon_visible = False
+        if self.website_loader.has_hash_in_file(hash_value, VISITED_HASH_FILE_PATH):
+            try:
+                visited_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_VISITED_PATH, ICON_SIZE, ICON_SIZE)
+                visited_icon_visible = True
+            except Exception as e:
+                print(f"❌ Error loading icon: {e}", file=sys.stderr)
+        return visited_icon, visited_icon_visible
+
+    def get_saved_icon_data(self, hash_value):
+        saved_icon = None
+        saved_icon_visible = False
+        if self.website_loader.has_hash_in_file(hash_value, SAVED_HASH_FILE_PATH):
+            try:
+                saved_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_SAVED_PATH, ICON_SIZE, ICON_SIZE)
+                saved_icon_visible = True
+            except Exception as e:
+                print(f"❌ Error loading icon: {e}", file=sys.stderr)
+        return saved_icon, saved_icon_visible
 
     def get_uid_icon_data(self, replaced_variables, filtered_uids_data):
         uid_icon = None
@@ -257,17 +269,19 @@ class WebSearch(Gramplet):
     def on_link_clicked(self, tree_view, path, column):
         tree_iter = self.model.get_iter(path)
         url = self.model.get_value(tree_iter, 3)
-        self.add_icon_event(VISITED_HASH_FILE_PATH, ICON_VISITED_PATH, tree_iter, 8)
+        self.add_icon_event(VISITED_HASH_FILE_PATH, ICON_VISITED_PATH, tree_iter, 8, 13)
         display_url(url)
 
-    def add_icon_event(self, file_path, icon_path, tree_iter, model_icon_pos):
+    def add_icon_event(self, file_path, icon_path, tree_iter, model_icon_pos, model_visibility_pos):
         url = self.model.get_value(tree_iter, 3)
-        hash_value = self.website_loader.generate_hash(url)
+        obj_handle = self.model.get_value(tree_iter, 15)
+        hash_value = self.website_loader.generate_hash(f"{url}|{obj_handle}")
         if not self.website_loader.has_hash_in_file(hash_value, file_path):
             self.website_loader.save_hash_to_file(hash_value, file_path)
             try:
                 pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(icon_path, ICON_SIZE, ICON_SIZE)
                 self.model.set_value(tree_iter, model_icon_pos, pixbuf)
+                self.model.set_value(tree_iter, model_visibility_pos, True)
             except Exception as e:
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
 
@@ -280,7 +294,7 @@ class WebSearch(Gramplet):
             return
 
         person_data, uids_data = self.get_person_data(person)
-        self.populate_links(person_data, uids_data, SupportedNavTypes.PEOPLE.value)
+        self.populate_links(person_data, uids_data, SupportedNavTypes.PEOPLE.value, person)
         self.update()
 
     def close_context_menu(self):
@@ -295,7 +309,7 @@ class WebSearch(Gramplet):
                 return
 
             place_data = self.get_place_data(place)
-            self.populate_links(place_data, {}, SupportedNavTypes.PLACES.value)
+            self.populate_links(place_data, {}, SupportedNavTypes.PLACES.value, place)
             self.update()
         except Exception as e:
             print(traceback.format_exc(), file=sys.stderr)
@@ -307,7 +321,7 @@ class WebSearch(Gramplet):
             return
 
         source_data = self.get_source_data(source)
-        self.populate_links(source_data, {}, SupportedNavTypes.SOURCES.value)
+        self.populate_links(source_data, {}, SupportedNavTypes.SOURCES.value, source)
         self.update()
 
     def active_family_changed(self, handle):
@@ -317,7 +331,7 @@ class WebSearch(Gramplet):
             return
 
         family_data = self.get_family_data(family)
-        self.populate_links(family_data, {}, SupportedNavTypes.FAMILIES.value)
+        self.populate_links(family_data, {}, SupportedNavTypes.FAMILIES.value, family)
         self.update()
 
     def get_person_data(self, person):
@@ -724,8 +738,24 @@ class WebSearch(Gramplet):
 
         # Create and set the ListStore model
         self.model = Gtk.ListStore(
-            str, str, str, str, str, str, str, str, GdkPixbuf.Pixbuf, GdkPixbuf.Pixbuf, GdkPixbuf.Pixbuf, bool, str
+            str,  # 0 - icon_name: The name of the category icon (e.g., "person", "place", etc.)
+            str,  # 1 - locale: The locale associated with the website (e.g., "en", "de", "fr") or COMMON_STATIC_SIGN for static URLs
+            str,  # 2 - category: The category under which this website falls
+            str,  # 3 - final_url: The fully formatted URL after applying all variable substitutions
+            str,  # 4 - comment: A user-defined comment or note about this entry
+            str,  # 5 - url_pattern: The raw URL pattern before variable substitution
+            str,  # 6 - variables_json: A JSON string containing details about replaced, missing, and empty variables
+            str,  # 7 - formatted_url: A compacted, cleaned-up version of final_url for display purposes
+            GdkPixbuf.Pixbuf,  # 8 - visited_icon: An icon indicating whether this link has been visited
+            GdkPixbuf.Pixbuf,  # 9 - saved_icon: An icon indicating whether this link has been manually saved
+            GdkPixbuf.Pixbuf,  # 10 - uid_icon: An icon representing whether this link is UID-based (e.g., specific to a person)
+            bool,  # 11 - uid_visible: A flag indicating whether the UID icon should be shown
+            str,   # 12 - nav_type: The navigation type (e.g., "People", "Places", "Families", "Sources")
+            bool,  # 13 - visited_icon_visible: A flag indicating whether the visited icon should be shown
+            bool,  # 14 - saved_icon_visible: A flag indicating whether the saved icon should be shown
+            str    # 15 - obj_handle: handle of active object
         )
+
         self.tree_view.set_model(self.model)
         self.tree_view.set_has_tooltip(True)
 
@@ -747,9 +777,14 @@ class WebSearch(Gramplet):
 
         # Bind renderers to columns in ListStore
         column_icon = columns[0]
-        column_icon.add_attribute(self.builder.get_object("category_icon"), "icon-name", 0)
-        column_icon.add_attribute(self.builder.get_object("visited_icon"), "pixbuf", 8)
-        column_icon.add_attribute(self.builder.get_object("saved_icon"), "pixbuf", 9)
+        category_renderer = self.builder.get_object("category_icon")
+        visited_renderer = self.builder.get_object("visited_icon")
+        saved_renderer = self.builder.get_object("saved_icon")
+        column_icon.add_attribute(category_renderer, "icon-name", 0)
+        column_icon.add_attribute(visited_renderer, "pixbuf", 8)
+        column_icon.add_attribute(visited_renderer, "visible", 13)
+        column_icon.add_attribute(saved_renderer, "pixbuf", 9)
+        column_icon.add_attribute(saved_renderer, "visible", 14)
 
         column_locale = columns[1]
         column_locale.add_attribute(self.builder.get_object("locale"), "text", 1)
@@ -855,14 +890,14 @@ class WebSearch(Gramplet):
                 self.context_menu.active_tree_path = path
                 self.context_menu.active_url = url
                 self.context_menu.show_all()
-                add_attribute_item = self.builder.get_object("AddAttribute")
+                #add_attribute_item = self.builder.get_object("AddAttribute")
                 add_note_item = self.builder.get_object("AddNote")
 
                 if nav_type == SupportedNavTypes.PEOPLE.value:
-                    add_attribute_item.show()
+                    #add_attribute_item.show()
                     add_note_item.show()
                 else:
-                    add_attribute_item.hide()
+                    #add_attribute_item.hide()
                     add_note_item.hide()
 
                 self.context_menu.popup_at_pointer(event)
@@ -888,7 +923,7 @@ class WebSearch(Gramplet):
                 self.dbstate.db.commit_person(self.person, trans)
 
         tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
-        self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, 9)
+        self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, 9, 14)
 
     def on_show_qr_code(self, widget):
         selection = self.tree_view.get_selection()
@@ -939,13 +974,13 @@ class WebSearch(Gramplet):
         tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
         nav_type = self.model.get_value(tree_iter, 12)
 
-        with DbTxn(_("Add Web Link Attribute"), self.dbstate.db) as trans:
-            if nav_type == SupportedNavTypes.PEOPLE.value:
-                self.person.add_attribute(attribute)
-                self.dbstate.db.commit_person(self.person, trans)
+        #with DbTxn(_("Add Web Link Attribute"), self.dbstate.db) as trans:
+        #    if nav_type == SupportedNavTypes.PEOPLE.value:
+        #        self.person.add_attribute(attribute)
+        #        self.dbstate.db.commit_person(self.person, trans)
 
         tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
-        self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, 9)
+        self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, 9, 14)
 
     def on_download_page(self, widget):
         pass
