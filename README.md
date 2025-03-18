@@ -2,21 +2,20 @@
 
 ## 1. Purpose
 
-This Gramplet allows you to load and display a list of genealogical websites, categorized by navigation types such as People, Places, and Sources. The websites are configured through CSV files that contain patterns for generating URLs, based on the genealogical data (such as name, birth year, death year, place, etc.). The Gramplet allows you to easily configure which CSV files to use and how middle names should be handled.
+This Gramplet allows you to load and display a list of genealogical websites, configured through CSV files. These files contain patterns for generating URLs based on genealogical data (such as name, birth year, death year, place, etc.). The Gramplet allows you to easily configure which CSV files to use and how middle names should be handled.
 
 ## 2. Navigation types and Supported Variables
 
-### Navigation types
-At the moment the Gramplet supports the following navigation types:
+### 2.1. Navigation types
+The Gramplet supports the following navigation types, which correspond to the main sections of Gramps:
 - **People**
 - **Places**
 - **Sources**
 - **Families**
 
-### Supported Variables
-The Gramplet uses the following data keys:
+Each navigation type has its own set of supported variables that can be used in URL templates. These variables act as placeholders in the URLs stored in CSV files. When using the Gramplet, they are automatically replaced with real data from the active entity (such as a person’s name, birth year, or place), allowing you to generate personalized search links instantly.
 
-#### People:
+#### 2.1.1. Variables for the "People" Navigation Type:
 
 - `given`: This field represents the first name of a person.
 - `middle`: Middle name. This field represents the middle name of a person. The handling of middle names is configurable, and the exact mechanics for extracting and displaying the middle name are described in more detail in the Settings section of the Gramplet. In the settings, you can choose how middle names should be processed, such as separating the first and middle names or removing the middle name entirely.
@@ -39,7 +38,7 @@ The Gramplet uses the following data keys:
 
 - `locale`: The system locale detected in Gramps.
 
-#### Places:
+#### 2.1.2. Variables for the "Places" Navigation Type:
 
 - `place`: This field stores the name of the specific place. It represents a location that can be used for various purposes in genealogy, such as identifying where an event (birth, death, marriage, etc.) occurred. The place can be any location, such as a city, town, village, or other defined geographical area, depending on the level of detail you need.
 - `root_place`: This field represents the "root" place in the place hierarchy, which is typically the highest-level location in the geographical structure. While the place refers to a specific location, the root_place refers to the broader geographical area that includes the place. This root location could be a country, region, province, or any other high-level administrative area, depending on how places are organized in your hierarchy. The root_place helps give context to the `place by showing the larger geographical area to which it belongs.
@@ -51,7 +50,7 @@ The Gramplet uses the following data keys:
 
 - `locale`: The system locale detected in Gramps.
 
-#### **Families**
+#### 2.1.3. Variables for the "Families" Navigation Type:
 The Gramplet WebSearch supports navigation for family records using the following variables:
 
 
@@ -114,7 +113,7 @@ The Gramplet WebSearch supports navigation for family records using the followin
 - `locale` – The system locale detected in Gramps.
 
 ---
-#### Sources:
+#### 2.1.4. Variables for the "Sources" Navigation Type:
 - `source_title`: Source title.
 
 
@@ -122,24 +121,86 @@ The Gramplet WebSearch supports navigation for family records using the followin
 
 ## 3. Configuration
 
-### Configuring the Gramplet
+The WebSearch Gramplet uses two configuration files, each serving a specific purpose:
 
-The Gramplet has a configurable settings interface. To access it, click the button **"Configure the active view"** in the Gramplet's menu.
+- **`config.ini`** – Stores general settings for the Gramplet, such as enabled CSV files, middle name handling, URL compactness level, and integration with external services.
+- **`attribute_mapping.json`** – Defines rules for extracting and mapping attributes from Gramps entities to URL variables.
 
-![Configure Button](assets/img/settings%20button.png)
+These configuration files are located in the `configs` directory:
 
-### Settings
+### 3.1. config.ini – General Configuration
 
-Within the settings window, you can configure:
+The `config.ini` file contains various settings that control how the Gramplet operates. Here are the key options:
 
-- **Enabled CSV Files**: Select which CSV files to use for loading websites.
-- **Middle Name Handling**: Choose how middle names are handled. The available options are:
-    - **Leave alone**: Leave the middle name unchanged.
-    - **Separate**: Separate the first and middle names by a space.
-    - **Remove**: Remove the middle name completely.
+- **`websearch.enabled_files`** – List of enabled CSV files that store website templates.
+- **`websearch.middle_name_handling`** – Defines how middle names should be handled in URL templates:
+    - **"leave alone"** – Keep the middle name unchanged.
+    - **"separate"** – Separate the first and middle names with a space.
+    - **"remove"** – Remove the middle name entirely.
+- **`websearch.url_prefix_replacement`** – Replacement for URL prefixes (e.g., removing `https://www.`).
+- **`websearch.show_short_url`** – If `true`, URLs are displayed in a shortened format.
+- **`websearch.url_compactness_level`** – Controls how URLs are formatted:
+    - **"shortest"** – Minimal URL, no prefix and no extra parameters.
+    - **"compact_no_attributes"** – Compact format, excludes attributes.
+    - **"compact_with_attributes"** – Compact format, includes attributes.
+    - **"long"** – Full URL with all details.
+- **`websearch.use_openai`** – If `true`, enables integration with OpenAI for website recommendations.
+- **`websearch.openai_api_key`** – API key for OpenAI services (if used).
 
-#### Screenshots of settings
-![Settings](assets/img/settings.png)
+These settings can be modified manually in `config.ini` or through the Gramplet's settings interface. Most settings take effect immediately. However, the following two options require a restart, as OpenAI is only initialized once when the application starts:
+
+- **`websearch.use_openai`** –
+- **`websearch.openai_api_key`**
+
+For details on how OpenAI is used, the costs associated with it, and what data is transmitted, see the [OpenAI Integration](#openai-integration) section.
+
+### 3.2. attribute_mapping.json – Attribute Mapping Rules
+
+The `attribute_mapping.json` file defines how attributes from Gramps navigation types are mapped to URL variables. It ensures that specific fields (such as user-defined attributes) are correctly included in search queries.
+
+Each entry follows this structure:
+
+```json
+[
+  {
+    "nav_type": "People",
+    "attribute_name": "Military Service",
+    "url_regex": ".*army.*",
+    "variable_name": "military"
+  },
+  {
+    "nav_type": "Places",
+    "attribute_name": "Old Name",
+    "url_regex": ".*historic.*",
+    "variable_name": "old_name"
+  }
+]
+```
+
+- **`nav_type`** – The navigation type to which the attribute belongs (`People`, `Places`, `Sources`, etc.). **Currently, only attributes for `People` are supported.**
+- **`attribute_name`** – The name of the attribute in Gramps.
+- **`url_regex`** – A regular expression to match relevant URLs.
+- **`variable_name`** – The name of the variable that will be substituted in the URL template.
+
+After making changes, restart Gramps for them to take effect.
+More details on how this mechanism works, including how identifiers from attributes are used in links, can be found [here](#how-attribute-mapping-works).
+
+#### 3.2.1. How Attribute Mapping Works
+
+The URL templates added in CSV files are **validated against the specified regex patterns**. If a URL matches a defined pattern, the system will check whether the active person has an attribute with the name specified in `attribute_name`.
+- If such an attribute exists, a **new variable** will be created with the name specified in `variable_name`, containing the value from that attribute.
+- This value will be inserted into the appropriate place in the URL from the CSV file.
+
+##### Examples of Configuration and Expected Output
+
+###### Example 1
+_(Placeholder for explanation and illustration)_
+
+###### Example 2
+_(Placeholder for explanation and illustration)_
+
+###### Example 3
+_(Placeholder for explanation and illustration)_
 
 ## 4. User Interface
 
@@ -172,7 +233,6 @@ When hovering over a row in the table, the tooltip will display:
 - **Comment**: Any comment associated with the website. These comments can be included in a separate column in the CSV file, allowing you to add additional context or information about each link.
 
 
-
 ## 6. Handling CSV Files
 
 ![Settings](assets/img/csv.png)
@@ -185,4 +245,17 @@ The Gramplet will automatically load these files and display the URLs based on t
 ### Enabling Files
 You can select which CSV files to use by enabling or disabling them in the Gramplet's settings.
 
+## 7. OpenAI Usage
+![Settings](assets/img/ai.png)
+This section provides an overview of how OpenAI is integrated into the WebSearch Gramplet. It covers:
+- **Usage of OpenAI**: The Gramplet interacts with OpenAI’s API to retrieve relevant genealogy websites based on user queries. The integration makes a **single API call** per request. OpenAI suggests **only those genealogy resources that are not already included** in the activated CSV files configured by the user.
+- **Data Transmission**: OpenAI receives **only** the following information:
+    - **Locales** from the CSV files used in WebSearch.
+    - **A list of domains** from the activated CSV files.
+    - **A list of domains that the user has marked as irrelevant**.
+- **No data from the Gramps database is transmitted to OpenAI.**
+- **Cost Considerations:** As of **March 18, 2025**, the average cost per request is **0.0091 USD** (0.91 cents). With this pricing, approximately **109 requests** can be made for **1 USD**.
+- **Data Transmission**: When a request is made to OpenAI, the Gramplet sends a structured prompt describing the required genealogy resources.
+- **Disabling OpenAI Integration:** Users can **disable** the use of OpenAI in the settings at any time. Additionally, they can remove the OpenAI API key from the configuration. When OpenAI is disabled, the **AI-generated suggestions section will no longer appear** in the lower part of the Gramplet.
+- **Disclaimer:** The author assumes **no responsibility** for the use of OpenAI within this Gramplet. The user **accepts all risks** associated with its usage, whatever they may be. By enabling OpenAI integration, the user acknowledges and agrees that all interactions with OpenAI are subject to OpenAI’s terms of service and privacy policies.
 
