@@ -11,15 +11,15 @@ Each time the user activates a person, place, or other entity in Gramps, the lis
 ## 2. Navigation types and Supported Variables
 
 ### 2.1. Navigation types
-The Gramplet supports the following navigation types, which correspond to the main sections of Gramps:
+The Gramplet supports the following **Navigation Types**, which correspond to the main sections of Gramps:
 - **People**
 - **Places**
 - **Sources**
 - **Families**
 
-Each navigation type has its own set of supported variables that can be used in URL templates. These variables act as placeholders in the URLs stored in CSV files. When using the Gramplet, they are automatically replaced with real data from the active entity (such as a person’s name, birth year, or place), allowing you to generate personalized search links instantly.
+Each **Navigation Type** has its own set of supported **Variables** that can be used in URL templates. These **Variables** act as placeholders in the URLs stored in CSV files. When using the Gramplet, they are automatically replaced with real data from the active entity (such as a person’s name, birth year, or place), allowing you to generate personalized search links instantly.
 
-#### 2.1.1. Variables for the "People" Navigation Type:
+#### 2.1.1. **Variables** for the "People" **Navigation Type**:
 
 - `given`: This field represents the first name of a person.
 - `middle`: Middle name. This field represents the middle name of a person. The handling of middle names is configurable, and the exact mechanics for extracting and displaying the middle name are described in more detail in the Settings section of the Gramplet. In the settings, you can choose how middle names should be processed, such as separating the first and middle names or removing the middle name entirely.
@@ -42,7 +42,7 @@ Each navigation type has its own set of supported variables that can be used in 
 
 - `locale`: The system locale detected in Gramps.
 
-#### 2.1.2. Variables for the "Places" Navigation Type:
+#### 2.1.2. **Variables** for the "Places" **Navigation Type**:
 
 - `place`: This field stores the name of the specific place. It represents a location that can be used for various purposes in genealogy, such as identifying where an event (birth, death, marriage, etc.) occurred. The place can be any location, such as a city, town, village, or other defined geographical area, depending on the level of detail you need.
 - `root_place`: This field represents the "root" place in the place hierarchy, which is typically the highest-level location in the geographical structure. While the place refers to a specific location, the root_place refers to the broader geographical area that includes the place. This root location could be a country, region, province, or any other high-level administrative area, depending on how places are organized in your hierarchy. The root_place helps give context to the `place by showing the larger geographical area to which it belongs.
@@ -54,7 +54,7 @@ Each navigation type has its own set of supported variables that can be used in 
 
 - `locale`: The system locale detected in Gramps.
 
-#### 2.1.3. Variables for the "Families" Navigation Type:
+#### 2.1.3. **Variables** for the "Families" **Navigation Type**:
 The Gramplet WebSearch supports navigation for family records using the following variables:
 
 
@@ -116,7 +116,7 @@ The Gramplet WebSearch supports navigation for family records using the followin
 
 - `locale` – The system locale detected in Gramps.
 
-#### 2.1.4. Variables for the "Sources" Navigation Type:
+#### 2.1.4. **Variables** for the "Sources" **Navigation Type**:
 - `source_title`: Source title.
 
 
