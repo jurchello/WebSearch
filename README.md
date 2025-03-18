@@ -6,6 +6,8 @@ This Gramplet allows you to load and display a list of genealogical websites, co
 
 Each time the user activates a person, place, or other entity in Gramps, the list of updated links is dynamically generated. (These entities are referred to as **Navigation Types** throughout this document). These links contain pre-filled search queries relevant to the selected subject. This enables the user to quickly access ready-made search links to gather additional information for their research.
 
+![Gramplet](assets/img/gramplet.png)
+
 ## 2. Navigation types and Supported Variables
 
 ### 2.1. Navigation types
