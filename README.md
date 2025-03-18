@@ -479,3 +479,15 @@ This section provides an overview of how OpenAI is integrated into the WebSearch
 - **Disabling OpenAI Integration:** Users can **disable** the use of OpenAI in the settings at any time. Additionally, they can remove the OpenAI API key from the configuration. When OpenAI is disabled, the **AI-generated suggestions section will no longer appear** in the lower part of the Gramplet.
 - **Disclaimer:** The author assumes **no responsibility** for the use of OpenAI within this Gramplet. The user **accepts all risks** associated with its usage, whatever they may be. By enabling OpenAI integration, the user acknowledges and agrees that all interactions with OpenAI are subject to OpenAI’s terms of service and privacy policies.
 
+## 8. Community Contributions and Support
+
+I encourage users who add **publicly useful links** to their **CSV files** to also submit requests for adding these links directly via **commits**.
+
+To contribute:
+1. **Create an issue** on GitHub: [**WebSearch Issues**](https://github.com/jurchello/WebSearch/issues)
+2. **Provide the necessary details**, including:
+    - The **URL template** with the correct variable placeholders
+    - A **brief description** of the website
+    - Any **specific navigation type or attributes** required
+
+By submitting new links this way, **other users won’t need to do the same work again**, ensuring that all commonly useful genealogy search links are readily available in WebSearch Gramplet by default. 🚀
