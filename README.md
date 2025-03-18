@@ -245,11 +245,18 @@ _(Placeholder for explanation and illustration)_
 
 The Gramplet's interface consists of the following columns:
 
-1. **Icon**: Displays the icon associated with the navigation type (e.g., People, Places, Sources). For common links, an icon of a star is displayed instead of the region.
-2. **Locale**: Shows the locale or region associated with the website. This field can be sorted alphabetically to help organize links by region.
+1. **Icons**: Displays the icon associated with the **Navigation Type** (e.g., People, Places, Sources).
+   In addition to these, other icons may also be displayed, representing additional functionalities or link types. These icons are described in detail in [**Section 5. Context Menu**](#5-context-menu).
+2. **Locale**: Shows the locale or region associated with the website. This field can be sorted alphabetically to help organize links by region. In addition to locale names, certain links are marked with specific icons to indicate their type:
+
+    - **`🌍` COMMON_LOCALE_SIGN** – Represents general links that are **suitable for all regions**. These links are found in **`common-links.csv`**.
+    - **`🆔` UID_SIGN** – Indicates links that use **custom variables**. These variables were primarily designed to retrieve **unique identifiers (UIDs)** from attributes, but users can repurpose them to store and pass any data. For example, a user could store **eye color** as an attribute and pass it as a custom variable in a URL. These links are stored in **`uid-links.csv`**.
+    - **`📌` STATIC_SIGN** – Represents **static links** that the user manually adds to **`static-links.csv`**. These are frequently used or favorite links that the user wants **permanent access** to.
+
 3. **Category**: Represents the category to which the website belongs. This field is sortable, allowing you to arrange links by their respective categories.  
    For ease of use, it is recommended to list the variables used in the URL template by their initial letters, as shown in the screenshot. This way, you can add several similar links with different sets of input parameters and quickly navigate through them. This greatly simplifies the search and convenient use of different template variations.  
-   ![Settings](assets/img/variables%20list.png)  
+  
+![Settings](assets/img/variables%20list.png)  
    For example, the letters shown in the screenshot represent:
   - **g** - Given name
   - **m** - Middle name
@@ -268,6 +275,25 @@ When hovering over a row in the table, the tooltip will display:
 - **Replaced**: The variables that were successfully replaced with data from the active entity.
 - **Empty**: Variables that did not have values and were replaced to empty.
 - **Comment**: Any comment associated with the website. These comments can be included in a separate column in the CSV file, allowing you to add additional context or information about each link.
+
+## 5. Context Menu
+
+Right-clicking on an active link within the Gramplet opens the **context menu**, which provides additional actions for working with the selected link. The following options are available:
+
+### **5.1 Add link to note**
+This option allows the user to add the selected link directly to a note in Gramps. This can be useful for storing references to relevant research materials, websites, or sources associated with a person, place, or event. The link will be saved in the notes section of the active entity.
+
+After saving a link to a note, a **floppy disk icon** appears in the icons column, indicating that the link has been stored.  
+![Saved Link](assets/icons/media-floppy.png)
+
+### **5.2 Show QR-code**
+Selecting this option generates and displays a **QR code** for the selected link. This enables users to quickly scan the QR code with a mobile device and open the link on a phone or tablet without manually copying and pasting it.
+
+### **5.3 Copy link to clipboard**
+This option copies the selected link to the clipboard, allowing the user to easily paste it into another application, browser, or document. This is useful for quickly sharing or storing links outside of Gramps.
+
+The **context menu** enhances usability by providing quick access to commonly used actions related to genealogy research links.
+
 
 
 ## 6. Handling CSV Files
