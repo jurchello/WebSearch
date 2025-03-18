@@ -220,6 +220,7 @@ Each entry follows this structure:
 - **`variable_name`** – The name of the **Variable** that will be substituted in the URL template.
 
 After making changes, restart Gramps for them to take effect.
+By default, the attribute_mapping.json file contains a large number of pre-configured services, such as WikiTree, Geni, Geneee, Find a Grave, Wikipedia, and others. Most likely, if you need to use them, you will only need to adjust the attribute_name field, as the current one is a placeholder.
 More details on how this mechanism works, including how identifiers from attributes are used in links, can be found [here](#how-attribute-mapping-works).
 
 #### 3.2.1. How Attribute Mapping Works
