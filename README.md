@@ -38,9 +38,7 @@ Each **Navigation Type** has its own set of supported **Variables** that can be 
 - `death_place`: Similar to birth_place, this field stores the place where the person passed away. It corresponds to the specific location selected from the list of available places. It represents the direct death place, which could also be a city, town, or any other defined geographical location.
 - `birth_root_place`: This field represents the "root" birth place, which is the highest-level location in the place hierarchy. The root birth place encompasses the birth_place, meaning it includes the broader geographic area (e.g., a region, state, or country) that the specific birth_place falls under. The birth_root_place helps identify the broader context or administrative region to which the birth place belongs.
 - `death_root_place`: Just like birth_root_place, this field represents the "root" death place, which is the highest-level location in the place hierarchy. It encompasses the death_place, representing the broader geographic region (e.g., region, state, or country) that the death_place is part of. The death_root_place provides context for the death_place by identifying the larger geographical area or administrative region it belongs to.
-
-
-- `locale`: The system locale detected in Gramps.
+- `locale`: The system locale detected in Gramps. Some examples of locale values: `en`, `de`, `fr`, `uk`, `es`, `it`, `pl`, `nl`, ...
 
 #### 2.1.2. **Variables** for the "Places" **Navigation Type**:
 
@@ -50,9 +48,7 @@ Each **Navigation Type** has its own set of supported **Variables** that can be 
 - `longitude`: The longitude of the place, if available.
 - `type`: The type of the place (e.g., city, village, region, etc.).
 - `title`: The hierarchical title representation of the place.
-
-
-- `locale`: The system locale detected in Gramps.
+- `locale`: The system locale detected in Gramps. Some examples of locale values: `en`, `de`, `fr`, `uk`, `es`, `it`, `pl`, `nl`, ...
 
 #### 2.1.3. **Variables** for the "Families" **Navigation Type**:
 The Gramplet WebSearch supports navigation for family records using the following variables:
@@ -75,8 +71,6 @@ The Gramplet WebSearch supports navigation for family records using the followin
 - `father_death_place` – The place where the father passed away. Represents a direct death place, which could be a city, town, or other defined geographical location.
 - `father_birth_root_place` – The "root" birth place, representing the highest-level location in the place hierarchy (e.g., a region, state, or country).
 - `father_death_root_place` – The "root" death place, representing the highest-level location in the place hierarchy (e.g., a region, state, or country).
-
-
 - `mother_given` – This field represents the first name of the mother.
 - `mother_middle` – Middle name. This field represents the middle name of the mother, configurable in the Gramplet settings.
 - `mother_surname` – This field represents the primary surname of the mother.
@@ -94,8 +88,6 @@ The Gramplet WebSearch supports navigation for family records using the followin
 - `mother_death_place` – The place where the mother passed away. Represents a direct death place, which could be a city, town, or other defined geographical location.
 - `mother_birth_root_place` – The "root" birth place, representing the highest-level location in the place hierarchy (e.g., a region, state, or country).
 - `mother_death_root_place` – The "root" death place, representing the highest-level location in the place hierarchy (e.g., a region, state, or country).
-
-
 - `marriage_year_from` – The start year of the marriage date range or span.
 - `marriage_year` – This field is filled in only when the marriage date is a single, specific year (i.e., not part of a date range).
 - `marriage_year_to` – The end year of the marriage date range or span.
@@ -103,8 +95,6 @@ The Gramplet WebSearch supports navigation for family records using the followin
 - `marriage_year_after` – The earliest possible marriage year after a given date.
 - `marriage_place` – The place where the marriage took place.
 - `marriage_root_place` – The "root" place of the marriage, representing the highest-level location in the place hierarchy.
-
-
 - `divorce_year_from` – The start year of the divorce date range or span.
 - `divorce_year` – This field is filled in only when the divorce date is a single, specific year (i.e., not part of a date range).
 - `divorce_year_to` – The end year of the divorce date range or span.
@@ -112,15 +102,11 @@ The Gramplet WebSearch supports navigation for family records using the followin
 - `divorce_year_after` – The earliest possible divorce year after a given date.
 - `divorce_place` – The place where the divorce took place.
 - `divorce_root_place` – The "root" place of the divorce, representing the highest-level location in the place hierarchy.
-
-
-- `locale` – The system locale detected in Gramps.
+- `locale` – The system locale detected in Gramps. Some examples of locale values: `en`, `de`, `fr`, `uk`, `es`, `it`, `pl`, `nl`, ...
 
 #### 2.1.4. **Variables** for the "Sources" **Navigation Type**:
 - `source_title`: Source title.
-
-
-- `locale`: The system locale detected in Gramps.
+- `locale`: The system locale detected in Gramps. Some examples of locale values: `en`, `de`, `fr`, `uk`, `es`, `it`, `pl`, `nl`, ...
 
 ## 3. Configuration
 
