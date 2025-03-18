@@ -34,16 +34,24 @@ Each **Navigation Type** has its own set of supported **Variables** that can be 
 - `death_year_to`: The end year of the death date range or span. Like death_year_from, this field is used for ranges. If you're dealing with a specific death year, this field will match death_year_from, as both will contain the same value for a single date.
 - `death_year_before`: The latest possible death year before a given date.
 - `death_year_after`: The earliest possible death year after a given date.
-- `birth_place`: This field stores the place where the person was born. It corresponds to the specific location selected from the list of available places. It represents the direct birth place, which could be a city, town, or any defined geographical area.
-- `death_place`: Similar to birth_place, this field stores the place where the person passed away. It corresponds to the specific location selected from the list of available places. It represents the direct death place, which could also be a city, town, or any other defined geographical location.
-- `birth_root_place`: This field represents the "root" birth place, which is the highest-level location in the place hierarchy. The root birth place encompasses the birth_place, meaning it includes the broader geographic area (e.g., a region, state, or country) that the specific birth_place falls under. The birth_root_place helps identify the broader context or administrative region to which the birth place belongs.
-- `death_root_place`: Just like birth_root_place, this field represents the "root" death place, which is the highest-level location in the place hierarchy. It encompasses the death_place, representing the broader geographic region (e.g., region, state, or country) that the death_place is part of. The death_root_place provides context for the death_place by identifying the larger geographical area or administrative region it belongs to.
 - `locale`: The system locale detected in Gramps. Some examples of locale values: `en`, `de`, `fr`, `uk`, `es`, `it`, `pl`, `nl`, ...
+
+- `birth_place`: This field stores the place where the person was born. It corresponds to the specific location selected from the list of available places. It represents the direct birth place, which could be a city, town, or any defined geographical area.
+- `death_place`: Similar to `birth_place`, this field stores the place where the person passed away. It corresponds to the specific location selected from the list of available places. It represents the direct death place, which could also be a city, town, or any other defined geographical location.
+- `birth_root_place`: This field represents the "root" birth place, which is the highest-level location in the place hierarchy. The `birth_root_place` encompasses the `birth_place`, meaning it includes the broader geographic area (e.g., a region, state, or country) that the specific `birth_place` falls under. The `birth_root_place` helps identify the broader context or administrative region to which the birth place belongs.
+- `death_root_place`: Just like `birth_root_place`, this field represents the "root" death place, which is the highest-level location in the place hierarchy. It encompasses the `death_place`, representing the broader geographic region (e.g., region, state, or country) that the `death_place` is part of. The `death_root_place` provides context for the `death_place` by identifying the larger geographical area or administrative region it belongs to.
+
+To better understand the difference between `place` and `root place`, see the example below:
+
+![Place vs Root Place](assets/img/place.png)
+
+- The **place** (e.g., "Los Angeles") refers to the specific city, town, or village.
+- The **root place** (e.g., "USA") represents the highest-level geographical entity containing the place.
 
 #### 2.1.2. **Variables** for the "Places" **Navigation Type**:
 
-- `place`: This field stores the name of the specific place. It represents a location that can be used for various purposes in genealogy, such as identifying where an event (birth, death, marriage, etc.) occurred. The place can be any location, such as a city, town, village, or other defined geographical area, depending on the level of detail you need.
-- `root_place`: This field represents the "root" place in the place hierarchy, which is typically the highest-level location in the geographical structure. While the place refers to a specific location, the root_place refers to the broader geographical area that includes the place. This root location could be a country, region, province, or any other high-level administrative area, depending on how places are organized in your hierarchy. The root_place helps give context to the `place by showing the larger geographical area to which it belongs.
+- `place`: The specific location associated with an event (e.g., birth, death, marriage). For a more detailed explanation, including a visual demonstration, see [**Variables for the "People" Navigation Type**](#211-variables-for-the-people-navigation-type).
+- `root_place`: The highest-level location in the place hierarchy that encompasses the `place`. For a more detailed explanation, including a visual demonstration, see [**Variables for the "People" Navigation Type**](#211-variables-for-the-people-navigation-type).
 - `latitude`: The latitude of the place, if available.
 - `longitude`: The longitude of the place, if available.
 - `type`: The type of the place (e.g., city, village, region, etc.).
