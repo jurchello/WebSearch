@@ -83,7 +83,7 @@ class SettingsUIManager:
             DEFAULT_URL_COMPACTNESS_LEVEL,
             descriptions={
                 URLCompactnessLevel.SHORTEST.value: _("Shortest - No Prefix, No Variables"),
-                URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value: _("Compact - No Prefix, Variables Without Attributes (Default)"),
+                URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value: _("Compact - No Prefix, Variables Without Attributes"),
                 URLCompactnessLevel.COMPACT_WITH_ATTRIBUTES.value: _("Compact - No Prefix, Variables With Attributes"),
                 URLCompactnessLevel.LONG.value: _("Long - Without Prefix on the Left"),
             }
