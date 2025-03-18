@@ -2,7 +2,8 @@
 
 ## 1. Purpose
 
-This Gramplet allows you to load and display a list of genealogical websites, configured through CSV files. These files contain patterns for generating URLs based on genealogical data (such as name, birth year, death year, place, etc.). The Gramplet allows you to easily configure which CSV files to use and how middle names should be handled.
+This Gramplet allows you to load and display a list of genealogical websites, configured through CSV files. These files contain patterns for generating URLs based on genealogical data (such as name, birth year, death year, place, etc.).
+Each time the user activates a person, place, or other entity in Gramps, the list of updated links is dynamically generated. These links contain pre-filled search queries relevant to the selected entity. This enables the user to quickly access ready-made search links to gather additional information about any research subject.
 
 ## 2. Navigation types and Supported Variables
 
@@ -112,7 +113,6 @@ The Gramplet WebSearch supports navigation for family records using the followin
 
 - `locale` – The system locale detected in Gramps.
 
----
 #### 2.1.4. Variables for the "Sources" Navigation Type:
 - `source_title`: Source title.
 
