@@ -72,7 +72,7 @@
 
         <!-- Badges box -->
         <child>
-            <object class="GtkBox">
+            <object class="GtkBox" id="badges_box">
                 <property name="orientation">vertical</property>
                 <property name="hexpand">True</property>
                 <property name="vexpand">False</property>

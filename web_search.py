@@ -110,9 +110,11 @@ class WebSearch(Gramplet):
         self.signal_emitter.connect("sites-fetched", self.on_sites_fetched)
         locales, domains, include_global = self.website_loader.get_domains_data(self.config_ini_manager)
         if not self.__use_openai:
+            self.toggle_badges_visibility()
             return
         if not self.__openai_api_key:
             print("⚠️ ERROR: No OpenAI API Key found.", file=sys.stderr)
+            self.toggle_badges_visibility()
             return
         self.finder = SiteFinder(self.__openai_api_key)
         threading.Thread(
@@ -770,6 +772,14 @@ class WebSearch(Gramplet):
         self.apply_styles()
 
         return self.main_container
+
+    def toggle_badges_visibility(self):
+        badges_box = self.builder.get_object("badges_box")
+
+        if self.__use_openai:
+            badges_box.show()
+        else:
+            badges_box.hide()
 
     def add_sorting(self, column, index):
         column.set_sort_column_id(index)
