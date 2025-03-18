@@ -189,7 +189,7 @@ Most settings take effect immediately. However, the following two settings requi
 - **Use OpenAI**
 - **OpenAI API Key**
 
-For details on how OpenAI is used, the costs associated with it, and what data is transmitted, see the [OpenAI Integration](#openai-integration) section.
+For details on how OpenAI is used, the costs associated with it, and what data is transmitted, see the [OpenAI Usage](#openai-usage) section.
 
 ### 3.2. attribute_mapping.json – Attribute Mapping Rules
 
