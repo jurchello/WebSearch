@@ -1,0 +1,32 @@
+configs/attribute_mapping.json
+assets/csv/common-links.csv
+assets/csv/de-links.csv
+assets/csv/fr-links.csv
+assets/csv/nl-links.csv
+assets/csv/ru-links.csv
+assets/csv/static-links.csv
+assets/csv/sv-links.csv
+assets/csv/ua-links.csv
+assets/csv/uid-links.csv
+assets/csv/uk-links.csv
+assets/csv/us-links.csv
+assets/icons/emblem-default.png
+assets/icons/media-floppy.png
+assets/icons/uid.png
+assets/img/ai.png
+assets/img/caste.png
+assets/img/csv.png
+assets/img/gramplet.png
+assets/img/icons.png
+assets/img/menu.png
+assets/img/pedigree.png
+assets/img/person.png
+assets/img/place.png
+assets/img/qr.png
+assets/img/settings button.png
+assets/img/settings.png
+assets/img/tooltip.png
+assets/img/ui.png
+assets/img/variables list.png
+assets/style.css
+README.md
