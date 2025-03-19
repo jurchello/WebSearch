@@ -11,3 +11,5 @@ People,"FamilySearch (records) (g,m,s,b,d)",1,https://www.familysearch.org/searc
 People,"FamilySearch (tree) (g,m,s,b,d)",1,https://www.familysearch.org/search/tree/results?count=20&q.birthLikeDate.from=%(birth_year_from)s&q.birthLikeDate.to=%(birth_year_to)s&q.deathLikeDate.from=%(death_year_from)s&q.deathLikeDate.to=%(death_year_to)s&q.givenName=%(given)s+%(middle)s&q.surname=%(surname)s,Account Login: free
 People,"Familysearch (Collections) (g,s)",1,https://www.familysearch.org/search/all-collections/results?q.surname=%(surname)s&q.givenName=%(given)s                                                      ,Account Login: free
 Places,Google Search (t),1,https://www.google.com/search?q=coordinates+%(title)s,
+Places,"Google Search (l,l)",1,"https://www.google.com.ua/maps/@%(latitude)s,%(longitude)s,14z?hl=%(locale)s",
+Places,"Geonames (l,l)",1,https://www.geonames.org/advanced-search.html?q=%(latitude)s+%(longitude)s,

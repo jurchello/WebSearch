@@ -189,7 +189,7 @@ ICON_SAVED_PATH = os.path.join(ASSETS_DIR, "icons", "media-floppy.png")
 ICON_UID_PATH = os.path.join(ASSETS_DIR, "icons", "uid.png")
 
 DEFAULT_CATEGORY_ICON = "gramps-gramplet"
-DEFAULT_SHOW_SHORT_URL = True
+DEFAULT_SHOW_SHORT_URL = False
 DEFAULT_USE_OPEN_AI = False
 DEFAULT_URL_PREFIX_REPLACEMENT = ""
 DEFAULT_QUERY_PARAMETERS_REPLACEMENT = "..."
