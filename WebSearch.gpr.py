@@ -23,10 +23,10 @@
 register(
     GRAMPLET,
     id="WebSearch",
-    name=_("Web Search Gramplet"),
-    description=_("Lists useful genealogy-related websites for research."),
+    name=_("WebSearch"),
+    description=_("Customized queries for online services based on the active Person, Place, Family, or Source record"),
     status=STABLE,
-    version="0.28.16",
+    version="0.28.17",
     fname="WebSearch.py",
     height=20,
     detached_width=400,
@@ -37,6 +37,6 @@ register(
     gramps_target_version="5.2",
     navtypes=["Person", "Place", "Source", "Family"],
     include_in_listing=True,
-    help_url="https://github.com/jurchello/WebSearch/blob/v0.28.16/README.md",
+    help_url="https://github.com/jurchello/WebSearch/blob/v0.28.17/README.md",
     # help_url="Addon:WebSearch",
 )

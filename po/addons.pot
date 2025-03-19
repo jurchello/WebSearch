@@ -70,11 +70,11 @@ msgid "Enable CSV Files"
 msgstr ""
 
 #: ../web_search.gpr.py:26
-msgid "Web Search Gramplet"
+msgid "WebSearch"
 msgstr ""
 
 #: ../web_search.gpr.py:27
-msgid "Lists useful genealogy-related websites for research."
+msgid "Customized queries for online services based on the active Person, Place, Family, or Source record"
 msgstr ""
 
 #: ../web_search.gpr.py:36
