@@ -181,8 +181,14 @@ class WebSearch(Gramplet):
     def populate_links(self, entity_data, uids_data, nav_type, obj):
         self.model.clear()
         websites = self.website_loader.load_websites(self.config_ini_manager)
+        obj_handle = obj.get_handle()
 
         for nav, locale, category, is_enabled, url_pattern, comment in websites:
+
+            if (self.website_loader.has_string_in_file(f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH)
+            or self.website_loader.has_string_in_file(f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH)):
+                continue
+
             if nav == nav_type and self.is_true(is_enabled):
                 try:
 
@@ -216,7 +222,6 @@ class WebSearch(Gramplet):
                         uid_icon, uid_visible = self.get_uid_icon_data(variables['replaced_variables'], filtered_uids_data)
 
                     icon_name = CATEGORY_ICON.get(nav_type, DEFAULT_CATEGORY_ICON)
-                    obj_handle = obj.get_handle()
                     hash_value = self.website_loader.generate_hash(f"{final_url}|{obj_handle}")
                     visited_icon, visited_icon_visible = self.get_visited_icon_data(hash_value)
                     saved_icon, saved_icon_visible = self.get_saved_icon_data(hash_value)
@@ -943,6 +948,27 @@ class WebSearch(Gramplet):
             clipboard.store()
             notification = self.show_notification(_("URL is copied to the Clipboard"))
             notification.show_all()
+
+    def on_hide_link_for_selected_item(self, widget):
+        selection = self.tree_view.get_selection()
+        model, tree_iter = selection.get_selected()
+        if tree_iter is not None:
+            url_pattern = model[tree_iter][5]
+            obj_handle = model[tree_iter][15]
+            nav_type = model[tree_iter][12]
+            if not self.website_loader.has_string_in_file(f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH):
+                self.website_loader.save_string_to_file(f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH)
+            model.remove(tree_iter)
+
+    def on_hide_link_for_all_items(self, widget):
+        selection = self.tree_view.get_selection()
+        model, tree_iter = selection.get_selected()
+        if tree_iter is not None:
+            url_pattern = model[tree_iter][5]
+            nav_type = model[tree_iter][12]
+            if not self.website_loader.has_string_in_file(f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH):
+                self.website_loader.save_string_to_file(f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH)
+            model.remove(tree_iter)
 
     def show_notification(self, message):
         notification = Notification(message)

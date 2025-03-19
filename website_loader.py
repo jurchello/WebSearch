@@ -75,10 +75,23 @@ class WebsiteLoader:
             return hash_value in file.read().splitlines()
 
     @staticmethod
+    def has_string_in_file(string_value: str, file_path) -> bool:
+        if not os.path.exists(file_path):
+            return False
+        with open(file_path, "r", encoding="utf-8") as file:
+            return string_value in file.read().splitlines()
+
+    @staticmethod
     def save_hash_to_file(hash_value: str, file_path):
         if not WebsiteLoader.has_hash_in_file(hash_value, file_path):
             with open(file_path, "a", encoding="utf-8") as file:
                 file.write(hash_value + "\n")
+
+    @staticmethod
+    def save_string_to_file(string_value: str, file_path):
+        if not WebsiteLoader.has_string_in_file(string_value, file_path):
+            with open(file_path, "a", encoding="utf-8") as file:
+                file.write(string_value + "\n")
 
     @staticmethod
     def load_skipped_domains() -> set:

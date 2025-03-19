@@ -149,5 +149,17 @@
                 <signal name="activate" handler="on_copy_url_to_clipboard"/>
             </object>
         </child>
+        <child>
+            <object class="GtkMenuItem" id="HideLinkForSelectedItem">
+                <property name="label">Hide link for selected item</property>
+                <signal name="activate" handler="on_hide_link_for_selected_item"/>
+            </object>
+        </child>
+        <child>
+            <object class="GtkMenuItem" id="HideLinkForAllItems">
+                <property name="label">Hide link for all items</property>
+                <signal name="activate" handler="on_hide_link_for_all_items"/>
+            </object>
+        </child>
     </object>
 </interface>
