@@ -37,6 +37,6 @@ register(
     gramps_target_version="5.2",
     navtypes=["Person", "Place", "Source", "Family"],
     include_in_listing=True,
-    help_url="https://github.com/jurchello/WebSearch/",
+    help_url="https://github.com/jurchello/WebSearch/blob/v0.26.15/README.md",
     # help_url="Addon:WebSearch",
 )
