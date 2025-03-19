@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-03-18 10:22+0200\n"
+"POT-Creation-Date: 2025-03-19 20:35+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <jurchello@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,71 +17,119 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../settings_ui_manager.py:69
+#: settings_ui_manager.py:69
 msgid "Middle Name Handling"
 msgstr ""
 
-#: ../settings_ui_manager.py:73
+#: settings_ui_manager.py:73
 msgid "Leave alone"
 msgstr ""
 
-#: ../settings_ui_manager.py:74
+#: settings_ui_manager.py:74
 msgid "Separate"
 msgstr ""
 
-#: ../settings_ui_manager.py:75
+#: settings_ui_manager.py:75
 msgid "Remove"
 msgstr ""
 
-#: ../settings_ui_manager.py:81
+#: settings_ui_manager.py:81
 msgid "URL Compactness Level"
 msgstr ""
 
-#: ../settings_ui_manager.py:85
+#: settings_ui_manager.py:85
 msgid "Shortest - No Prefix, No Variables"
 msgstr ""
 
-#: ../settings_ui_manager.py:86
+#: settings_ui_manager.py:86
 msgid "Compact - No Prefix, Variables Without Attributes"
 msgstr ""
 
-#: ../settings_ui_manager.py:87
+#: settings_ui_manager.py:87
 msgid "Compact - No Prefix, Variables With Attributes"
 msgstr ""
 
-#: ../settings_ui_manager.py:88
+#: settings_ui_manager.py:88
 msgid "Long - Without Prefix on the Left"
 msgstr ""
 
-#: ../settings_ui_manager.py:91
+#: settings_ui_manager.py:91
 msgid "URL Prefix Replacement"
 msgstr ""
 
-#: ../settings_ui_manager.py:92
+#: settings_ui_manager.py:92
 msgid "Use OpenAI"
 msgstr ""
 
-#: ../settings_ui_manager.py:93
+#: settings_ui_manager.py:93
 msgid "OpenAI API Key"
 msgstr ""
 
-#: ../settings_ui_manager.py:99
+#: settings_ui_manager.py:99
 msgid "Enable CSV Files"
 msgstr ""
 
-#: ../web_search.gpr.py:26
+#: WebSearch.gpr.py:26
 msgid "WebSearch"
 msgstr ""
 
-#: ../web_search.gpr.py:27
-msgid "Customized queries for online services based on the active Person, Place, Family, or Source record"
+#: WebSearch.gpr.py:27
+msgid ""
+"Customized queries for online services based on the active Person, Place, "
+"Family, or Source record"
 msgstr ""
 
-#: ../web_search.gpr.py:36
+#: WebSearch.gpr.py:36
 msgid "Web Search"
 msgstr ""
 
-#: ../web_search.py:911
+#: qr_window.py:65
+msgid "QR-code"
+msgstr ""
+
+#: qr_window.py:89
+msgid ""
+"⚠ Error generating QR code:\n"
+"Original error: “{}”"
+msgstr ""
+
+#: WebSearch.py:821
+msgid "Locale"
+msgstr ""
+
+#: WebSearch.py:822
+msgid "Category"
+msgstr ""
+
+#: WebSearch.py:823
+msgid "Website URL"
+msgstr ""
+
+#: WebSearch.py:826
+msgid "Add link to note"
+msgstr ""
+
+#: WebSearch.py:827
+msgid "Show QR-code"
+msgstr ""
+
+#: WebSearch.py:828
+msgid "Copy link to clipboard"
+msgstr ""
+
+#: WebSearch.py:829
+msgid "Hide link for selected item"
+msgstr ""
+
+#: WebSearch.py:830
+msgid "Hide link for all items"
+msgstr ""
+
+#: WebSearch.py:840
+msgid "🔍 AI Suggestions (Missing in CSV)"
+msgstr ""
+
+#: WebSearch.py:942
 #, python-brace-format
 msgid ""
 "📌 This web link was added using the WebSearch gramplet for future "
@@ -93,44 +141,34 @@ msgid ""
 "related to this person."
 msgstr ""
 
-#: ../web_search.py:919
+#: WebSearch.py:950
 msgid "Add Web Link Note"
 msgstr ""
 
-#: ../web_search.py:944
+#: WebSearch.py:975
 msgid "URL is copied to the Clipboard"
 msgstr ""
 
-#: ../web_search.py:970
+#: WebSearch.py:1022
 msgid "WebSearch Link"
 msgstr ""
 
-#: ../web_search.py:1001
+#: WebSearch.py:1053
 #, python-brace-format
 msgid "Category: {category}\n"
 msgstr ""
 
-#: ../web_search.py:1003
+#: WebSearch.py:1055
 #, python-brace-format
 msgid "Replaced: {variables}\n"
 msgstr ""
 
-#: ../web_search.py:1005
+#: WebSearch.py:1057
 #, python-brace-format
 msgid "Empty: {variables}\n"
 msgstr ""
 
-#: ../web_search.py:1007
+#: WebSearch.py:1059
 #, python-brace-format
 msgid "Comment: {comment}\n"
-msgstr ""
-
-#: ../qr_window.py:65
-msgid "QR-code"
-msgstr ""
-
-#: ../qr_window.py:89
-msgid ""
-"⚠ Error generating QR code:\n"
-"Original error: “{}”"
 msgstr ""

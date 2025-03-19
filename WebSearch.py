@@ -811,7 +811,33 @@ class WebSearch(Gramplet):
         # Apply CSS styles
         self.apply_styles()
 
+        # translate UI
+        self.translate()
+
         return self.main_container
+
+    def translate(self):
+        columns = self.tree_view.get_columns()
+        columns[1].set_title(_("Locale"))
+        columns[2].set_title(_("Category"))
+        columns[3].set_title(_("Website URL"))
+
+        menu_items = {
+            "AddNote": _("Add link to note"),
+            "ShowQR": _("Show QR-code"),
+            "CopyLink": _("Copy link to clipboard"),
+            "HideLinkForSelectedItem": _("Hide link for selected item"),
+            "HideLinkForAllItems": _("Hide link for all items"),
+        }
+
+        for item_id, translation in menu_items.items():
+            menu_item = self.builder.get_object(item_id)
+            if menu_item:
+                menu_item.set_label(translation)
+
+        ai_label = self.builder.get_object("ai_recommendations_label")
+        if ai_label:
+            ai_label.set_text(_("🔍 AI Suggestions (Missing in CSV)"))
 
     def toggle_badges_visibility(self):
         badges_box = self.builder.get_object("badges_box")
