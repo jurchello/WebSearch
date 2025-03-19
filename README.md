@@ -453,6 +453,12 @@ This option copies the selected link to the clipboard, allowing the user to easi
 
 The **context menu** enhances usability by providing quick access to commonly used actions related to genealogy research links.
 
+### **5.4 **
+This option allows the user to temporarily hide a specific link associated with the selected item in the Gramplet. The link is not deleted but will no longer be displayed until the user restores it. This can be useful for decluttering the interface by hiding irrelevant or less frequently used links.
+
+### **5.5 **
+This option hides all displayed links in the Gramplet, making the interface cleaner. Like the previous option, it does not delete the links but only removes them from view. This feature is helpful when the user wants to focus on other elements of the interface without being distracted by the list of links.
+
 ## 6. Handling CSV Files
 
 ![Settings](assets/img/csv.png)
