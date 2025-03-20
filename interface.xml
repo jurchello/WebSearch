@@ -52,12 +52,12 @@
 
                         <child>
                             <object class="GtkTreeViewColumn">
-                                <property name="title">Category</property>
+                                <property name="title">Title</property>
                                 <property name="clickable">True</property>
                                 <property name="resizable">True</property>
                                 <property name="expand">True</property>
                                 <child>
-                                    <object class="GtkCellRendererText" id="category"/>
+                                    <object class="GtkCellRendererText" id="title"/>
                                 </child>
                             </object>
                         </child>
@@ -66,6 +66,7 @@
                             <object class="GtkTreeViewColumn">
                                 <property name="title">Website URL</property>
                                 <property name="clickable">True</property>
+                                <property name="resizable">True</property>
                                 <child>
                                     <object class="GtkCellRendererPixbuf" id="uid_icon"/>
                                 </child>
@@ -74,6 +75,18 @@
                                 </child>
                             </object>
                         </child>
+
+                        <child>
+                            <object class="GtkTreeViewColumn">
+                                <property name="title">Comment</property>
+                                <property name="clickable">True</property>
+                                <property name="resizable">True</property>
+                                <child>
+                                    <object class="GtkCellRendererText" id="comment"/>
+                                </child>
+                            </object>
+                        </child>
+
                     </object>
                 </child>
             </object>

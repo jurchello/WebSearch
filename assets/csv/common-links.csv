@@ -1,4 +1,4 @@
-Navigation type,Category,Is enabled,URL                                                                                                                                         ,Comment
+Navigation type,Title,Is enabled,URL                                                                                                                                         ,Comment
 People,"Archive.org (people) (g,s)",1,"https://www.archive.org/search.php?query=""%(surname)s+%(given)s""",
 People,"Archive.org (people) (g,s,b,d)",1,"https://www.archive.org/search.php?query=""%(given)s+%(surname)s+%(birth_year)s+""-""+%(death_year)s""'",
 Places,Archive.org (places),1,https://www.archive.org/search.php?query=%(place)s,

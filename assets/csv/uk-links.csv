@@ -1,4 +1,4 @@
-Navigation type,Category,Is enabled,URL                                                                                                                                         ,Comment
+Navigation type,Title,Is enabled,URL                                                                                                                                         ,Comment
 People,Google,1,"http://www.google.co.uk/#hl=en&q=""%(surname)s,+%(given)s""",
 People,"British, UK, and Ireland",1,http://userdb.rootsweb.ancestry.com/uki/cgi-bin/uki.cgi?surname=%(surname)s&fname=%(given)s,
 People,Geneanet,1,http://search.geneanet.org/result.php?lang=en&name=%(surname)s,

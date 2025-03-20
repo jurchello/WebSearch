@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gramps 52\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-03-19 20:35+0200\n"
+"POT-Creation-Date: 2025-03-20 18:10+0200\n"
 "PO-Revision-Date: 2025-03-18 10:24+0200\n"
 "Last-Translator: yurii <jurchello@gmail.com>\n"
 "Language-Team: Ukrainian <trans-uk@lists.fedoraproject.org>\n"
@@ -66,7 +66,11 @@ msgstr "Використовувати OpenAI"
 msgid "OpenAI API Key"
 msgstr "Ключ API OpenAI"
 
-#: settings_ui_manager.py:99
+#: settings_ui_manager.py:94
+msgid "Display 'Website URL' Column"
+msgstr "Показувати колонку 'URL вебсайту'"
+
+#: settings_ui_manager.py:100
 msgid "Enable CSV Files"
 msgstr "Увімкнути файли CSV"
 
@@ -98,43 +102,47 @@ msgstr ""
 "⚠ Помилка генерації QR-коду:\n"
 "Оригінальна помилка: «{}»"
 
-#: WebSearch.py:821
+#: WebSearch.py:836
 msgid "Locale"
 msgstr "Регіон"
 
-#: WebSearch.py:822
-msgid "Category"
-msgstr "Категорія"
+#: WebSearch.py:837
+msgid "Title"
+msgstr "Назва"
 
-#: WebSearch.py:823
+#: WebSearch.py:838
 msgid "Website URL"
 msgstr "URL вебсайту"
 
-#: WebSearch.py:826
+#: WebSearch.py:839
+msgid "Comment"
+msgstr "Коментар"
+
+#: WebSearch.py:842
 msgid "Add link to note"
 msgstr "Додати посилання до нотатки"
 
-#: WebSearch.py:827
+#: WebSearch.py:843
 msgid "Show QR-code"
 msgstr "Показати QR-код"
 
-#: WebSearch.py:828
+#: WebSearch.py:844
 msgid "Copy link to clipboard"
 msgstr "Скопіювати посилання у буфер"
 
-#: WebSearch.py:829
+#: WebSearch.py:845
 msgid "Hide link for selected item"
 msgstr "Приховати посилання для вибраного елемента"
 
-#: WebSearch.py:830
+#: WebSearch.py:846
 msgid "Hide link for all items"
 msgstr "Приховати посилання для всіх елементів"
 
-#: WebSearch.py:840
+#: WebSearch.py:856
 msgid "🔍 AI Suggestions (Missing in CSV)"
 msgstr "🔍 Рекомендації AI (відсутні у CSV)"
 
-#: WebSearch.py:942
+#: WebSearch.py:958
 #, python-brace-format
 msgid ""
 "📌 This web link was added using the WebSearch gramplet for future "
@@ -153,34 +161,34 @@ msgstr ""
 "Ви можете скористатися цим посиланням, щоб знову переглянути джерело та "
 "перевірити інформацію, пов’язану з цією особою."
 
-#: WebSearch.py:950
+#: WebSearch.py:966
 msgid "Add Web Link Note"
 msgstr "Додати нотатку з веб-посиланням"
 
-#: WebSearch.py:975
+#: WebSearch.py:991
 msgid "URL is copied to the Clipboard"
 msgstr "URL скопійовано до буфера обміну"
 
-#: WebSearch.py:1022
+#: WebSearch.py:1038
 msgid "WebSearch Link"
 msgstr "Посилання WebSearch"
 
-#: WebSearch.py:1053
-#, python-brace-format
-msgid "Category: {category}\n"
-msgstr "Категорія: {category}\n"
+#: WebSearch.py:1069
+#, fuzzy, python-brace-format
+msgid "Title: {title}\n"
+msgstr "Назва: {title}\n"
 
-#: WebSearch.py:1055
+#: WebSearch.py:1071
 #, python-brace-format
 msgid "Replaced: {variables}\n"
 msgstr "Замінено: {variables}\n"
 
-#: WebSearch.py:1057
+#: WebSearch.py:1073
 #, python-brace-format
 msgid "Empty: {variables}\n"
 msgstr "Порожні: {variables}\n"
 
-#: WebSearch.py:1059
+#: WebSearch.py:1075
 #, python-brace-format
 msgid "Comment: {comment}\n"
 msgstr "Коментар: {comment}\n"

@@ -131,16 +131,16 @@ class WebsiteLoader:
                         continue
 
                     nav_type = row.get(CsvColumnNames.NAV_TYPE.value, "").strip()
-                    category = row.get(CsvColumnNames.CATEGORY.value, "").strip()
+                    title = row.get(CsvColumnNames.TITLE.value, "").strip()
                     is_enabled = row.get(CsvColumnNames.IS_ENABLED.value, "").strip()
                     url = row.get(CsvColumnNames.URL.value, "").strip()
                     comment = row.get(CsvColumnNames.COMMENT.value, None)
 
-                    if not all([nav_type, category, is_enabled, url]):
+                    if not all([nav_type, title, is_enabled, url]):
                         print(f"⚠️ Some data are missing in: {selected_file_path}. A row is skipped: {row}", file=sys.stderr)
                         continue
 
-                    websites.append([nav_type, locale, category, is_enabled, url, comment])
+                    websites.append([nav_type, locale, title, is_enabled, url, comment])
         return websites
 
     @classmethod

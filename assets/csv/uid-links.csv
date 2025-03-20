@@ -1,4 +1,4 @@
-Navigation type,Category,Is enabled,URL                                                                                                                                         ,Comment
+Navigation type,Title,Is enabled,URL                                                                                                                                         ,Comment
 People,FS Person,1,https://www.familysearch.org/en/tree/person/details/%(FamilySearch.personID)s,
 People,FS Pedigree,1,https://www.familysearch.org/en/tree/pedigree/landscape/%(FamilySearch.personID)s,
 People,WikiTree,1,https://www.wikitree.com/wiki/%(WikiTree.ID)s,

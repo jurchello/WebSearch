@@ -137,7 +137,7 @@ class FamilyDataKeys(Enum):
 
 class CsvColumnNames(Enum):
     NAV_TYPE = "Navigation type"
-    CATEGORY = "Category"
+    TITLE = "Title"
     IS_ENABLED = "Is enabled"
     URL = "URL"
     COMMENT = "Comment"
@@ -197,6 +197,7 @@ DEFAULT_QUERY_PARAMETERS_REPLACEMENT = "..."
 DEFAULT_URL_COMPACTNESS_LEVEL = URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value
 DEFAULT_MIDDLE_NAME_HANDLING = MiddleNameHandling.SEPARATE.value
 DEFAULT_ENABLED_FILES = [COMMON_CSV_FILE_NAME, UID_CSV_FILE_NAME, COMMON_STATIC_SIGN]
+DEFAULT_SHOW_URL_COLUMN = False
 
 CATEGORY_ICON = {
     "Dashboard": "gramps-gramplet",

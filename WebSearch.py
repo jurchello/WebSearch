@@ -184,7 +184,7 @@ class WebSearch(Gramplet):
         websites = self.website_loader.load_websites(self.config_ini_manager)
         obj_handle = obj.get_handle()
 
-        for nav, locale, category, is_enabled, url_pattern, comment in websites:
+        for nav, locale, title, is_enabled, url_pattern, comment in websites:
 
             if (self.website_loader.has_string_in_file(f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH)
             or self.website_loader.has_string_in_file(f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH)):
@@ -228,7 +228,7 @@ class WebSearch(Gramplet):
                     saved_icon, saved_icon_visible = self.get_saved_icon_data(hash_value)
 
                     self.model.append([
-                        icon_name, locale, category, final_url, comment, url_pattern, variables_json, formatted_url,
+                        icon_name, locale, title, final_url, comment, url_pattern, variables_json, formatted_url,
                         visited_icon, saved_icon, uid_icon, uid_visible, nav_type, visited_icon_visible, saved_icon_visible,
                         obj_handle
                     ])
@@ -747,7 +747,7 @@ class WebSearch(Gramplet):
         self.model = Gtk.ListStore(
             str,  # 0 - icon_name: The name of the category icon (e.g., "person", "place", etc.)
             str,  # 1 - locale: The locale associated with the website (e.g., "en", "de", "fr") or COMMON_STATIC_SIGN for static URLs
-            str,  # 2 - category: The category under which this website falls
+            str,  # 2 - title: The title under which this website falls
             str,  # 3 - final_url: The fully formatted URL after applying all variable substitutions
             str,  # 4 - comment: A user-defined comment or note about this entry
             str,  # 5 - url_pattern: The raw URL pattern before variable substitution
@@ -796,13 +796,16 @@ class WebSearch(Gramplet):
         column_locale = columns[1]
         column_locale.add_attribute(self.builder.get_object("locale"), "text", 1)
 
-        column_category = columns[2]
-        column_category.add_attribute(self.builder.get_object("category"), "text", 2)
+        column_title = columns[2]
+        column_title.add_attribute(self.builder.get_object("title"), "text", 2)
 
         column_link = columns[3]
         column_link.add_attribute(self.builder.get_object("uid_icon"), "pixbuf", 10)
         column_link.add_attribute(self.builder.get_object("uid_icon"), "visible", 11)
         column_link.add_attribute(self.builder.get_object("url"), "text", 7)
+
+        column_comment = columns[4]
+        column_comment.add_attribute(self.builder.get_object("comment"), "text", 4)
 
         # Badge container
         self.badge_container = self.builder.get_object("badge_container")
@@ -816,13 +819,24 @@ class WebSearch(Gramplet):
         # translate UI
         self.translate()
 
+        self.update_url_column_visibility()
+
         return self.main_container
+
+    def update_url_column_visibility(self):
+        columns = self.tree_view.get_columns()
+        if not columns or len(columns) < 4:
+            return
+
+        self.__show_url_column = self.config_ini_manager.get_boolean_option("websearch.show_url_column", DEFAULT_SHOW_URL_COLUMN)
+        columns[3].set_visible(self.__show_url_column)
 
     def translate(self):
         columns = self.tree_view.get_columns()
         columns[1].set_title(_("Locale"))
-        columns[2].set_title(_("Category"))
+        columns[2].set_title(_("Title"))
         columns[3].set_title(_("Website URL"))
+        columns[4].set_title(_("Comment"))
 
         menu_items = {
             "AddNote": _("Add link to note"),
@@ -1044,7 +1058,7 @@ class WebSearch(Gramplet):
         if path_info:
             path, column, cell_x, cell_y = path_info
             tree_iter = self.model.get_iter(path)
-            category = self.model.get_value(tree_iter, 2)
+            title = self.model.get_value(tree_iter, 2)
             comment = self.model.get_value(tree_iter, 4) or ""
 
             variables_json = self.model.get_value(tree_iter, 6)
@@ -1052,7 +1066,7 @@ class WebSearch(Gramplet):
             replaced_variables = [f"{key}={value}" for var in variables['replaced_variables'] for key, value in var.items()]
             empty_variables = [var for var in variables['empty_variables']]
 
-            tooltip_text = _("Category: {category}\n").format(category=category)
+            tooltip_text = _("Title: {title}\n").format(title=title)
             if replaced_variables:
                 tooltip_text += _("Replaced: {variables}\n").format(variables=", ".join(replaced_variables))
             if empty_variables:
@@ -1076,12 +1090,14 @@ class WebSearch(Gramplet):
         self.config_ini_manager.set_string("websearch.url_prefix_replacement", self.opts[4].get_value())
         self.config_ini_manager.set_boolean_option("websearch.use_openai", self.opts[5].get_value())
         self.config_ini_manager.set_string("websearch.openai_api_key", self.opts[6].get_value())
+        self.config_ini_manager.set_boolean_option("websearch.show_url_column", self.opts[7].get_value())
         self.config_ini_manager.save()
 
     def save_update_options(self, obj):
         self.save_options()
         self.update()
         self.on_load()
+        self.update_url_column_visibility()
 
     def on_load(self):
         self.__enabled_files = self.config_ini_manager.get_list("websearch.enabled_files", DEFAULT_ENABLED_FILES)
@@ -1091,3 +1107,4 @@ class WebSearch(Gramplet):
         self.__show_short_url = self.config_ini_manager.get_boolean_option("websearch.show_short_url", DEFAULT_SHOW_SHORT_URL)
         self.__url_compactness_level = self.config_ini_manager.get_enum("websearch.url_compactness_level", URLCompactnessLevel, DEFAULT_URL_COMPACTNESS_LEVEL)
         self.__url_prefix_replacement = self.config_ini_manager.get_string("websearch.url_prefix_replacement", DEFAULT_URL_PREFIX_REPLACEMENT)
+        self.__show_url_column = self.config_ini_manager.get_boolean_option("websearch.show_url_column", DEFAULT_SHOW_URL_COLUMN)

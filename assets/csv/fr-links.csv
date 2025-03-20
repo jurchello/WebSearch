@@ -1,4 +1,4 @@
-Navigation type,Category,Is enabled,URL                                                                                                                                         ,Comment
+Navigation type,Title,Is enabled,URL                                                                                                                                         ,Comment
 People,Cultural ministry,1,http://www.culture.fr/bases_genealogie/resultats?lastname=%(surname)s&firstname=%(given)s&search=Lancer+la+recherche&bases[]=bigenet&bases[]=ecfa&bases[]=mayenne&bases[]=vendome&bases[]=leonore&bases[]=ain&bases[]=memoire_des_hommes&bases[]=vendee,
 People,Genealogical bank,1,https://gbkcouples.geneabank.org/nom/?name=%(surname)s&place=&start=&end=&source=gbk*,
 People,Historical Families Center,0,http://www.cdhf.net/fr/index.php?t=bases&d=bases%2Fmoteurpat&c=moteurpat&f=selection&p=&order=&order2=&motcle=&patronyme=%(surname)s,

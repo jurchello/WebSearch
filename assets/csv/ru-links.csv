@@ -1,4 +1,4 @@
-Navigation type,Category,Is enabled,URL                                                                                                                                         ,Comment
+Navigation type,Title,Is enabled,URL                                                                                                                                         ,Comment
 People,OBD Memorial,1,https://obd-memorial.ru/html/search.htm?f=%(surname)s&n=%(given)s&s=&y=%(birth_year)s&r=,
 People,People Memory,1,https://pamyat-naroda.ru/heroes/?adv_search=y&last_name=%(surname)s&first_name=%(given)s&middle_name=%(middle)s&date_birth=%(birth_year)s&group=all&types=pamyat_commander:nagrady_nagrad_doc:nagrady_uchet_kartoteka:nagrady_ubilein_kartoteka:pamyat_voenkomat:potery_vpp:pamyat_zsp_parts:kld_upk:kld_vmf:potery_doneseniya_o_poteryah:potery_gospitali:potery_utochenie_poter:potery_spiski_zahoroneniy:potery_voennoplen:potery_iskluchenie_iz_spiskov&page=1,
 People,Winners,1,https://www.pobediteli.ru/veteran-search/index.html?charset=utf-8&flag=&region=&district=&mode=lastname&q=%(surname)s+%(given)s,

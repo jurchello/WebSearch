@@ -1,4 +1,4 @@
-Navigation type,Category,Is enabled,URL                                                                                                                                         ,Comment
+Navigation type,Title,Is enabled,URL                                                                                                                                         ,Comment
 People,Archieven,1,https://www.archieven.nl/nl/zoeken?mivast=0&miadt=0&mizig=310&miview=tbl&milang=nl&micols=1&mip3=%(surname)s&mip1=%(given)s,
 People,Open Archives,1,https://www.openarch.nl/search.php?name=%(surname)s,
 People,Genealogy Online,1,https://www.genealogieonline.nl/zoeken/index.php?q=%(surname)s&vn=%(given)s,

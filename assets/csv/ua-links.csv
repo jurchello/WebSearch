@@ -1,4 +1,4 @@
-Navigation type,Category,Is enabled,URL                                                                                                                                         ,Comment
+Navigation type,Title,Is enabled,URL                                                                                                                                         ,Comment
 People,"Ukrgenealogy (g,m,s)",1,https://ukrgenealogy.com.ua/search.php?keywords=%(given)s+%(middle)s+%(surname)s&submit=Пошук,
 People,"Genoua (g,m,s)",1,http://forum.genoua.name/search.php?action=search&keywords=%(given)s+%(middle)s+%(surname)s&search=Знайти,
 People,ESU,1,https://esu.com.ua/search?s=%(surname)s+%(middle)s+%(given)s,

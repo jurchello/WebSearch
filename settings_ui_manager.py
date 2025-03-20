@@ -21,7 +21,7 @@
 # ----------------------------------------------------------------------------
 
 from gramps.gen.const import GRAMPS_LOCALE as glocale
-from gramps.gen.plug.menu import BooleanListOption, EnumeratedListOption, StringOption
+from gramps.gen.plug.menu import BooleanListOption, EnumeratedListOption, StringOption, BooleanOption
 from constants import *
 from website_loader import WebsiteLoader
 
@@ -91,6 +91,7 @@ class SettingsUIManager:
         self.add_string_option("websearch.url_prefix_replacement", _("URL Prefix Replacement"), DEFAULT_URL_PREFIX_REPLACEMENT)
         self.add_boolean_option("websearch.use_openai", _("Use OpenAI"), DEFAULT_USE_OPEN_AI)
         self.add_string_option("websearch.openai_api_key", _("OpenAI API Key"))
+        self.add_boolean_option("websearch.show_url_column", _("Display 'Website URL' Column"), DEFAULT_SHOW_URL_COLUMN)
 
         return self.opts
 
@@ -102,9 +103,8 @@ class SettingsUIManager:
         self.opts.append(opt)
 
     def add_boolean_option(self, config_key, label, default):
-        opt = BooleanListOption(label)
         value = self.config_ini_manager.get_boolean_option(config_key, default)
-        opt.add_button(label, value)
+        opt = BooleanOption(label, value)
         self.opts.append(opt)
 
     def add_enum_option(self, config_key, label, enum_class, default, descriptions=None):

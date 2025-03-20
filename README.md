@@ -409,9 +409,11 @@ Double-clicking on a URL in the Gramplet opens the associated website in the def
     - **`🆔` UID_SIGN** – Indicates links that use **custom variables**. These variables were primarily designed to retrieve **unique identifiers (UIDs)** from attributes, but users can repurpose them to store and pass any data. For example, a user could store **eye color** as an attribute and pass it as a custom variable in a URL. These links are stored in **`uid-links.csv`**.
     - **`📌` STATIC_SIGN** – Represents **static links** that the user manually adds to **`static-links.csv`**. These are frequently used or favorite links that the user wants **permanent access** to.
 
-3. **Category**: Represents the category to which the website belongs. This field is sortable, allowing you to arrange links by their respective categories.  
+3. **Title**: Represents the title assigned to the website. This field is sortable, allowing you to arrange links by their respective categories.  
    For ease of use, it is recommended to list the variables used in the URL template by their initial letters, as shown in the screenshot. This way, you can add several similar links with different sets of input parameters and quickly navigate through them. This greatly simplifies the search and convenient use of different template variations.  
-  
+
+4. **Comment**: Provides additional information about the link. This field allows users to add custom notes regarding the purpose, source, or special usage of the link. Comments can help users quickly understand the context of each link without opening it. This field is optional and can be edited directly within the Gramplet.
+
 ![Settings](assets/img/variables%20list.png)  
    For example, the letters shown in the screenshot represent:
   - **g** - Given name
@@ -427,7 +429,7 @@ Double-clicking on a URL in the Gramplet opens the associated website in the def
 ![Settings](assets/img/tooltip.png)
 
 When hovering over a row in the table, the tooltip will display:
-- **Category**: The category of the website.
+- **Title**: The title assigned to the website.
 - **Replaced**: The variables that were successfully replaced with data from the active entity.
 - **Empty**: Variables that did not have values and were replaced to empty.
 - **Comment**: Any comment associated with the website. These comments can be included in a separate column in the CSV file, allowing you to add additional context or information about each link.
@@ -517,3 +519,33 @@ pip install openai
 
 The core functionality of the WebSearch Gramplet remains fully operational even without these dependencies.
 
+## 10. Developer Section. Quick Commands
+
+For developers working on the WebSearch Gramplet, here are some frequently used commands for quick access:
+
+###. 10.1 Updating the POT File
+
+```
+xgettext -o po/template.pot --from-code=UTF-8 -L Python $(find . -name "*.py")
+```
+
+This command extracts translatable strings from all .py files and updates the POT template.
+
+###. 10.2 Updating Translations
+
+```
+msgmerge --update po/uk_UA-local.po po/template.pot
+```
+
+This ensures that the Ukrainian translation file includes new strings while preserving existing translations.
+
+###. 10.3 Compiling Translations (Creating MO Files)
+
+```
+for lang in po/*-local.po; do lang_code=$(basename "$lang" -local.po); mkdir -p "locale/$lang_code/LC_MESSAGES"; msgfmt --output-file="locale/$lang_code/LC_MESSAGES/addon.mo" "$lang"; done
+```
+
+Testing the Gramplet in Ukrainian
+```
+LANG=uk_UA.utf8 gramps
+```
