@@ -14,3 +14,5 @@ Places,Google Search (t),1,https://www.google.com/search?q=coordinates+%(title)s
 Places,"Google Search (l,l)",1,"https://www.google.com.ua/maps/@%(latitude)s,%(longitude)s,14z?hl=%(locale)s",
 Places,"Geonames (l,l)",1,https://www.geonames.org/advanced-search.html?q=%(latitude)s+%(longitude)s,
 People,"Billiongraves (g,s,b,d)",1,https://billiongraves.com/search/results?given_names=%(given)s&family_names=%(surname)s&birth_year=%(birth_year)s&death_year=%(death_year)s&size=15
+Places,"Find a Grave (cemetery)",1,https://www.findagrave.com/cemetery/search?cemetery-name=%(place)s&cemetery-loc=%(root_place)s&only-with-cemeteries=cemOnly,
+People,"Find a Grave (memorial)",1,https://www.findagrave.com/memorial/search?firstname=%(given)s&middlename=%(middle)s&lastname=%(surname)s&birthyear=%(birth_year)s&birthyearfilter=&deathyear=%(death_year)s&deathyearfilter=&location=&locationId=&bio=&linkedToName=&plot=&memorialid=&mcid=&datefilter=&orderby=r

@@ -94,11 +94,5 @@
     "attribute_name": "InstagramID",
     "url_regex": ".*instagram\\.com/.*",
     "variable_name": "Instagram.ID"
-  },
-  {
-    "nav_type": "Person",
-    "attribute_name": "BillionGravesID",
-    "url_regex": ".*billiongraves\\.com/grave/.*",
-    "variable_name": "BillionGraves.ID"
   }
 ]
