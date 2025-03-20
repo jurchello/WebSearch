@@ -33,6 +33,7 @@ import json
 import traceback
 import threading
 import webbrowser
+import urllib.parse
 from enum import Enum
 
 # Own project imports
@@ -274,8 +275,9 @@ class WebSearch(Gramplet):
     def on_link_clicked(self, tree_view, path, column):
         tree_iter = self.model.get_iter(path)
         url = self.model.get_value(tree_iter, 3)
+        encoded_url = urllib.parse.quote(url, safe=":/?&=")
         self.add_icon_event(VISITED_HASH_FILE_PATH, ICON_VISITED_PATH, tree_iter, 8, 13)
-        display_url(url)
+        display_url(encoded_url)
 
     def add_icon_event(self, file_path, icon_path, tree_iter, model_icon_pos, model_visibility_pos):
         url = self.model.get_value(tree_iter, 3)
@@ -891,7 +893,7 @@ class WebSearch(Gramplet):
         return badge_box
 
     def open_url(self, url):
-        webbrowser.open(url)
+        webbrowser.open(urllib.parse.quote(url, safe=":/?&="))
 
     def on_remove_badge(self, button, badge):
         domain_label = None
