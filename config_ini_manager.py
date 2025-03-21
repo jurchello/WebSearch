@@ -18,6 +18,7 @@ class ConfigINIManager:
         self.config.register("websearch.use_openai", DEFAULT_USE_OPEN_AI)
         self.config.register("websearch.openai_api_key", "")
         self.config.register("websearch.show_url_column", DEFAULT_SHOW_URL_COLUMN)
+        self.config.register("websearch.show_vars_column", DEFAULT_SHOW_VARS_COLUMN)
         self.config.register("websearch.columns_order", DEFAULT_COLUMNS_ORDER)
         self.config.load()
 

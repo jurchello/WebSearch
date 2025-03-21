@@ -203,8 +203,9 @@ DEFAULT_URL_COMPACTNESS_LEVEL = URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value
 DEFAULT_MIDDLE_NAME_HANDLING = MiddleNameHandling.SEPARATE.value
 DEFAULT_ENABLED_FILES = [COMMON_CSV_FILE_NAME, UID_CSV_FILE_NAME, COMMON_STATIC_SIGN]
 DEFAULT_SHOW_URL_COLUMN = False
+DEFAULT_SHOW_VARS_COLUMN = False
 
-DEFAULT_COLUMNS_ORDER = ['icons', 'locale', 'title', 'url', 'comment']
+DEFAULT_COLUMNS_ORDER = ['icons', 'locale', 'vars', 'title', 'url', 'comment']
 
 CATEGORY_ICON = {
     "Dashboard": "gramps-gramplet",

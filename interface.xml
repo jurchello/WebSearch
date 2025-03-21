@@ -44,9 +44,28 @@
                             <object class="GtkTreeViewColumn" id="locale_column">
                                 <property name="title"></property>
                                 <property name="clickable">True</property>
+                                <property name="resizable">True</property>
                                 <property name="sizing">autosize</property>
                                 <child>
                                     <object class="GtkCellRendererText" id="locale_renderer"/>
+                                </child>
+                            </object>
+                        </child>
+
+                        <child>
+                            <object class="GtkTreeViewColumn" id="vars_column">
+                                <property name="title">Vars</property>
+                                <property name="clickable">True</property>
+                                <child>
+                                    <object class="GtkCellRendererText" id="vars_replaced_renderer"/>
+                                </child>
+                                <child>
+                                    <object class="GtkCellRendererText" id="slash_renderer">
+                                        <property name="text">/</property>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="GtkCellRendererText" id="vars_total_renderer"/>
                                 </child>
                             </object>
                         </child>
