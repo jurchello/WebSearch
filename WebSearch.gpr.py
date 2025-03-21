@@ -26,7 +26,7 @@ register(
     name=_("WebSearch"),
     description=_("Customized queries for online services based on the active Person, Place, Family, or Source record"),
     status=STABLE,
-    version="0.36.21",
+    version="0.36.22",
     fname="WebSearch.py",
     height=20,
     detached_width=400,
