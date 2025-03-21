@@ -35,6 +35,8 @@ import threading
 import webbrowser
 import urllib.parse
 from enum import Enum
+from enum import IntEnum
+from types import SimpleNamespace
 
 # Own project imports
 from constants import *
@@ -64,6 +66,28 @@ from gramps.gen.db import DbTxn
 from gramps.gen.lib.eventtype import EventType
 from gramps.gen.lib.placetype import PlaceType
 
+MODEL_SCHEMA = [
+    ("icon_name", str),
+    ("locale", str),
+    ("title", str),
+    ("final_url", str),
+    ("comment", str),
+    ("url_pattern", str),
+    ("variables_json", str),
+    ("formatted_url", str),
+    ("visited_icon", GdkPixbuf.Pixbuf),
+    ("saved_icon", GdkPixbuf.Pixbuf),
+    ("uid_icon", GdkPixbuf.Pixbuf),
+    ("uid_visible", bool),
+    ("nav_type", str),
+    ("visited_icon_visible", bool),
+    ("saved_icon_visible", bool),
+    ("obj_handle", str),
+]
+
+ModelColumns = IntEnum("ModelColumns", {name.upper(): idx for idx, (name, _) in enumerate(MODEL_SCHEMA)})
+MODEL_TYPES = [type_ for _, type_ in MODEL_SCHEMA]
+
 try:
     _trans = glocale.get_addon_translator(__file__)
 except ValueError:
@@ -88,6 +112,14 @@ class WebSearch(Gramplet):
     }
 
     def __init__(self, gui):
+        self._context = SimpleNamespace(
+            person=None,
+            family=None,
+            place=None,
+            source=None,
+            active_url=None,
+            active_tree_path=None
+        )
         self.system_locale = glocale.language[0] if isinstance(glocale.language, list) else glocale.language
         self.gui = gui
         self.make_directories()
@@ -110,14 +142,14 @@ class WebSearch(Gramplet):
     def post_init(self):
         self.signal_emitter.connect("sites-fetched", self.on_sites_fetched)
         locales, domains, include_global = self.website_loader.get_domains_data(self.config_ini_manager)
-        if not self.__use_openai:
+        if not self._use_openai:
             self.toggle_badges_visibility()
             return
-        if not self.__openai_api_key:
+        if not self._openai_api_key:
             print("⚠️ ERROR: No OpenAI API Key found.", file=sys.stderr)
             self.toggle_badges_visibility()
             return
-        self.finder = SiteFinder(self.__openai_api_key)
+        self.finder = SiteFinder(self._openai_api_key)
         threading.Thread(
             target=self.fetch_sites_in_background,
             args=(domains, locales, include_global),
@@ -227,11 +259,26 @@ class WebSearch(Gramplet):
                     visited_icon, visited_icon_visible = self.get_visited_icon_data(hash_value)
                     saved_icon, saved_icon_visible = self.get_saved_icon_data(hash_value)
 
-                    self.model.append([
-                        icon_name, locale, title, final_url, comment, url_pattern, variables_json, formatted_url,
-                        visited_icon, saved_icon, uid_icon, uid_visible, nav_type, visited_icon_visible, saved_icon_visible,
-                        obj_handle
-                    ])
+                    data_dict = {
+                        "icon_name": icon_name,
+                        "locale": locale,
+                        "title": title,
+                        "final_url": final_url,
+                        "comment": comment,
+                        "url_pattern": url_pattern,
+                        "variables_json": variables_json,
+                        "formatted_url": formatted_url,
+                        "visited_icon": visited_icon,
+                        "saved_icon": saved_icon,
+                        "uid_icon": uid_icon,
+                        "uid_visible": uid_visible,
+                        "nav_type": nav_type,
+                        "visited_icon_visible": visited_icon_visible,
+                        "saved_icon_visible": saved_icon_visible,
+                        "obj_handle": obj_handle,
+                    }
+
+                    self.model.append([data_dict[name] for name, _ in MODEL_SCHEMA])
                 except KeyError as e:
                     print(f"❌ {locale}. KeyError in template variables: {url_pattern}. Missing key: {e}", file=sys.stderr)
                     pass
@@ -274,14 +321,14 @@ class WebSearch(Gramplet):
 
     def on_link_clicked(self, tree_view, path, column):
         tree_iter = self.model.get_iter(path)
-        url = self.model.get_value(tree_iter, 3)
-        encoded_url = urllib.parse.quote(url, safe=":/?&=")
-        self.add_icon_event(VISITED_HASH_FILE_PATH, ICON_VISITED_PATH, tree_iter, 8, 13)
+        url = self.model.get_value(tree_iter, ModelColumns.FINAL_URL.value)
+        encoded_url = urllib.parse.quote(url, safe=URL_SAFE_CHARS)
+        self.add_icon_event(VISITED_HASH_FILE_PATH, ICON_VISITED_PATH, tree_iter, ModelColumns.VISITED_ICON.value, ModelColumns.VISITED_ICON_VISIBLE.value)
         display_url(encoded_url)
 
     def add_icon_event(self, file_path, icon_path, tree_iter, model_icon_pos, model_visibility_pos):
-        url = self.model.get_value(tree_iter, 3)
-        obj_handle = self.model.get_value(tree_iter, 15)
+        url = self.model.get_value(tree_iter, ModelColumns.FINAL_URL.value)
+        obj_handle = self.model.get_value(tree_iter, ModelColumns.OBJ_HANDLE.value)
         hash_value = self.website_loader.generate_hash(f"{url}|{obj_handle}")
         if not self.website_loader.has_hash_in_file(hash_value, file_path):
             self.website_loader.save_hash_to_file(hash_value, file_path)
@@ -289,6 +336,9 @@ class WebSearch(Gramplet):
                 pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(icon_path, ICON_SIZE, ICON_SIZE)
                 self.model.set_value(tree_iter, model_icon_pos, pixbuf)
                 self.model.set_value(tree_iter, model_visibility_pos, True)
+                self.ui.columns.icons.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
+                self.ui.columns.icons.set_fixed_width(-1)
+                self.ui.columns.icons.queue_resize()
             except Exception as e:
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
 
@@ -296,7 +346,7 @@ class WebSearch(Gramplet):
         self.close_context_menu()
 
         person = self.dbstate.db.get_person_from_handle(handle)
-        self.person = person
+        self._context.person = person
         if not person:
             return
 
@@ -305,13 +355,13 @@ class WebSearch(Gramplet):
         self.update()
 
     def close_context_menu(self):
-        if self.context_menu and self.context_menu.get_visible():
-            self.context_menu.hide()
+        if self.ui.context_menu and self.ui.context_menu.get_visible():
+            self.ui.context_menu.hide()
 
     def active_place_changed(self, handle):
         try:
             place = self.dbstate.db.get_place_from_handle(handle)
-            self.place = place
+            self._context.place = place
             if not place:
                 return
 
@@ -323,7 +373,7 @@ class WebSearch(Gramplet):
 
     def active_source_changed(self, handle):
         source = self.dbstate.db.get_source_from_handle(handle)
-        self.source = source
+        self._context.source = source
         if not source:
             return
 
@@ -333,7 +383,7 @@ class WebSearch(Gramplet):
 
     def active_family_changed(self, handle):
         family = self.dbstate.db.get_family_from_handle(handle)
-        self.family = family
+        self._context.family = family
         if not family:
             return
 
@@ -730,138 +780,143 @@ class WebSearch(Gramplet):
     def build_gui(self):
         # Load UI from XML
         self.builder = Gtk.Builder()
-        self.builder.add_from_file(os.path.join(os.path.dirname(__file__), "interface.xml"))
+        self.builder.add_from_file(INTERFACE_FILE_PATH)
         self.builder.connect_signals(self)
 
         # Get the main container
-        self.main_container = self.builder.get_object("main_container")
-
-
-        # Get the AI recommendations label
-        self.ai_recommendations_label = self.builder.get_object("ai_recommendations_label")
-
-        # Get the TreeView from XML
-        self.tree_view = self.builder.get_object("treeview")
-
-        # Create and set the ListStore model
-        self.model = Gtk.ListStore(
-            str,  # 0 - icon_name: The name of the category icon (e.g., "person", "place", etc.)
-            str,  # 1 - locale: The locale associated with the website (e.g., "en", "de", "fr") or COMMON_STATIC_SIGN for static URLs
-            str,  # 2 - title: The title under which this website falls
-            str,  # 3 - final_url: The fully formatted URL after applying all variable substitutions
-            str,  # 4 - comment: A user-defined comment or note about this entry
-            str,  # 5 - url_pattern: The raw URL pattern before variable substitution
-            str,  # 6 - variables_json: A JSON string containing details about replaced, missing, and empty variables
-            str,  # 7 - formatted_url: A compacted, cleaned-up version of final_url for display purposes
-            GdkPixbuf.Pixbuf,  # 8 - visited_icon: An icon indicating whether this link has been visited
-            GdkPixbuf.Pixbuf,  # 9 - saved_icon: An icon indicating whether this link has been manually saved
-            GdkPixbuf.Pixbuf,  # 10 - uid_icon: An icon representing whether this link is UID-based (e.g., specific to a person)
-            bool,  # 11 - uid_visible: A flag indicating whether the UID icon should be shown
-            str,   # 12 - nav_type: The navigation type (e.g., "People", "Places", "Families", "Sources")
-            bool,  # 13 - visited_icon_visible: A flag indicating whether the visited icon should be shown
-            bool,  # 14 - saved_icon_visible: A flag indicating whether the saved icon should be shown
-            str    # 15 - obj_handle: handle of active object
+        self.ui = SimpleNamespace(
+            boxes = SimpleNamespace(
+                main    = self.builder.get_object("main_box"),
+                badges  = SimpleNamespace(
+                    box       = self.builder.get_object("badges_box"),
+                    container = self.builder.get_object("badge_container"),
+                ),
+            ),
+            ai_recommendations_label  = self.builder.get_object("ai_recommendations_label"),
+            tree_view                 = self.builder.get_object("treeview"),
+            context_menu              = self.builder.get_object("context_menu"),
+            context_menu_items = SimpleNamespace(
+                add_note = self.builder.get_object("add_note"),
+                show_qr = self.builder.get_object("show_qr"),
+                copy_link = self.builder.get_object("copy_link"),
+                hide_selected = self.builder.get_object("hide_selected"),
+                hide_all = self.builder.get_object("hide_all"),
+            ),
+            text_renderers = SimpleNamespace(
+                locale      = self.builder.get_object("locale_renderer"),
+                title       = self.builder.get_object("title_renderer"),
+                url         = self.builder.get_object("url_renderer"),
+                comment     = self.builder.get_object("comment_renderer"),
+            ),
+            icon_renderers = SimpleNamespace(
+                category = self.builder.get_object("category_icon_renderer"),
+                visited  = self.builder.get_object("visited_icon_renderer"),
+                saved    = self.builder.get_object("saved_icon_renderer"),
+                uid      = self.builder.get_object("uid_icon_renderer"),
+            ),
+            columns = SimpleNamespace(
+                icons   = self.builder.get_object("icons_column"),
+                locale  = self.builder.get_object("locale_column"),
+                title   = self.builder.get_object("title_column"),
+                url     = self.builder.get_object("url_column"),
+                comment = self.builder.get_object("comment_column"),
+            )
         )
 
-        self.tree_view.set_model(self.model)
-        self.tree_view.set_has_tooltip(True)
+        # Create and set the ListStore model
+        self.model = Gtk.ListStore(*MODEL_TYPES)
+        self.ui.tree_view.set_model(self.model)
+        self.ui.tree_view.set_has_tooltip(True)
 
         # Get selection object
-        selection = self.tree_view.get_selection()
+        selection = self.ui.tree_view.get_selection()
         selection.set_mode(Gtk.SelectionMode.SINGLE)
 
         # Connect signals
-        self.tree_view.connect("row-activated", self.on_link_clicked)
-        self.tree_view.connect("query-tooltip", self.on_query_tooltip)
-        self.tree_view.connect("button-press-event", self.on_button_press)
+        self.ui.tree_view.connect("row-activated", self.on_link_clicked)
+        self.ui.tree_view.connect("query-tooltip", self.on_query_tooltip)
+        self.ui.tree_view.connect("button-press-event", self.on_button_press)
+        self.ui.tree_view.connect("columns-changed", self.on_column_changed)
 
-        # Get the columns from the TreeView
-        columns = self.tree_view.get_columns()
+        # Columns reordering
+        for column in self.ui.tree_view.get_columns():
+            column.set_reorderable(True)
 
-        self.add_sorting(columns[1], 1)
-        self.add_sorting(columns[2], 2)
-        self.add_sorting(columns[3], 7)
+        # Columns sorting
+        self.add_sorting(self.ui.columns.locale, ModelColumns.LOCALE.value)
+        self.add_sorting(self.ui.columns.title, ModelColumns.TITLE.value)
+        self.add_sorting(self.ui.columns.url, ModelColumns.FORMATTED_URL.value)
+        self.add_sorting(self.ui.columns.comment, ModelColumns.COMMENT.value)
 
-        # Bind renderers to columns in ListStore
-        column_icon = columns[0]
-        category_renderer = self.builder.get_object("category_icon")
-        visited_renderer = self.builder.get_object("visited_icon")
-        saved_renderer = self.builder.get_object("saved_icon")
-        column_icon.add_attribute(category_renderer, "icon-name", 0)
-        column_icon.add_attribute(visited_renderer, "pixbuf", 8)
-        column_icon.add_attribute(visited_renderer, "visible", 13)
-        column_icon.add_attribute(saved_renderer, "pixbuf", 9)
-        column_icon.add_attribute(saved_renderer, "visible", 14)
+        # Columns rendering
+        self.ui.columns.icons.add_attribute(self.ui.icon_renderers.category, "icon-name", ModelColumns.ICON_NAME.value)
+        self.ui.columns.icons.add_attribute(self.ui.icon_renderers.visited, "pixbuf", ModelColumns.VISITED_ICON.value)
+        self.ui.columns.icons.add_attribute(self.ui.icon_renderers.visited, "visible", ModelColumns.VISITED_ICON_VISIBLE.value)
+        self.ui.columns.icons.add_attribute(self.ui.icon_renderers.saved, "pixbuf", ModelColumns.SAVED_ICON.value)
+        self.ui.columns.icons.add_attribute(self.ui.icon_renderers.saved, "visible", ModelColumns.SAVED_ICON_VISIBLE.value)
+        self.ui.columns.locale.add_attribute(self.ui.text_renderers.locale, "text", ModelColumns.LOCALE.value)
+        self.ui.columns.title.add_attribute(self.ui.text_renderers.title, "text", ModelColumns.TITLE.value)
+        self.ui.columns.url.add_attribute(self.ui.icon_renderers.uid, "pixbuf", ModelColumns.UID_ICON.value)
+        self.ui.columns.url.add_attribute(self.ui.icon_renderers.uid, "visible", ModelColumns.UID_VISIBLE.value)
+        self.ui.columns.url.add_attribute(self.ui.text_renderers.url, "text", ModelColumns.FORMATTED_URL.value)
+        self.ui.columns.comment.add_attribute(self.ui.text_renderers.comment, "text", ModelColumns.COMMENT.value)
 
-        column_locale = columns[1]
-        column_locale.add_attribute(self.builder.get_object("locale"), "text", 1)
-
-        column_title = columns[2]
-        column_title.add_attribute(self.builder.get_object("title"), "text", 2)
-
-        column_link = columns[3]
-        column_link.add_attribute(self.builder.get_object("uid_icon"), "pixbuf", 10)
-        column_link.add_attribute(self.builder.get_object("uid_icon"), "visible", 11)
-        column_link.add_attribute(self.builder.get_object("url"), "text", 7)
-
-        column_comment = columns[4]
-        column_comment.add_attribute(self.builder.get_object("comment"), "text", 4)
-
-        # Badge container
-        self.badge_container = self.builder.get_object("badge_container")
-
-        # Context menu
-        self.context_menu = self.builder.get_object("context_menu")
-
-        # Apply CSS styles
+        # CSS styles, translate, update
         self.apply_styles()
-
-        # translate UI
         self.translate()
-
         self.update_url_column_visibility()
 
-        return self.main_container
+        self.reorder_columns()
+
+        return self.ui.boxes.main
+
+    def reorder_columns(self):
+        self._columns_order = self.config_ini_manager.get_list("websearch.columns_order", DEFAULT_COLUMNS_ORDER)
+
+        columns_map = self.ui.columns
+        previous_column = None
+
+        for column_id in self._columns_order:
+            column = getattr(columns_map, column_id, None)
+            if column:
+                current_pos = self.ui.tree_view.get_columns().index(column)
+                expected_pos = self._columns_order.index(column_id)
+                if current_pos != expected_pos:
+                    self.ui.tree_view.move_column_after(column, previous_column)
+                previous_column = column
+
+    def on_column_changed(self, tree_view):
+        columns = tree_view.get_columns()
+        column_map = {v: k for k, v in self.ui.columns.__dict__.items()}
+        columns_order = [column_map[col] for col in columns]
+        print(columns_order)
+        self.config_ini_manager.set_list("websearch.columns_order", columns_order)
 
     def update_url_column_visibility(self):
-        columns = self.tree_view.get_columns()
-        if not columns or len(columns) < 4:
-            return
-
-        self.__show_url_column = self.config_ini_manager.get_boolean_option("websearch.show_url_column", DEFAULT_SHOW_URL_COLUMN)
-        columns[3].set_visible(self.__show_url_column)
+        self._show_url_column = self.config_ini_manager.get_boolean_option(
+            "websearch.show_url_column", DEFAULT_SHOW_URL_COLUMN
+        )
+        self.ui.columns.url.set_visible(self._show_url_column)
 
     def translate(self):
-        columns = self.tree_view.get_columns()
-        columns[1].set_title(_("Locale"))
-        columns[2].set_title(_("Title"))
-        columns[3].set_title(_("Website URL"))
-        columns[4].set_title(_("Comment"))
+        self.ui.columns.locale.set_title(_("Locale"))
+        self.ui.columns.title.set_title(_("Title"))
+        self.ui.columns.url.set_title(_("Website URL"))
+        self.ui.columns.comment.set_title(_("Comment"))
 
-        menu_items = {
-            "AddNote": _("Add link to note"),
-            "ShowQR": _("Show QR-code"),
-            "CopyLink": _("Copy link to clipboard"),
-            "HideLinkForSelectedItem": _("Hide link for selected item"),
-            "HideLinkForAllItems": _("Hide link for all items"),
-        }
+        self.ui.context_menu_items.add_note.set_label(_("Add link to note"))
+        self.ui.context_menu_items.show_qr.set_label(_("Show QR-code"))
+        self.ui.context_menu_items.copy_link.set_label(_("Copy link to clipboard"))
+        self.ui.context_menu_items.hide_selected.set_label(_("Hide link for selected item"))
+        self.ui.context_menu_items.hide_all.set_label(_("Hide link for all items"))
 
-        for item_id, translation in menu_items.items():
-            menu_item = self.builder.get_object(item_id)
-            if menu_item:
-                menu_item.set_label(translation)
-
-        ai_label = self.builder.get_object("ai_recommendations_label")
-        if ai_label:
-            ai_label.set_text(_("🔍 AI Suggestions (Missing in CSV)"))
+        self.ui.ai_recommendations_label.set_text(_("🔍 AI Suggestions"))
 
     def toggle_badges_visibility(self):
-        badges_box = self.builder.get_object("badges_box")
-
-        if self.__use_openai:
-            badges_box.show()
+        if self._use_openai:
+            self.ui.boxes.badges.box.show()
         else:
-            badges_box.hide()
+            self.ui.boxes.badges.box.hide()
 
     def add_sorting(self, column, index):
         column.set_sort_column_id(index)
@@ -869,7 +924,7 @@ class WebSearch(Gramplet):
 
     def apply_styles(self):
         css_provider = Gtk.CssProvider()
-        css_provider.load_from_path(os.path.join(os.path.dirname(__file__), "assets", "style.css"))
+        css_provider.load_from_path(STYLE_CSS_PATH)
         Gtk.StyleContext.add_provider_for_screen(
             Gdk.Screen.get_default(),
             css_provider,
@@ -877,11 +932,11 @@ class WebSearch(Gramplet):
         )
 
     def populate_badges(self, domain_url_pairs):
-        self.badge_container.foreach(lambda widget: self.badge_container.remove(widget))
+        self.ui.boxes.badges.container.foreach(lambda widget: self.ui.boxes.badges.container.remove(widget))
         for domain, url in domain_url_pairs:
             badge = self.create_badge(domain, url)
-            self.badge_container.add(badge)
-        self.badge_container.show_all()
+            self.ui.boxes.badges.container.add(badge)
+        self.ui.boxes.badges.container.show_all()
 
     def create_badge(self, domain, url):
         badge_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
@@ -907,7 +962,7 @@ class WebSearch(Gramplet):
         return badge_box
 
     def open_url(self, url):
-        webbrowser.open(urllib.parse.quote(url, safe=":/?&="))
+        webbrowser.open(urllib.parse.quote(url, safe=URL_SAFE_CHARS))
 
     def on_remove_badge(self, button, badge):
         domain_label = None
@@ -920,71 +975,69 @@ class WebSearch(Gramplet):
         if domain_label:
             self.website_loader.save_skipped_domain(domain_label)
 
-        self.badge_container.remove(badge)
+        self.ui.boxes.badges.container.remove(badge)
 
     def on_button_press(self, widget, event):
-        if event.button == 3:  # Right-click mouse button
+        if event.button == RIGHT_MOUSE_BUTTON:
             path_info = widget.get_path_at_pos(event.x, event.y)
             if path_info:
                 path, column, cell_x, cell_y = path_info
                 tree_iter = self.model.get_iter(path)
                 if not tree_iter or not self.model.iter_is_valid(tree_iter):
                     return
-                url = self.model.get_value(tree_iter, 3)
-                nav_type = self.model.get_value(tree_iter, 12)
+                url = self.model.get_value(tree_iter, ModelColumns.FINAL_URL.value)
+                nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
 
-                self.context_menu = self.builder.get_object("context_menu")
-                self.context_menu.active_tree_path = path
-                self.context_menu.active_url = url
-                self.context_menu.show_all()
+                self._context.active_tree_path = path
+                self._context.active_url = url
+                self.ui.context_menu.show_all()
                 #add_attribute_item = self.builder.get_object("AddAttribute")
-                add_note_item = self.builder.get_object("AddNote")
 
                 if nav_type == SupportedNavTypes.PEOPLE.value:
                     #add_attribute_item.show()
-                    add_note_item.show()
+                    self.ui.context_menu_items.add_note.show()
                 else:
                     #add_attribute_item.hide()
-                    add_note_item.hide()
+                    self.ui.context_menu_items.add_note.hide()
 
-                self.context_menu.popup_at_pointer(event)
+                self.ui.context_menu.popup_at_pointer(event)
 
     def on_add_note(self, widget):
-        if not self.context_menu.active_tree_path:
+        if not self._context.active_tree_path:
             print("❌ Error: No saved path to the iterator!", file=sys.stderr)
             return
 
         note = Note()
         note.set(_("📌 This web link was added using the WebSearch gramplet for future reference:\n\n🔗 {url}\n\n"
                    "You can use this link to revisit the source and verify the information related to this person.")
-                 .format(url=self.context_menu.active_url))
+                 .format(url=self._context.active_url))
         note.set_privacy(True)
 
-        tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
-        nav_type = self.model.get_value(tree_iter, 12)
+        tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
+        nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
 
         with DbTxn(_("Add Web Link Note"), self.dbstate.db) as trans:
             note_handle = self.dbstate.db.add_note(note, trans)
             if nav_type == SupportedNavTypes.PEOPLE.value:
-                self.person.add_note(note_handle)
-                self.dbstate.db.commit_person(self.person, trans)
+                self._context.person.add_note(note_handle)
+                self.dbstate.db.commit_person(self._context.person, trans)
 
-        tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
-        self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, 9, 14)
+        tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
+        self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, ModelColumns.SAVED_ICON.value, ModelColumns.SAVED_ICON_VISIBLE.value)
 
     def on_show_qr_code(self, widget):
-        selection = self.tree_view.get_selection()
+        selection = self.ui.tree_view.get_selection()
         model, tree_iter = selection.get_selected()
         if tree_iter is not None:
-            url = model[tree_iter][3]
+            url = model[tree_iter][ModelColumns.FINAL_URL.value]
             qr_window = QRCodeWindow(url)
             qr_window.show_all()
 
     def on_copy_url_to_clipboard(self, widget):
-        selection = self.tree_view.get_selection()
+        selection = self.ui.tree_view.get_selection()
         model, tree_iter = selection.get_selected()
         if tree_iter is not None:
-            url = model[tree_iter][3]
+            url = model[tree_iter][ModelColumns.FINAL_URL.value]
             clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
             clipboard.set_text(url, -1)
             clipboard.store()
@@ -992,22 +1045,22 @@ class WebSearch(Gramplet):
             notification.show_all()
 
     def on_hide_link_for_selected_item(self, widget):
-        selection = self.tree_view.get_selection()
+        selection = self.ui.tree_view.get_selection()
         model, tree_iter = selection.get_selected()
         if tree_iter is not None:
-            url_pattern = model[tree_iter][5]
-            obj_handle = model[tree_iter][15]
-            nav_type = model[tree_iter][12]
+            url_pattern = model[tree_iter][ModelColumns.URL_PATTERN.value]
+            obj_handle = model[tree_iter][ModelColumns.OBJ_HANDLE.value]
+            nav_type = model[tree_iter][ModelColumns.NAV_TYPE.value]
             if not self.website_loader.has_string_in_file(f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH):
                 self.website_loader.save_string_to_file(f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH)
             model.remove(tree_iter)
 
     def on_hide_link_for_all_items(self, widget):
-        selection = self.tree_view.get_selection()
+        selection = self.ui.tree_view.get_selection()
         model, tree_iter = selection.get_selected()
         if tree_iter is not None:
-            url_pattern = model[tree_iter][5]
-            nav_type = model[tree_iter][12]
+            url_pattern = model[tree_iter][ModelColumns.URL_PATTERN.value]
+            nav_type = model[tree_iter][ModelColumns.NAV_TYPE.value]
             if not self.website_loader.has_string_in_file(f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH):
                 self.website_loader.save_string_to_file(f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH)
             model.remove(tree_iter)
@@ -1021,8 +1074,8 @@ class WebSearch(Gramplet):
         path_str = str(path)
         try:
             tree_path = Gtk.TreePath.new_from_string(path_str)
-            self.tree_view.get_selection().select_path(tree_path)
-            self.tree_view.set_cursor(tree_path)
+            self.ui.tree_view.get_selection().select_path(tree_path)
+            self.ui.tree_view.set_cursor(tree_path)
             tree_iter = self.model.get_iter(tree_path)
             return tree_iter
         except Exception as e:
@@ -1030,25 +1083,25 @@ class WebSearch(Gramplet):
             return None
 
     def on_add_attribute(self, widget):
-        if not self.context_menu.active_tree_path:
+        if not self._context.active_tree_path:
             print("❌ Error: No saved path to the iterator!", file=sys.stderr)
             return
 
         attribute = Attribute()
         attribute.set_type(_("WebSearch Link"))
-        attribute.set_value(self.context_menu.active_url)
+        attribute.set_value(self._context.active_url)
         attribute.set_privacy(True)
 
-        tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
-        nav_type = self.model.get_value(tree_iter, 12)
+        tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
+        nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
 
         #with DbTxn(_("Add Web Link Attribute"), self.dbstate.db) as trans:
         #    if nav_type == SupportedNavTypes.PEOPLE.value:
-        #        self.person.add_attribute(attribute)
-        #        self.dbstate.db.commit_person(self.person, trans)
+        #        self._context.person.add_attribute(attribute)
+        #        self.dbstate.db.commit_person(self._context.person, trans)
 
-        tree_iter = self.get_active_tree_iter(self.context_menu.active_tree_path)
-        self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, 9, 14)
+        tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
+        self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, ModelColumns.SAVED_ICON.value, ModelColumns.SAVED_ICON_VISIBLE.value)
 
     def on_download_page(self, widget):
         pass
@@ -1058,10 +1111,10 @@ class WebSearch(Gramplet):
         if path_info:
             path, column, cell_x, cell_y = path_info
             tree_iter = self.model.get_iter(path)
-            title = self.model.get_value(tree_iter, 2)
-            comment = self.model.get_value(tree_iter, 4) or ""
+            title = self.model.get_value(tree_iter, ModelColumns.TITLE.value)
+            comment = self.model.get_value(tree_iter, ModelColumns.COMMENT.value) or ""
 
-            variables_json = self.model.get_value(tree_iter, 6)
+            variables_json = self.model.get_value(tree_iter, ModelColumns.VARIABLES_JSON.value)
             variables = json.loads(variables_json)
             replaced_variables = [f"{key}={value}" for var in variables['replaced_variables'] for key, value in var.items()]
             empty_variables = [var for var in variables['empty_variables']]
@@ -1100,11 +1153,12 @@ class WebSearch(Gramplet):
         self.update_url_column_visibility()
 
     def on_load(self):
-        self.__enabled_files = self.config_ini_manager.get_list("websearch.enabled_files", DEFAULT_ENABLED_FILES)
-        self.__use_openai = self.config_ini_manager.get_boolean_option("websearch.use_openai", DEFAULT_USE_OPEN_AI)
-        self.__openai_api_key = self.config_ini_manager.get_string("websearch.openai_api_key")
-        self.__middle_name_handling = self.config_ini_manager.get_enum("websearch.middle_name_handling", MiddleNameHandling, DEFAULT_MIDDLE_NAME_HANDLING)
-        self.__show_short_url = self.config_ini_manager.get_boolean_option("websearch.show_short_url", DEFAULT_SHOW_SHORT_URL)
-        self.__url_compactness_level = self.config_ini_manager.get_enum("websearch.url_compactness_level", URLCompactnessLevel, DEFAULT_URL_COMPACTNESS_LEVEL)
-        self.__url_prefix_replacement = self.config_ini_manager.get_string("websearch.url_prefix_replacement", DEFAULT_URL_PREFIX_REPLACEMENT)
-        self.__show_url_column = self.config_ini_manager.get_boolean_option("websearch.show_url_column", DEFAULT_SHOW_URL_COLUMN)
+        self._enabled_files = self.config_ini_manager.get_list("websearch.enabled_files", DEFAULT_ENABLED_FILES)
+        self._use_openai = self.config_ini_manager.get_boolean_option("websearch.use_openai", DEFAULT_USE_OPEN_AI)
+        self._openai_api_key = self.config_ini_manager.get_string("websearch.openai_api_key")
+        self._middle_name_handling = self.config_ini_manager.get_enum("websearch.middle_name_handling", MiddleNameHandling, DEFAULT_MIDDLE_NAME_HANDLING)
+        self._show_short_url = self.config_ini_manager.get_boolean_option("websearch.show_short_url", DEFAULT_SHOW_SHORT_URL)
+        self._url_compactness_level = self.config_ini_manager.get_enum("websearch.url_compactness_level", URLCompactnessLevel, DEFAULT_URL_COMPACTNESS_LEVEL)
+        self._url_prefix_replacement = self.config_ini_manager.get_string("websearch.url_prefix_replacement", DEFAULT_URL_PREFIX_REPLACEMENT)
+        self._show_url_column = self.config_ini_manager.get_boolean_option("websearch.show_url_column", DEFAULT_SHOW_URL_COLUMN)
+        self._columns_order = self.config_ini_manager.get_list("websearch.columns_order", DEFAULT_COLUMNS_ORDER)

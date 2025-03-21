@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-03-20 18:10+0200\n"
+"POT-Creation-Date: 2025-03-21 19:32+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <jurchello@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -73,7 +73,7 @@ msgstr ""
 msgid "Enable CSV Files"
 msgstr ""
 
-#: WebSearch.gpr.py:26
+#: WebSearch.gpr.py:26 WebSearch.gpr.py:36
 msgid "WebSearch"
 msgstr ""
 
@@ -81,10 +81,6 @@ msgstr ""
 msgid ""
 "Customized queries for online services based on the active Person, Place, "
 "Family, or Source record"
-msgstr ""
-
-#: WebSearch.gpr.py:36
-msgid "Web Search"
 msgstr ""
 
 #: qr_window.py:65
@@ -97,47 +93,47 @@ msgid ""
 "Original error: “{}”"
 msgstr ""
 
-#: WebSearch.py:836
+#: WebSearch.py:902
 msgid "Locale"
 msgstr ""
 
-#: WebSearch.py:837
+#: WebSearch.py:903
 msgid "Title"
 msgstr ""
 
-#: WebSearch.py:838
+#: WebSearch.py:904
 msgid "Website URL"
 msgstr ""
 
-#: WebSearch.py:839
+#: WebSearch.py:905
 msgid "Comment"
 msgstr ""
 
-#: WebSearch.py:842
+#: WebSearch.py:907
 msgid "Add link to note"
 msgstr ""
 
-#: WebSearch.py:843
+#: WebSearch.py:908
 msgid "Show QR-code"
 msgstr ""
 
-#: WebSearch.py:844
+#: WebSearch.py:909
 msgid "Copy link to clipboard"
 msgstr ""
 
-#: WebSearch.py:845
+#: WebSearch.py:910
 msgid "Hide link for selected item"
 msgstr ""
 
-#: WebSearch.py:846
+#: WebSearch.py:911
 msgid "Hide link for all items"
 msgstr ""
 
-#: WebSearch.py:856
-msgid "🔍 AI Suggestions (Missing in CSV)"
+#: WebSearch.py:913
+msgid "🔍 AI Suggestions"
 msgstr ""
 
-#: WebSearch.py:958
+#: WebSearch.py:1011
 #, python-brace-format
 msgid ""
 "📌 This web link was added using the WebSearch gramplet for future "
@@ -149,34 +145,34 @@ msgid ""
 "related to this person."
 msgstr ""
 
-#: WebSearch.py:966
+#: WebSearch.py:1019
 msgid "Add Web Link Note"
 msgstr ""
 
-#: WebSearch.py:991
+#: WebSearch.py:1044
 msgid "URL is copied to the Clipboard"
 msgstr ""
 
-#: WebSearch.py:1038
+#: WebSearch.py:1091
 msgid "WebSearch Link"
 msgstr ""
 
-#: WebSearch.py:1069
+#: WebSearch.py:1122
 #, python-brace-format
 msgid "Title: {title}\n"
 msgstr ""
 
-#: WebSearch.py:1071
+#: WebSearch.py:1124
 #, python-brace-format
 msgid "Replaced: {variables}\n"
 msgstr ""
 
-#: WebSearch.py:1073
+#: WebSearch.py:1126
 #, python-brace-format
 msgid "Empty: {variables}\n"
 msgstr ""
 
-#: WebSearch.py:1075
+#: WebSearch.py:1128
 #, python-brace-format
 msgid "Comment: {comment}\n"
 msgstr ""

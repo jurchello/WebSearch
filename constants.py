@@ -165,6 +165,9 @@ class SourceDataKeys(Enum):
 # CONSTANTS
 # --------------------------
 
+RIGHT_MOUSE_BUTTON = 3
+URL_SAFE_CHARS = ":/?&="
+
 COMMON_LOCALE_SIGN = "🌍"
 COMMON_UID_SIGN = "🆔"
 COMMON_STATIC_SIGN = "📌"
@@ -179,6 +182,7 @@ CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
 
+INTERFACE_FILE_PATH = os.path.join(os.path.dirname(__file__), "interface.xml")
 CONFIG_FILE_PATH = os.path.join(CONFIGS_DIR, "config.ini")
 ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(CONFIGS_DIR, "attribute_mapping.json")
 VISITED_HASH_FILE_PATH = os.path.join(DATA_DIR, "visited_links.txt")
@@ -188,6 +192,7 @@ SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(DATA_DIR, "skipped_domain_su
 ICON_VISITED_PATH = os.path.join(ASSETS_DIR, "icons", "emblem-default.png")
 ICON_SAVED_PATH = os.path.join(ASSETS_DIR, "icons", "media-floppy.png")
 ICON_UID_PATH = os.path.join(ASSETS_DIR, "icons", "uid.png")
+STYLE_CSS_PATH = os.path.join(ASSETS_DIR, "style.css")
 
 DEFAULT_CATEGORY_ICON = "gramps-gramplet"
 DEFAULT_SHOW_SHORT_URL = False
@@ -198,6 +203,8 @@ DEFAULT_URL_COMPACTNESS_LEVEL = URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value
 DEFAULT_MIDDLE_NAME_HANDLING = MiddleNameHandling.SEPARATE.value
 DEFAULT_ENABLED_FILES = [COMMON_CSV_FILE_NAME, UID_CSV_FILE_NAME, COMMON_STATIC_SIGN]
 DEFAULT_SHOW_URL_COLUMN = False
+
+DEFAULT_COLUMNS_ORDER = ['icons', 'locale', 'title', 'url', 'comment']
 
 CATEGORY_ICON = {
     "Dashboard": "gramps-gramplet",
