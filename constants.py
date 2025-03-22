@@ -59,6 +59,9 @@ class SupportedNavTypes(Enum):
     PLACES = "Places"
     SOURCES = "Sources"
     FAMILIES = "Families"
+    EVENTS = "Events"
+    CITATIONS = "Citations"
+    MEDIA = "Media"
 
 class PersonDataKeys(Enum):
     GIVEN = "given"

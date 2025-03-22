@@ -1,4 +1,6 @@
 import re
+from gramps.gen.lib.srcattrtype import SrcAttributeType
+from gramps.gen.lib import AttributeType
 
 class AttributeLinksLoader:
     """
@@ -17,9 +19,16 @@ class AttributeLinksLoader:
             return links
 
         for attr in obj.get_attribute_list():
-            attr_name = attr.get_type().type2base()
-            attr_value = attr.get_value()
+            type = attr.get_type()
 
+            if isinstance(type, AttributeType):
+                attr_name = type.type2base()
+            elif isinstance(type, SrcAttributeType):
+                attr_name = type.string
+            else:
+                continue
+
+            attr_value = attr.get_value()
             if not isinstance(attr_value, str):
                 continue
 

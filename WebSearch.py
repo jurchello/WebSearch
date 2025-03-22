@@ -203,11 +203,17 @@ class WebSearch(Gramplet):
         self.connect_signal("Place", self.active_place_changed)
         self.connect_signal("Source", self.active_source_changed)
         self.connect_signal("Family", self.active_family_changed)
+        self.connect_signal("Event", self.active_event_changed)
+        self.connect_signal("Citation", self.active_citation_changed)
+        self.connect_signal("Media", self.active_media_changed)
 
         active_person_handle = self.gui.uistate.get_active("Person")
         active_place_handle = self.gui.uistate.get_active("Place")
         active_source_handle = self.gui.uistate.get_active("Source")
         active_family_handle = self.gui.uistate.get_active("Family")
+        active_event_handle = self.gui.uistate.get_active("Event")
+        active_citation_handle = self.gui.uistate.get_active("Citation")
+        active_media_handle = self.gui.uistate.get_active("Media")
 
         if active_person_handle:
             self.active_person_changed(active_person_handle)
@@ -217,6 +223,12 @@ class WebSearch(Gramplet):
             self.active_source_changed(active_source_handle)
         elif active_family_handle:
             self.active_family_changed(active_family_handle)
+        elif active_event_handle:
+            self.active_event_changed(active_event_handle)
+        elif active_citation_handle:
+            self.active_citation_changed(active_citation_handle)
+        elif active_media_handle:
+            self.active_media_changed(active_media_handle)
 
     def is_true(self, value):
         return str(value).strip().lower() in {"1", "true", "yes", "y"}
@@ -444,6 +456,39 @@ class WebSearch(Gramplet):
         person_data, uids_data = self.get_person_data(person)
         self.populate_links(person_data, uids_data, SupportedNavTypes.PEOPLE.value, person)
         self.update()
+        
+    def active_event_changed(self, handle):
+        self.close_context_menu()
+
+        event = self.dbstate.db.get_event_from_handle(handle)
+        self._context.event = event
+        if not event:
+            return
+
+        self.populate_links({}, {}, SupportedNavTypes.EVENTS.value, event)
+        self.update()
+        
+    def active_citation_changed(self, handle):
+        self.close_context_menu()
+
+        citation = self.dbstate.db.get_citation_from_handle(handle)
+        self._context.citation = citation
+        if not citation:
+            return
+
+        self.populate_links({}, {}, SupportedNavTypes.CITATIONS.value, citation)
+        self.update()
+        
+    def active_media_changed(self, handle):
+        self.close_context_menu()
+
+        media = self.dbstate.db.get_media_from_handle(handle)
+        self._context.media = media
+        if not media:
+            return
+
+        self.populate_links({}, {}, SupportedNavTypes.MEDIA.value, media)
+        self.update()  
 
     def close_context_menu(self):
         if self.ui.context_menu and self.ui.context_menu.get_visible():
