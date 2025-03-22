@@ -16,7 +16,6 @@ People,Google Archives,0,http://news.google.fr/archivesearch?q=%(surname)s&btnGt
 People,Google,0,"http://www.google.fr/#hl=fr&q=""%(surname)s,+%(given)s""",
 People,Hathi Trust,1,"https://babel.hathitrust.org/cgi/ls?q1=%(surname)s+%(given)s+&lmt=ft&a=srchls&facet=language008_full:""French""",
 People,Open Library,1,"https://openlibrary.org/search?q=""%(surname)s, %(given)s""&language=fre'",
-People,Belgium's Archives,1,https://search.arch.be/fr/rechercher-des-personnes/resultats/q/zoekwijze/s?text=%(surname)s,
 Places,Geneanet,1,http://search.geneanet.org/result.php?lang=fr&place=%(place)s,
 Places,Historical Families Center,1,http://www.cdhf.net/fr/index.php?t=villages&d=villages&c=villages&f=results&p=&page=&lieu2=%(place)s,
 Places,OrigineFile (places),1,http://www.fichierorigine.com/recherche.php?commune=%(place)s&pays=%(root_place)s,
