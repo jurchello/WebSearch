@@ -37,6 +37,11 @@
                                         <property name="xalign">0.0</property>
                                     </object>
                                 </child>
+                                <child>
+                                    <object class="GtkCellRendererPixbuf" id="user_data_icon_renderer">
+                                        <property name="xalign">0.0</property>
+                                    </object>
+                                </child>
                             </object>
                         </child>
 

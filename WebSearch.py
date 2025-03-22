@@ -86,6 +86,8 @@ MODEL_SCHEMA = [
     ("replaced_vars_count", int),
     ("total_vars_count", int),
     ("vars_color", str),
+    ("user_data_icon", GdkPixbuf.Pixbuf),
+    ("user_data_icon_visible", bool)
 ]
 
 ModelColumns = IntEnum("ModelColumns", {name.upper(): idx for idx, (name, _) in enumerate(MODEL_SCHEMA)})
@@ -160,9 +162,9 @@ class WebSearch(Gramplet):
         ).start()
 
     def make_directories(self):
-        for directory in [DATA_DIR, CONFIGS_DIR]:
+        for directory in [DATA_DIR, CONFIGS_DIR, USER_DATA_CSV_DIR, USER_DATA_JSON_DIR]:
             if not os.path.exists(directory):
-                os.makedirs(directory)
+                os.makedirs(directory, exist_ok=True)
 
     def fetch_sites_in_background(self, csv_domains, locales, include_global):
         skipped_domains = self.website_loader.load_skipped_domains()
@@ -219,7 +221,7 @@ class WebSearch(Gramplet):
         websites = self.website_loader.load_websites(self.config_ini_manager)
         obj_handle = obj.get_handle()
 
-        for nav, locale, title, is_enabled, url_pattern, comment in websites:
+        for nav, locale, title, is_enabled, url_pattern, comment, is_custom in websites:
 
             if (self.website_loader.has_string_in_file(f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH)
             or self.website_loader.has_string_in_file(f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH)):
@@ -261,6 +263,7 @@ class WebSearch(Gramplet):
                     hash_value = self.website_loader.generate_hash(f"{final_url}|{obj_handle}")
                     visited_icon, visited_icon_visible = self.get_visited_icon_data(hash_value)
                     saved_icon, saved_icon_visible = self.get_saved_icon_data(hash_value)
+                    user_data_icon, user_data_icon_visible = self.get_user_data_icon_data(is_custom)
 
                     replaced_vars_count = len(variables['replaced_variables'])
                     total_vars_count = len(variables['not_found_variables']) + len(variables['replaced_variables']) + len(variables['empty_variables'])
@@ -291,13 +294,30 @@ class WebSearch(Gramplet):
                         "obj_handle": obj_handle,
                         "replaced_vars_count": replaced_vars_count,
                         "total_vars_count": total_vars_count,
-                        "vars_color": vars_color
+                        "vars_color": vars_color,
+                        "user_data_icon": user_data_icon,
+                        "user_data_icon_visible": user_data_icon_visible
                     }
 
                     self.model.append([data_dict[name] for name, _ in MODEL_SCHEMA])
                 except KeyError as e:
                     print(f"❌ {locale}. KeyError in template variables: {url_pattern}. Missing key: {e}", file=sys.stderr)
                     pass
+
+    def get_user_data_icon_data(self, is_custom):
+        user_data_icon = None
+        user_data_icon_visible = False
+
+        if not self._show_user_data_icon:
+            return user_data_icon, user_data_icon_visible
+
+        if is_custom:
+            try:
+                user_data_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_USER_DATA_PATH, ICON_SIZE, ICON_SIZE)
+                user_data_icon_visible = True
+            except Exception as e:
+                print(f"❌ Error loading icon: {e}", file=sys.stderr)
+        return user_data_icon, user_data_icon_visible
 
     def get_visited_icon_data(self, hash_value):
         visited_icon = None
@@ -828,10 +848,11 @@ class WebSearch(Gramplet):
                 comment         = self.builder.get_object("comment_renderer"),
             ),
             icon_renderers = SimpleNamespace(
-                category = self.builder.get_object("category_icon_renderer"),
-                visited  = self.builder.get_object("visited_icon_renderer"),
-                saved    = self.builder.get_object("saved_icon_renderer"),
-                uid      = self.builder.get_object("uid_icon_renderer"),
+                category    = self.builder.get_object("category_icon_renderer"),
+                visited     = self.builder.get_object("visited_icon_renderer"),
+                saved       = self.builder.get_object("saved_icon_renderer"),
+                uid         = self.builder.get_object("uid_icon_renderer"),
+                user_data   = self.builder.get_object("user_data_icon_renderer"),
             ),
             columns = SimpleNamespace(
                 icons   = self.builder.get_object("icons_column"),
@@ -874,6 +895,8 @@ class WebSearch(Gramplet):
         self.ui.columns.icons.add_attribute(self.ui.icon_renderers.visited, "visible", ModelColumns.VISITED_ICON_VISIBLE.value)
         self.ui.columns.icons.add_attribute(self.ui.icon_renderers.saved, "pixbuf", ModelColumns.SAVED_ICON.value)
         self.ui.columns.icons.add_attribute(self.ui.icon_renderers.saved, "visible", ModelColumns.SAVED_ICON_VISIBLE.value)
+        self.ui.columns.icons.add_attribute(self.ui.icon_renderers.user_data, "pixbuf", ModelColumns.USER_DATA_ICON.value)
+        self.ui.columns.icons.add_attribute(self.ui.icon_renderers.user_data, "visible", ModelColumns.USER_DATA_ICON_VISIBLE.value)
         self.ui.columns.vars.add_attribute(self.ui.text_renderers.vars_replaced, "text", ModelColumns.REPLACED_VARS_COUNT.value)
         self.ui.columns.vars.add_attribute(self.ui.text_renderers.vars_total, "text", ModelColumns.TOTAL_VARS_COUNT.value)
         self.ui.columns.vars.add_attribute(self.ui.text_renderers.vars_replaced, "foreground", ModelColumns.VARS_COLOR.value)
@@ -1177,6 +1200,7 @@ class WebSearch(Gramplet):
         self.config_ini_manager.set_string("websearch.openai_api_key", self.opts[6].get_value())
         self.config_ini_manager.set_boolean_option("websearch.show_url_column", self.opts[7].get_value())
         self.config_ini_manager.set_boolean_option("websearch.show_vars_column", self.opts[8].get_value())
+        self.config_ini_manager.set_boolean_option("websearch.show_user_data_icon", self.opts[9].get_value())
         self.config_ini_manager.save()
 
     def save_update_options(self, obj):
@@ -1196,4 +1220,5 @@ class WebSearch(Gramplet):
         self._url_prefix_replacement = self.config_ini_manager.get_string("websearch.url_prefix_replacement", DEFAULT_URL_PREFIX_REPLACEMENT)
         self._show_url_column = self.config_ini_manager.get_boolean_option("websearch.show_url_column", DEFAULT_SHOW_URL_COLUMN)
         self._show_vars_column = self.config_ini_manager.get_boolean_option("websearch.show_vars_column", DEFAULT_SHOW_VARS_COLUMN)
+        self._show_user_data_icon = self.config_ini_manager.get_boolean_option("websearch.show_user_data_icon", DEFAULT_SHOW_USER_DATA_ICON)
         self._columns_order = self.config_ini_manager.get_list("websearch.columns_order", DEFAULT_COLUMNS_ORDER)

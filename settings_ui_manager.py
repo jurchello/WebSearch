@@ -93,6 +93,7 @@ class SettingsUIManager:
         self.add_string_option("websearch.openai_api_key", _("OpenAI API Key"))
         self.add_boolean_option("websearch.show_url_column", _("Display 'Website URL' Column"), DEFAULT_SHOW_URL_COLUMN)
         self.add_boolean_option("websearch.show_vars_column", _("Display 'Vars' Column"), DEFAULT_SHOW_VARS_COLUMN)
+        self.add_boolean_option("websearch.show_user_data_icon", _("Show User Data Icon"), DEFAULT_SHOW_USER_DATA_ICON)
 
         return self.opts
 

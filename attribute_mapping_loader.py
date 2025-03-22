@@ -2,7 +2,7 @@ import json
 import os
 import re
 import sys
-from constants import CONFIGS_DIR
+from constants import *
 
 class AttributeMappingLoader:
     """
@@ -13,7 +13,10 @@ class AttributeMappingLoader:
     """
 
     def __init__(self):
-        self.mapping_file = os.path.join(CONFIGS_DIR, "attribute_mapping.json")
+        if os.path.exists(USER_DATA_ATTRIBUTE_MAPPING_FILE_PATH):
+            self.mapping_file = USER_DATA_ATTRIBUTE_MAPPING_FILE_PATH
+        else:
+            self.mapping_file = DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH
         self.mappings = self.load_mappings()
 
     def load_mappings(self):

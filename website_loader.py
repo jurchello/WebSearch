@@ -39,7 +39,6 @@ class WebsiteLoader:
     - Maintains a list of skipped domains to avoid irrelevant suggestions.
     - Extracts domains and locales for AI-based recommendations.
     """
-    CSV_DIR = os.path.join(os.path.dirname(__file__), "assets", "csv")
 
     locales = set()
     domains = set()
@@ -47,9 +46,16 @@ class WebsiteLoader:
 
     @staticmethod
     def get_csv_files():
-        if not os.path.exists(WebsiteLoader.CSV_DIR):
-            return []
-        return [os.path.join(WebsiteLoader.CSV_DIR, f) for f in os.listdir(WebsiteLoader.CSV_DIR) if f.endswith(".csv")]
+        files = {}
+        if os.path.exists(CSV_DIR):
+            for f in os.listdir(CSV_DIR):
+                if f.endswith(".csv"):
+                    files[f] = os.path.join(CSV_DIR, f)
+        if os.path.exists(USER_DATA_CSV_DIR):
+            for f in os.listdir(USER_DATA_CSV_DIR):
+                if f.endswith(".csv"):
+                    files[f] = os.path.join(USER_DATA_CSV_DIR, f)
+        return list(files.values())
 
     @staticmethod
     def get_selected_csv_files(config_ini_manager):
@@ -122,6 +128,8 @@ class WebsiteLoader:
             if locale == "STATIC":
                 locale = COMMON_STATIC_SIGN
 
+            is_custom_file = selected_file_path.startswith(USER_DATA_CSV_DIR)
+
             with open(selected_file_path, "r", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
                 reader.fieldnames = [name.strip() if name else name for name in reader.fieldnames]
@@ -140,7 +148,7 @@ class WebsiteLoader:
                         print(f"⚠️ Some data are missing in: {selected_file_path}. A row is skipped: {row}", file=sys.stderr)
                         continue
 
-                    websites.append([nav_type, locale, title, is_enabled, url, comment])
+                    websites.append([nav_type, locale, title, is_enabled, url, comment, is_custom_file])
         return websites
 
     @classmethod

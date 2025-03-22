@@ -193,6 +193,23 @@ For details on how OpenAI is used, the costs associated with it, and what data i
 
 ### 3.2. attribute_mapping.json – Attribute Mapping Rules
 
+### 3.2.1. Where is attribute_mapping.json located
+
+📁 By default, the `attribute_mapping.json` file is loaded from the `configs/` directory inside the Gramplet.
+
+However, users can create their own custom `attribute_mapping.json` file and place it in a special directory that is preserved across updates and reinstallations. 
+For example, the file should be located in Ubuntu here: 
+
+```
+/home/<username>/.local/share/gramps/WebSearch/json/attribute_mapping.json
+```
+
+If a user-defined file exists in this location, it will automatically override the default version. This allows you to make personalized adjustments to how Gramps attributes are converted into WebSearch variables without risking loss during upgrades.
+
+This folder is created automatically when the WebSearch Gramplet is first launched.
+
+### 3.2.2. Attribute Mapping Rules
+
 The `attribute_mapping.json` file defines how attributes from Gramps **Navigation Types** are mapped to URL **Variables**. It ensures that specific fields (such as user-defined attributes) are correctly included in search queries.
 
 Each entry follows this structure:
@@ -465,12 +482,32 @@ This option hides all displayed links in the Gramplet, making the interface clea
 
 ![Settings](assets/img/csv.png)
 
+### 6.1. Default CSV Files
+
 The CSV files are loaded from the directory `assets/csv/` inside the Gramplet's directory. The filenames must end with `.csv`, and each file should follow the following format:
 The Gramplet will automatically load these files and display the URLs based on the active entity (Person, Place, Source, ...).
 
 **Is Enabled**: This column in the CSV file allows the user to enable or disable individual links without deleting them. This provides flexibility to manage which links are active while keeping all the available URLs in the file.
 
-### Enabling Files
+### 6.2. User-defined CSV files
+In addition to the built-in CSV files stored in the `assets/csv/` directory, the Gramplet supports custom user-defined CSV files stored in a special system-specific location that is safe from data loss during upgrades or reinstalls.
+
+🛡️ These user CSV files are never overwritten or deleted, making them the preferred location for your personalized links.
+For example, on Ubuntu, this folder is:
+
+```
+/home/<username>/.local/share/gramps/WebSearch
+```
+
+This folder is created automatically when the WebSearch Gramplet is first run, so you only need to place your .csv files there.
+
+If a CSV file with the same name exists in both the system and user directory, the Gramplet prioritizes the user's version and ignores the default one.
+
+To help you distinguish such links, a spreadsheet icon ![Settings](assets/icons/user-file.png) is displayed next to websites loaded from user-defined files.
+
+You can disable this icon in the settings via the “Show User Data Icon” option.
+
+### 6.3. Enabling Files
 You can select which CSV files to use by enabling or disabling them in the Gramplet's settings.
 
 ## 7. OpenAI Usage

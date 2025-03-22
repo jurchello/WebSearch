@@ -43,6 +43,7 @@ These enums and constants help standardize data representation and ensure consis
 
 import os
 from enum import Enum
+from gramps.gen.const import USER_DATA
 
 # --------------------------
 # ENUMS
@@ -181,6 +182,10 @@ UID_CSV_FILE_NAME = "uid-links.csv"
 CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
+CSV_DIR = os.path.join(ASSETS_DIR, "csv")
+USER_DATA_BASE_DIR = os.path.join(USER_DATA, "WebSearch")
+USER_DATA_CSV_DIR = os.path.join(USER_DATA_BASE_DIR, "csv")
+USER_DATA_JSON_DIR = os.path.join(USER_DATA_BASE_DIR, "json")
 
 INTERFACE_FILE_PATH = os.path.join(os.path.dirname(__file__), "interface.xml")
 CONFIG_FILE_PATH = os.path.join(CONFIGS_DIR, "config.ini")
@@ -192,7 +197,11 @@ SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(DATA_DIR, "skipped_domain_su
 ICON_VISITED_PATH = os.path.join(ASSETS_DIR, "icons", "emblem-default.png")
 ICON_SAVED_PATH = os.path.join(ASSETS_DIR, "icons", "media-floppy.png")
 ICON_UID_PATH = os.path.join(ASSETS_DIR, "icons", "uid.png")
+ICON_USER_DATA_PATH = os.path.join(ASSETS_DIR, "icons", "user-file.png")
 STYLE_CSS_PATH = os.path.join(ASSETS_DIR, "style.css")
+DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(CONFIGS_DIR, "attribute_mapping.json")
+USER_DATA_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(USER_DATA_JSON_DIR, "attribute_mapping.json")
+
 
 DEFAULT_CATEGORY_ICON = "gramps-gramplet"
 DEFAULT_SHOW_SHORT_URL = False
@@ -204,6 +213,7 @@ DEFAULT_MIDDLE_NAME_HANDLING = MiddleNameHandling.SEPARATE.value
 DEFAULT_ENABLED_FILES = [COMMON_CSV_FILE_NAME, UID_CSV_FILE_NAME, COMMON_STATIC_SIGN]
 DEFAULT_SHOW_URL_COLUMN = False
 DEFAULT_SHOW_VARS_COLUMN = False
+DEFAULT_SHOW_USER_DATA_ICON = False
 
 DEFAULT_COLUMNS_ORDER = ['icons', 'locale', 'vars', 'title', 'url', 'comment']
 
