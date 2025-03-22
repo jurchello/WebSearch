@@ -169,15 +169,14 @@ class SourceDataKeys(Enum):
 RIGHT_MOUSE_BUTTON = 3
 URL_SAFE_CHARS = ":/?&="
 
-COMMON_LOCALE_SIGN = "🌍"
 COMMON_UID_SIGN = ""
-COMMON_STATIC_SIGN = "📌"
 ICON_SIZE = 16
 UID_ICON_WIDTH = 32
 UID_ICON_HEIGHT = 12
 URL_PREFIXES_TO_TRIM = ["https://www.", "http://www.", "https://", "http://"]
 COMMON_CSV_FILE_NAME = "common-links.csv"
 UID_CSV_FILE_NAME = "uid-links.csv"
+STATIC_CSV_FILE_NAME = "static-links.csv"
 
 CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -200,6 +199,9 @@ ICON_VISITED_PATH = os.path.join(ICONS_DIR, "emblem-default.png")
 ICON_SAVED_PATH = os.path.join(ICONS_DIR, "media-floppy.png")
 ICON_UID_PATH = os.path.join(ICONS_DIR, "uid.png")
 ICON_USER_DATA_PATH = os.path.join(ICONS_DIR, "user-file.png")
+ICON_PIN_PATH = os.path.join(ICONS_DIR, "pin.png")
+ICON_EARTH_PATH = os.path.join(ICONS_DIR, "earth.png")
+
 STYLE_CSS_PATH = os.path.join(ASSETS_DIR, "style.css")
 DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(CONFIGS_DIR, "attribute_mapping.json")
 USER_DATA_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(USER_DATA_JSON_DIR, "attribute_mapping.json")
@@ -212,7 +214,7 @@ DEFAULT_URL_PREFIX_REPLACEMENT = ""
 DEFAULT_QUERY_PARAMETERS_REPLACEMENT = "..."
 DEFAULT_URL_COMPACTNESS_LEVEL = URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value
 DEFAULT_MIDDLE_NAME_HANDLING = MiddleNameHandling.SEPARATE.value
-DEFAULT_ENABLED_FILES = [COMMON_CSV_FILE_NAME, UID_CSV_FILE_NAME, COMMON_STATIC_SIGN]
+DEFAULT_ENABLED_FILES = [COMMON_CSV_FILE_NAME, UID_CSV_FILE_NAME, STATIC_CSV_FILE_NAME]
 DEFAULT_SHOW_URL_COLUMN = False
 DEFAULT_SHOW_VARS_COLUMN = False
 DEFAULT_SHOW_USER_DATA_ICON = False

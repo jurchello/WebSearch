@@ -121,13 +121,6 @@ class WebsiteLoader:
                 continue
 
             locale = os.path.splitext(os.path.basename(selected_file_path))[0].replace("-links", "").upper()
-            if locale == "COMMON":
-                locale = COMMON_LOCALE_SIGN
-            if locale == "UID":
-                locale = COMMON_UID_SIGN
-            if locale == "STATIC":
-                locale = COMMON_STATIC_SIGN
-
             is_custom_file = selected_file_path.startswith(USER_DATA_CSV_DIR)
 
             with open(selected_file_path, "r", encoding="utf-8") as csvfile:

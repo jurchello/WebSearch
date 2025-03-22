@@ -68,7 +68,7 @@ from gramps.gen.lib.placetype import PlaceType
 
 MODEL_SCHEMA = [
     ("icon_name", str),
-    ("locale", str),
+    ("locale_text", str),
     ("title", str),
     ("final_url", str),
     ("comment", str),
@@ -88,9 +88,9 @@ MODEL_SCHEMA = [
     ("vars_color", str),
     ("user_data_icon", GdkPixbuf.Pixbuf),
     ("user_data_icon_visible", bool),
-    ("flag_icon", GdkPixbuf.Pixbuf),
-    ("flag_icon_visible", bool),
-    ("locale_visible", bool)
+    ("locale_icon", GdkPixbuf.Pixbuf),
+    ("locale_icon_visible", bool),
+    ("locale_text_visible", bool)
 ]
 
 ModelColumns = IntEnum("ModelColumns", {name.upper(): idx for idx, (name, _) in enumerate(MODEL_SCHEMA)})
@@ -233,7 +233,7 @@ class WebSearch(Gramplet):
             if nav == nav_type and self.is_true(is_enabled):
                 try:
 
-                    if locale == COMMON_STATIC_SIGN:
+                    if locale == "COMMON":
                         final_url = url_pattern
                         formatted_url = url_pattern
                         uid_icon = None
@@ -267,7 +267,7 @@ class WebSearch(Gramplet):
                     visited_icon, visited_icon_visible = self.get_visited_icon_data(hash_value)
                     saved_icon, saved_icon_visible = self.get_saved_icon_data(hash_value)
                     user_data_icon, user_data_icon_visible = self.get_user_data_icon_data(is_custom)
-                    flag_icon, flag_icon_visible = self.get_flag_icon_data(locale)
+                    locale_icon, locale_icon_visible = self.get_locale_icon_data(locale)
 
                     replaced_vars_count = len(variables['replaced_variables'])
                     total_vars_count = len(variables['not_found_variables']) + len(variables['replaced_variables']) + len(variables['empty_variables'])
@@ -279,9 +279,13 @@ class WebSearch(Gramplet):
                     if replaced_vars_count != total_vars_count and replaced_vars_count == 0:
                         vars_color = "red"
 
+                    locale_text = locale
+                    if locale_text in ["COMMON", "UID", "STATIC"]:
+                        locale_text = ""
+
                     data_dict = {
                         "icon_name": icon_name,
-                        "locale": locale,
+                        "locale_text": locale_text,
                         "title": title,
                         "final_url": final_url,
                         "comment": comment,
@@ -301,9 +305,9 @@ class WebSearch(Gramplet):
                         "vars_color": vars_color,
                         "user_data_icon": user_data_icon,
                         "user_data_icon_visible": user_data_icon_visible,
-                        "flag_icon": flag_icon,
-                        "flag_icon_visible": flag_icon_visible,
-                        "locale_visible": not flag_icon_visible
+                        "locale_icon": locale_icon,
+                        "locale_icon_visible": locale_icon_visible,
+                        "locale_text_visible": not locale_icon_visible
                     }
 
                     self.model.append([data_dict[name] for name, _ in MODEL_SCHEMA])
@@ -311,27 +315,38 @@ class WebSearch(Gramplet):
                     print(f"❌ {locale}. KeyError in template variables: {url_pattern}. Missing key: {e}", file=sys.stderr)
                     pass
 
-    def get_flag_icon_data(self, locale_code):
+    def get_locale_icon_data(self, locale):
         from gi.repository import GdkPixbuf
 
-        flag_icon = None
-        flag_icon_visible = False
+        locale_icon = None
+        locale_icon_visible = False
 
-        if not locale_code or not self._show_flag_icons:
-            return flag_icon, flag_icon_visible
+        if locale == "COMMON":
+            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_EARTH_PATH, ICON_SIZE, ICON_SIZE)
+            locale_icon_visible = True
+            return locale_icon, locale_icon_visible
+        if locale == "STATIC":
+            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_PIN_PATH, ICON_SIZE, ICON_SIZE)
+            locale_icon_visible = True
+            return locale_icon, locale_icon_visible
+        if locale == "UID":
+            return locale_icon, locale_icon_visible
 
-        locale_code = locale_code.lower()
-        flag_filename = f"{locale_code}.png"
+        if not locale or not self._show_flag_icons:
+            return locale_icon, locale_icon_visible
+
+        locale = locale.lower()
+        flag_filename = f"{locale}.png"
         flag_path = os.path.join(FLAGS_DIR, flag_filename)
 
         if os.path.exists(flag_path):
             try:
-                flag_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(flag_path, 16, 12)
-                flag_icon_visible = True
+                locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(flag_path, ICON_SIZE, ICON_SIZE)
+                locale_icon_visible = True
             except Exception as e:
                 print(f"❌ Error loading flag icon '{flag_path}': {e}", file=sys.stderr)
 
-        return flag_icon, flag_icon_visible
+        return locale_icon, locale_icon_visible
 
     def get_user_data_icon_data(self, is_custom):
         user_data_icon = None
@@ -868,7 +883,7 @@ class WebSearch(Gramplet):
                 hide_all = self.builder.get_object("hide_all"),
             ),
             text_renderers = SimpleNamespace(
-                locale          = self.builder.get_object("locale_renderer"),
+                locale          = self.builder.get_object("locale_text_renderer"),
                 vars_replaced   = self.builder.get_object("vars_replaced_renderer"),
                 slash           = self.builder.get_object("slash_renderer"),
                 vars_total      = self.builder.get_object("vars_total_renderer"),
@@ -882,7 +897,7 @@ class WebSearch(Gramplet):
                 saved       = self.builder.get_object("saved_icon_renderer"),
                 uid         = self.builder.get_object("uid_icon_renderer"),
                 user_data   = self.builder.get_object("user_data_icon_renderer"),
-                flag_icon   = self.builder.get_object("flag_icon_renderer"),
+                locale      = self.builder.get_object("locale_icon_renderer"),
             ),
             columns = SimpleNamespace(
                 icons   = self.builder.get_object("icons_column"),
@@ -915,7 +930,7 @@ class WebSearch(Gramplet):
             column.set_reorderable(True)
 
         # Columns sorting
-        self.add_sorting(self.ui.columns.locale, ModelColumns.LOCALE.value)
+        self.add_sorting(self.ui.columns.locale, ModelColumns.LOCALE_TEXT.value)
         self.add_sorting(self.ui.columns.title, ModelColumns.TITLE.value)
         self.add_sorting(self.ui.columns.url, ModelColumns.FORMATTED_URL.value)
         self.add_sorting(self.ui.columns.comment, ModelColumns.COMMENT.value)
@@ -932,10 +947,10 @@ class WebSearch(Gramplet):
         self.ui.columns.vars.add_attribute(self.ui.text_renderers.vars_total, "text", ModelColumns.TOTAL_VARS_COUNT.value)
         self.ui.columns.vars.add_attribute(self.ui.text_renderers.vars_replaced, "foreground", ModelColumns.VARS_COLOR.value)
         self.ui.text_renderers.vars_total.set_property("foreground", "green")
-        self.ui.columns.locale.add_attribute(self.ui.text_renderers.locale, "text", ModelColumns.LOCALE.value)
-        self.ui.columns.locale.add_attribute(self.ui.text_renderers.locale, "visible", ModelColumns.LOCALE_VISIBLE.value)
-        self.ui.columns.locale.add_attribute(self.ui.icon_renderers.flag_icon, "pixbuf", ModelColumns.FLAG_ICON.value)
-        self.ui.columns.locale.add_attribute(self.ui.icon_renderers.flag_icon, "visible", ModelColumns.FLAG_ICON_VISIBLE.value)
+        self.ui.columns.locale.add_attribute(self.ui.text_renderers.locale, "text", ModelColumns.LOCALE_TEXT.value)
+        self.ui.columns.locale.add_attribute(self.ui.text_renderers.locale, "visible", ModelColumns.LOCALE_TEXT_VISIBLE.value)
+        self.ui.columns.locale.add_attribute(self.ui.icon_renderers.locale, "pixbuf", ModelColumns.LOCALE_ICON.value)
+        self.ui.columns.locale.add_attribute(self.ui.icon_renderers.locale, "visible", ModelColumns.LOCALE_ICON_VISIBLE.value)
         self.ui.columns.title.add_attribute(self.ui.text_renderers.title, "text", ModelColumns.TITLE.value)
         self.ui.columns.url.add_attribute(self.ui.icon_renderers.uid, "pixbuf", ModelColumns.UID_ICON.value)
         self.ui.columns.url.add_attribute(self.ui.icon_renderers.uid, "visible", ModelColumns.UID_VISIBLE.value)
