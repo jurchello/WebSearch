@@ -1269,7 +1269,10 @@ class WebSearch(Gramplet):
         pass
 
     def on_query_tooltip(self, widget, x, y, keyboard_mode, tooltip):
-        path_info = widget.get_path_at_pos(x, y)
+
+        bin_x, bin_y = widget.convert_widget_to_bin_window_coords(x, y)
+        path_info = widget.get_path_at_pos(bin_x, bin_y)
+
         if path_info:
             path, column, cell_x, cell_y = path_info
             tree_iter = self.model.get_iter(path)
