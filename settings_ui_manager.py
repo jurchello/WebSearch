@@ -95,6 +95,7 @@ class SettingsUIManager:
         self.add_boolean_option("websearch.show_vars_column", _("Display 'Vars' Column"), DEFAULT_SHOW_VARS_COLUMN)
         self.add_boolean_option("websearch.show_user_data_icon", _("Show User Data Icon"), DEFAULT_SHOW_USER_DATA_ICON)
         self.add_boolean_option("websearch.show_flag_icons", _("Show Flag Icons"), DEFAULT_SHOW_FLAG_ICONS)
+        self.add_boolean_option("websearch.show_attribute_links", _("Show Links From Attributes"), DEFAULT_SHOW_ATTRIBUTE_LINKS)
 
         return self.opts
 
@@ -122,26 +123,3 @@ class SettingsUIManager:
         value = self.config_ini_manager.get_string(config_key, default)
         opt = StringOption(label, value)
         self.opts.append(opt)
-
-    def print_settings(self):
-        """
-        Debugging method: Prints the current settings in a readable format.
-        This method is intended for developers to check configuration values
-        during development and troubleshooting. It is not used in normal operation.
-        """
-        print("\n=== SettingsUIManager Settings ===")
-        for opt in self.opts:
-            option_name = opt.get_label()
-            if isinstance(opt, BooleanListOption):
-                selected = opt.get_selected()
-                if len(selected) > 1:
-                    print(f"🟢 {option_name}: {selected}")
-                else:
-                    print(f"🟢 {option_name}: {bool(selected)}")
-            elif isinstance(opt, EnumeratedListOption):
-                current_value = opt.get_value()
-                print(f"🔵 {option_name}: {current_value}")
-            elif isinstance(opt, StringOption):
-                current_value = opt.get_value()
-                print(f"🟠 {option_name}: {current_value}")
-        print("========================\n")

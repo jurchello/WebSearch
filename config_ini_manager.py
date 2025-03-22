@@ -22,6 +22,7 @@ class ConfigINIManager:
         self.config.register("websearch.show_user_data_icon", DEFAULT_SHOW_USER_DATA_ICON)
         self.config.register("websearch.columns_order", DEFAULT_COLUMNS_ORDER)
         self.config.register("websearch.show_flag_icons", DEFAULT_SHOW_FLAG_ICONS)
+        self.config.register("websearch.show_attribute_links", DEFAULT_SHOW_ATTRIBUTE_LINKS)
         self.config.load()
 
     def get_boolean_option(self, key, default=True):
@@ -84,29 +85,3 @@ class ConfigINIManager:
             self.save()
         else:
             print(f"❌ ERROR: {key}: {type(values)}")
-
-    def print_config(self):
-        print("\n=== ConfigINIManager Settings ===")
-        config_keys = [
-            ("websearch.enabled_files", "🟢 Enable CSV Files"),
-            ("websearch.middle_name_handling", "🔵 Middle Name Handling"),
-            ("websearch.url_prefix_replacement", "🟠 URL Prefix Replacement"),
-            ("websearch.show_short_url", "🟢 Show Shortened URL"),
-            ("websearch.url_compactness_level", "🔵 URL Compactness Level"),
-            ("websearch.use_openai", "🟢 Use OpenAI"),
-            ("websearch.openai_api_key", "🟠 OpenAI API Key"),
-            ("websearch.show_url_column", "🟢 Display 'Website URL' Column"),
-            ("websearch.show_flag_icons", "🟢 Display 'Show Flag Icons"),
-            ("websearch.columns_order", "🟠 Columns Order")
-        ]
-        for key, label in config_keys:
-            value = self.config.get(key)
-            if isinstance(value, list):
-                print(f"{label}: {value if value else 'None'}")
-            elif isinstance(value, bool) or key in ["websearch.show_short_url", "websearch.use_openai"]:
-                print(f"{label}: {bool(value)}")
-            elif isinstance(value, str):
-                print(f"{label}: {value.strip() if value.strip() else 'None'}")
-            else:
-                print(f"{label}: {value}")
-        print("========================\n")

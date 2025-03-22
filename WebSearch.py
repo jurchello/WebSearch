@@ -49,6 +49,7 @@ from notification import Notification
 from signals import WebSearchSignalEmitter
 from url_formatter import UrlFormatter
 from attribute_mapping_loader import AttributeMappingLoader
+from attribute_links_loader import AttributeLinksLoader
 
 # GTK
 import gi
@@ -133,6 +134,7 @@ class WebSearch(Gramplet):
         self.make_directories()
         self.signal_emitter = WebSearchSignalEmitter()
         self.attribute_loader = AttributeMappingLoader()
+        self.attribute_links_loader = AttributeLinksLoader()
         self.config_ini_manager = ConfigINIManager()
         self.settings_ui_manager = SettingsUIManager(self.config_ini_manager)
         self.website_loader = WebsiteLoader()
@@ -224,6 +226,10 @@ class WebSearch(Gramplet):
         websites = self.website_loader.load_websites(self.config_ini_manager)
         obj_handle = obj.get_handle()
 
+        if self._show_attribute_links:
+            attr_links = self.attribute_links_loader.get_links_from_attributes(obj, nav_type)
+            websites += attr_links
+
         for nav, locale, title, is_enabled, url_pattern, comment, is_custom in websites:
 
             if (self.website_loader.has_string_in_file(f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH)
@@ -233,7 +239,7 @@ class WebSearch(Gramplet):
             if nav == nav_type and self.is_true(is_enabled):
                 try:
 
-                    if locale == "COMMON":
+                    if locale in ["COMMON", "ATTR"]:
                         final_url = url_pattern
                         formatted_url = url_pattern
                         uid_icon = None
@@ -328,6 +334,10 @@ class WebSearch(Gramplet):
             return locale_icon, locale_icon_visible
         if locale == "STATIC":
             locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_PIN_PATH, ICON_SIZE, ICON_SIZE)
+            locale_icon_visible = True
+            return locale_icon, locale_icon_visible
+        if locale == "ATTR":
+            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_CHAIN_PATH, ICON_SIZE, ICON_SIZE)
             locale_icon_visible = True
             return locale_icon, locale_icon_visible
         if locale == "UID":
@@ -1252,6 +1262,7 @@ class WebSearch(Gramplet):
         self.config_ini_manager.set_boolean_option("websearch.show_vars_column", self.opts[8].get_value())
         self.config_ini_manager.set_boolean_option("websearch.show_user_data_icon", self.opts[9].get_value())
         self.config_ini_manager.set_boolean_option("websearch.show_flag_icons", self.opts[10].get_value())
+        self.config_ini_manager.set_boolean_option("websearch.show_attribute_links", self.opts[11].get_value())
         self.config_ini_manager.save()
 
     def save_update_options(self, obj):
@@ -1273,4 +1284,5 @@ class WebSearch(Gramplet):
         self._show_vars_column = self.config_ini_manager.get_boolean_option("websearch.show_vars_column", DEFAULT_SHOW_VARS_COLUMN)
         self._show_user_data_icon = self.config_ini_manager.get_boolean_option("websearch.show_user_data_icon", DEFAULT_SHOW_USER_DATA_ICON)
         self._show_flag_icons = self.config_ini_manager.get_boolean_option("websearch.show_flag_icons", DEFAULT_SHOW_FLAG_ICONS)
+        self._show_attribute_links = self.config_ini_manager.get_boolean_option("websearch.show_attribute_links", DEFAULT_SHOW_ATTRIBUTE_LINKS)
         self._columns_order = self.config_ini_manager.get_list("websearch.columns_order", DEFAULT_COLUMNS_ORDER)

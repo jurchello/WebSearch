@@ -170,6 +170,7 @@ RIGHT_MOUSE_BUTTON = 3
 URL_SAFE_CHARS = ":/?&="
 
 COMMON_UID_SIGN = ""
+
 ICON_SIZE = 16
 UID_ICON_WIDTH = 32
 UID_ICON_HEIGHT = 12
@@ -201,6 +202,7 @@ ICON_UID_PATH = os.path.join(ICONS_DIR, "uid.png")
 ICON_USER_DATA_PATH = os.path.join(ICONS_DIR, "user-file.png")
 ICON_PIN_PATH = os.path.join(ICONS_DIR, "pin.png")
 ICON_EARTH_PATH = os.path.join(ICONS_DIR, "earth.png")
+ICON_CHAIN_PATH = os.path.join(ICONS_DIR, "chain.png")
 
 STYLE_CSS_PATH = os.path.join(ASSETS_DIR, "style.css")
 DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(CONFIGS_DIR, "attribute_mapping.json")
@@ -219,6 +221,7 @@ DEFAULT_SHOW_URL_COLUMN = False
 DEFAULT_SHOW_VARS_COLUMN = False
 DEFAULT_SHOW_USER_DATA_ICON = False
 DEFAULT_SHOW_FLAG_ICONS = True
+DEFAULT_SHOW_ATTRIBUTE_LINKS = False
 
 DEFAULT_COLUMNS_ORDER = ['icons', 'locale', 'vars', 'title', 'url', 'comment']
 
