@@ -251,7 +251,7 @@ class WebSearch(Gramplet):
             if nav == nav_type and self.is_true(is_enabled):
                 try:
 
-                    if locale in ["COMMON", "ATTR"]:
+                    if locale in ["STATIC", "ATTR"]:
                         final_url = url_pattern
                         formatted_url = url_pattern
                         uid_icon = None
@@ -262,6 +262,8 @@ class WebSearch(Gramplet):
                             "empty_variables": []
                         }
                         variables_json = json.dumps(variables)
+                        replaced_vars_count = 0
+                        total_vars_count = 0
                     else:
                         filtered_uids_data = self.attribute_loader.add_matching_variables_to_data(uids_data, url_pattern)
                         data = entity_data.copy()
