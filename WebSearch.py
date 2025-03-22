@@ -238,11 +238,12 @@ class WebSearch(Gramplet):
                         formatted_url = url_pattern
                         uid_icon = None
                         uid_visible = False
-                        variables_json = json.dumps({
+                        variables = {
                             "replaced_variables": [],
                             "not_found_variables": [],
                             "empty_variables": []
-                        })
+                        }
+                        variables_json = json.dumps(variables)
                     else:
                         filtered_uids_data = self.attribute_loader.add_matching_variables_to_data(uids_data, url_pattern)
                         data = entity_data.copy()
