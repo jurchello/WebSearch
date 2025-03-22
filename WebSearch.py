@@ -87,7 +87,10 @@ MODEL_SCHEMA = [
     ("total_vars_count", int),
     ("vars_color", str),
     ("user_data_icon", GdkPixbuf.Pixbuf),
-    ("user_data_icon_visible", bool)
+    ("user_data_icon_visible", bool),
+    ("flag_icon", GdkPixbuf.Pixbuf),
+    ("flag_icon_visible", bool),
+    ("locale_visible", bool)
 ]
 
 ModelColumns = IntEnum("ModelColumns", {name.upper(): idx for idx, (name, _) in enumerate(MODEL_SCHEMA)})
@@ -264,6 +267,7 @@ class WebSearch(Gramplet):
                     visited_icon, visited_icon_visible = self.get_visited_icon_data(hash_value)
                     saved_icon, saved_icon_visible = self.get_saved_icon_data(hash_value)
                     user_data_icon, user_data_icon_visible = self.get_user_data_icon_data(is_custom)
+                    flag_icon, flag_icon_visible = self.get_flag_icon_data(locale)
 
                     replaced_vars_count = len(variables['replaced_variables'])
                     total_vars_count = len(variables['not_found_variables']) + len(variables['replaced_variables']) + len(variables['empty_variables'])
@@ -296,13 +300,38 @@ class WebSearch(Gramplet):
                         "total_vars_count": total_vars_count,
                         "vars_color": vars_color,
                         "user_data_icon": user_data_icon,
-                        "user_data_icon_visible": user_data_icon_visible
+                        "user_data_icon_visible": user_data_icon_visible,
+                        "flag_icon": flag_icon,
+                        "flag_icon_visible": flag_icon_visible,
+                        "locale_visible": not flag_icon_visible
                     }
 
                     self.model.append([data_dict[name] for name, _ in MODEL_SCHEMA])
                 except KeyError as e:
                     print(f"❌ {locale}. KeyError in template variables: {url_pattern}. Missing key: {e}", file=sys.stderr)
                     pass
+
+    def get_flag_icon_data(self, locale_code):
+        from gi.repository import GdkPixbuf
+
+        flag_icon = None
+        flag_icon_visible = False
+
+        if not locale_code or not self._show_flag_icons:
+            return flag_icon, flag_icon_visible
+
+        locale_code = locale_code.lower()
+        flag_filename = f"{locale_code}.png"
+        flag_path = os.path.join(FLAGS_DIR, flag_filename)
+
+        if os.path.exists(flag_path):
+            try:
+                flag_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(flag_path, 16, 12)
+                flag_icon_visible = True
+            except Exception as e:
+                print(f"❌ Error loading flag icon '{flag_path}': {e}", file=sys.stderr)
+
+        return flag_icon, flag_icon_visible
 
     def get_user_data_icon_data(self, is_custom):
         user_data_icon = None
@@ -853,6 +882,7 @@ class WebSearch(Gramplet):
                 saved       = self.builder.get_object("saved_icon_renderer"),
                 uid         = self.builder.get_object("uid_icon_renderer"),
                 user_data   = self.builder.get_object("user_data_icon_renderer"),
+                flag_icon   = self.builder.get_object("flag_icon_renderer"),
             ),
             columns = SimpleNamespace(
                 icons   = self.builder.get_object("icons_column"),
@@ -868,6 +898,7 @@ class WebSearch(Gramplet):
         self.model = Gtk.ListStore(*MODEL_TYPES)
         self.ui.tree_view.set_model(self.model)
         self.ui.tree_view.set_has_tooltip(True)
+        self.ui.tree_view.set_fixed_height_mode(True)
 
         # Get selection object
         selection = self.ui.tree_view.get_selection()
@@ -902,6 +933,9 @@ class WebSearch(Gramplet):
         self.ui.columns.vars.add_attribute(self.ui.text_renderers.vars_replaced, "foreground", ModelColumns.VARS_COLOR.value)
         self.ui.text_renderers.vars_total.set_property("foreground", "green")
         self.ui.columns.locale.add_attribute(self.ui.text_renderers.locale, "text", ModelColumns.LOCALE.value)
+        self.ui.columns.locale.add_attribute(self.ui.text_renderers.locale, "visible", ModelColumns.LOCALE_VISIBLE.value)
+        self.ui.columns.locale.add_attribute(self.ui.icon_renderers.flag_icon, "pixbuf", ModelColumns.FLAG_ICON.value)
+        self.ui.columns.locale.add_attribute(self.ui.icon_renderers.flag_icon, "visible", ModelColumns.FLAG_ICON_VISIBLE.value)
         self.ui.columns.title.add_attribute(self.ui.text_renderers.title, "text", ModelColumns.TITLE.value)
         self.ui.columns.url.add_attribute(self.ui.icon_renderers.uid, "pixbuf", ModelColumns.UID_ICON.value)
         self.ui.columns.url.add_attribute(self.ui.icon_renderers.uid, "visible", ModelColumns.UID_VISIBLE.value)
@@ -953,7 +987,7 @@ class WebSearch(Gramplet):
         self.ui.columns.vars.set_visible(self._show_vars_column)
 
     def translate(self):
-        self.ui.columns.locale.set_title(_("Locale"))
+        self.ui.columns.locale.set_title("")
         self.ui.columns.vars.set_title(_("Vars"))
         self.ui.columns.title.set_title(_("Title"))
         self.ui.columns.url.set_title(_("Website URL"))
@@ -1201,6 +1235,7 @@ class WebSearch(Gramplet):
         self.config_ini_manager.set_boolean_option("websearch.show_url_column", self.opts[7].get_value())
         self.config_ini_manager.set_boolean_option("websearch.show_vars_column", self.opts[8].get_value())
         self.config_ini_manager.set_boolean_option("websearch.show_user_data_icon", self.opts[9].get_value())
+        self.config_ini_manager.set_boolean_option("websearch.show_flag_icons", self.opts[10].get_value())
         self.config_ini_manager.save()
 
     def save_update_options(self, obj):
@@ -1221,4 +1256,5 @@ class WebSearch(Gramplet):
         self._show_url_column = self.config_ini_manager.get_boolean_option("websearch.show_url_column", DEFAULT_SHOW_URL_COLUMN)
         self._show_vars_column = self.config_ini_manager.get_boolean_option("websearch.show_vars_column", DEFAULT_SHOW_VARS_COLUMN)
         self._show_user_data_icon = self.config_ini_manager.get_boolean_option("websearch.show_user_data_icon", DEFAULT_SHOW_USER_DATA_ICON)
+        self._show_flag_icons = self.config_ini_manager.get_boolean_option("websearch.show_flag_icons", DEFAULT_SHOW_FLAG_ICONS)
         self._columns_order = self.config_ini_manager.get_list("websearch.columns_order", DEFAULT_COLUMNS_ORDER)

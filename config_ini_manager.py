@@ -21,6 +21,7 @@ class ConfigINIManager:
         self.config.register("websearch.show_vars_column", DEFAULT_SHOW_VARS_COLUMN)
         self.config.register("websearch.show_user_data_icon", DEFAULT_SHOW_USER_DATA_ICON)
         self.config.register("websearch.columns_order", DEFAULT_COLUMNS_ORDER)
+        self.config.register("websearch.show_flag_icons", DEFAULT_SHOW_FLAG_ICONS)
         self.config.load()
 
     def get_boolean_option(self, key, default=True):
@@ -95,6 +96,7 @@ class ConfigINIManager:
             ("websearch.use_openai", "🟢 Use OpenAI"),
             ("websearch.openai_api_key", "🟠 OpenAI API Key"),
             ("websearch.show_url_column", "🟢 Display 'Website URL' Column"),
+            ("websearch.show_flag_icons", "🟢 Display 'Show Flag Icons"),
             ("websearch.columns_order", "🟠 Columns Order")
         ]
         for key, label in config_keys:

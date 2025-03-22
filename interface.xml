@@ -52,6 +52,11 @@
                                 <property name="resizable">True</property>
                                 <property name="sizing">autosize</property>
                                 <child>
+                                    <object class="GtkCellRendererPixbuf" id="flag_icon_renderer">
+                                        <property name="xalign">0.0</property>
+                                    </object>
+                                </child>
+                                <child>
                                     <object class="GtkCellRendererText" id="locale_renderer"/>
                                 </child>
                             </object>

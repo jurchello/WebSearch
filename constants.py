@@ -170,7 +170,7 @@ RIGHT_MOUSE_BUTTON = 3
 URL_SAFE_CHARS = ":/?&="
 
 COMMON_LOCALE_SIGN = "🌍"
-COMMON_UID_SIGN = "🆔"
+COMMON_UID_SIGN = ""
 COMMON_STATIC_SIGN = "📌"
 ICON_SIZE = 16
 UID_ICON_WIDTH = 32
@@ -183,6 +183,8 @@ CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
 CSV_DIR = os.path.join(ASSETS_DIR, "csv")
+ICONS_DIR = os.path.join(ASSETS_DIR, "icons")
+FLAGS_DIR = os.path.join(ICONS_DIR, "flags")
 USER_DATA_BASE_DIR = os.path.join(USER_DATA, "WebSearch")
 USER_DATA_CSV_DIR = os.path.join(USER_DATA_BASE_DIR, "csv")
 USER_DATA_JSON_DIR = os.path.join(USER_DATA_BASE_DIR, "json")
@@ -194,10 +196,10 @@ VISITED_HASH_FILE_PATH = os.path.join(DATA_DIR, "visited_links.txt")
 SAVED_HASH_FILE_PATH = os.path.join(DATA_DIR, "saved_links.txt")
 HIDDEN_HASH_FILE_PATH = os.path.join(DATA_DIR, "hidden_links.txt")
 SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(DATA_DIR, "skipped_domain_suggestions.txt")
-ICON_VISITED_PATH = os.path.join(ASSETS_DIR, "icons", "emblem-default.png")
-ICON_SAVED_PATH = os.path.join(ASSETS_DIR, "icons", "media-floppy.png")
-ICON_UID_PATH = os.path.join(ASSETS_DIR, "icons", "uid.png")
-ICON_USER_DATA_PATH = os.path.join(ASSETS_DIR, "icons", "user-file.png")
+ICON_VISITED_PATH = os.path.join(ICONS_DIR, "emblem-default.png")
+ICON_SAVED_PATH = os.path.join(ICONS_DIR, "media-floppy.png")
+ICON_UID_PATH = os.path.join(ICONS_DIR, "uid.png")
+ICON_USER_DATA_PATH = os.path.join(ICONS_DIR, "user-file.png")
 STYLE_CSS_PATH = os.path.join(ASSETS_DIR, "style.css")
 DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(CONFIGS_DIR, "attribute_mapping.json")
 USER_DATA_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(USER_DATA_JSON_DIR, "attribute_mapping.json")
@@ -214,6 +216,7 @@ DEFAULT_ENABLED_FILES = [COMMON_CSV_FILE_NAME, UID_CSV_FILE_NAME, COMMON_STATIC_
 DEFAULT_SHOW_URL_COLUMN = False
 DEFAULT_SHOW_VARS_COLUMN = False
 DEFAULT_SHOW_USER_DATA_ICON = False
+DEFAULT_SHOW_FLAG_ICONS = True
 
 DEFAULT_COLUMNS_ORDER = ['icons', 'locale', 'vars', 'title', 'url', 'comment']
 
