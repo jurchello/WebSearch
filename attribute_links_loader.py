@@ -2,15 +2,14 @@ import re
 from gramps.gen.lib.srcattrtype import SrcAttributeType
 from gramps.gen.lib import AttributeType
 
+
 class AttributeLinksLoader:
     """
     Extracts direct URLs from the attributes of a Gramps object.
     """
 
     def __init__(self):
-        self.url_regex = re.compile(
-            r"https?://[^\s]+"
-        )
+        self.url_regex = re.compile(r"https?://[^\s]+")
 
     def get_links_from_attributes(self, obj, nav_type):
         links = []
@@ -38,15 +37,9 @@ class AttributeLinksLoader:
                 comment = None
                 is_enabled = True
                 is_custom = True
-                links.append((
-                    nav_type,
-                    "ATTR",
-                    title,
-                    is_enabled,
-                    url,
-                    comment,
-                    is_custom
-                ))
+                links.append(
+                    (nav_type, "ATTR", title, is_enabled, url, comment, is_custom)
+                )
 
         return links
 

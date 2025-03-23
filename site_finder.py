@@ -26,7 +26,11 @@ import sys
 try:
     import openai
 except ImportError:
-    print("⚠ OpenAI module is missing. Install it using: `pip install openai`.", file=sys.stderr)
+    print(
+        "⚠ OpenAI module is missing. Install it using: `pip install openai`.",
+        file=sys.stderr,
+    )
+
 
 class SiteFinder:
     """
@@ -47,6 +51,7 @@ class SiteFinder:
     - find_sites(excluded_domains, locales, include_global):
         Sends a query to OpenAI and returns a JSON-formatted list of relevant genealogy websites.
     """
+
     def __init__(self, api_key):
         self.api_key = api_key
 
@@ -61,17 +66,21 @@ class SiteFinder:
             locale_text = "only globally used"
             locales_str = "none"
         else:
-            locale_text = "both regional and globally used" if include_global else "regional"
+            locale_text = (
+                "both regional and globally used" if include_global else "regional"
+            )
             locales_str = ", ".join(locales)
 
-        excluded_domains_str = ", ".join(excluded_domains) if excluded_domains else "none"
+        excluded_domains_str = (
+            ", ".join(excluded_domains) if excluded_domains else "none"
+        )
 
         user_message = (
             f"I am looking for additional genealogical research websites for {locale_text} resources. "
             f"Relevant locales: {locales_str}. "
             f"Exclude the following domains: {excluded_domains_str}. "
             "Provide exactly 10 relevant websites formatted as a JSON array of objects with keys 'domain' and 'url'. "
-            "Example response: [{'{\"domain\": \"example.com\", \"url\": \"https://example.com\"}'}]. "
+            'Example response: [{\'{"domain": "example.com", "url": "https://example.com"}\'}]. '
             "If no relevant websites are found, return an empty array [] without any explanations."
         )
 
@@ -81,8 +90,8 @@ class SiteFinder:
                 model="gpt-4-turbo",
                 messages=[
                     {"role": "system", "content": system_message},
-                    {"role": "user", "content": user_message}
-                ]
+                    {"role": "user", "content": user_message},
+                ],
             )
         except Exception as e:
             print(f"❌ Unexpected error while calling OpenAI: {e}", file=sys.stderr)

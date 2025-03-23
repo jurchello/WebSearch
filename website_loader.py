@@ -27,6 +27,7 @@ import hashlib
 
 from constants import *
 
+
 class WebsiteLoader:
     """
     WebsiteLoader is responsible for managing genealogy-related websites stored in CSV files.
@@ -60,13 +61,17 @@ class WebsiteLoader:
     @staticmethod
     def get_selected_csv_files(config_ini_manager):
         csv_files = WebsiteLoader.get_csv_files()
-        selected_files = config_ini_manager.get_list("websearch.enabled_files", DEFAULT_ENABLED_FILES)
+        selected_files = config_ini_manager.get_list(
+            "websearch.enabled_files", DEFAULT_ENABLED_FILES
+        )
         return [file for file in csv_files if os.path.basename(file) in selected_files]
 
     @staticmethod
     def get_all_and_selected_files(config_ini_manager):
         all_files = [os.path.basename(f) for f in WebsiteLoader.get_csv_files()]
-        selected_files = config_ini_manager.get_list("websearch.enabled_files", DEFAULT_ENABLED_FILES)
+        selected_files = config_ini_manager.get_list(
+            "websearch.enabled_files", DEFAULT_ENABLED_FILES
+        )
         return all_files, selected_files
 
     @staticmethod
@@ -120,12 +125,18 @@ class WebsiteLoader:
             if not os.path.exists(selected_file_path):
                 continue
 
-            locale = os.path.splitext(os.path.basename(selected_file_path))[0].replace("-links", "").upper()
+            locale = (
+                os.path.splitext(os.path.basename(selected_file_path))[0]
+                .replace("-links", "")
+                .upper()
+            )
             is_custom_file = selected_file_path.startswith(USER_DATA_CSV_DIR)
 
             with open(selected_file_path, "r", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
-                reader.fieldnames = [name.strip() if name else name for name in reader.fieldnames]
+                reader.fieldnames = [
+                    name.strip() if name else name for name in reader.fieldnames
+                ]
 
                 for row in reader:
                     if not row:
@@ -138,10 +149,23 @@ class WebsiteLoader:
                     comment = row.get(CsvColumnNames.COMMENT.value, None)
 
                     if not all([nav_type, title, is_enabled, url]):
-                        print(f"⚠️ Some data are missing in: {selected_file_path}. A row is skipped: {row}", file=sys.stderr)
+                        print(
+                            f"⚠️ Some data are missing in: {selected_file_path}. A row is skipped: {row}",
+                            file=sys.stderr,
+                        )
                         continue
 
-                    websites.append([nav_type, locale, title, is_enabled, url, comment, is_custom_file])
+                    websites.append(
+                        [
+                            nav_type,
+                            locale,
+                            title,
+                            is_enabled,
+                            url,
+                            comment,
+                            is_custom_file,
+                        ]
+                    )
         return websites
 
     @classmethod
@@ -155,7 +179,11 @@ class WebsiteLoader:
             if not os.path.exists(selected_file_path):
                 continue
 
-            locale = os.path.splitext(os.path.basename(selected_file_path))[0].replace("-links", "").upper()
+            locale = (
+                os.path.splitext(os.path.basename(selected_file_path))[0]
+                .replace("-links", "")
+                .upper()
+            )
             if locale == "COMMON":
                 cls.include_global = True
             else:
@@ -163,7 +191,9 @@ class WebsiteLoader:
 
             with open(selected_file_path, "r", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
-                reader.fieldnames = [name.strip() if name else name for name in reader.fieldnames]
+                reader.fieldnames = [
+                    name.strip() if name else name for name in reader.fieldnames
+                ]
 
                 for row in reader:
                     if not row:

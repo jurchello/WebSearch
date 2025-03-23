@@ -3,6 +3,7 @@ from gramps.gen.config import config as configman
 from gramps.gen.const import GRAMPS_LOCALE as glocale
 from constants import *
 
+
 class ConfigINIManager:
     def __init__(self):
         self.config_file = CONFIG_FILE_PATH
@@ -11,18 +12,28 @@ class ConfigINIManager:
 
         self.config = configman.register_manager(os.path.join(CONFIGS_DIR, "config"))
         self.config.register("websearch.enabled_files", DEFAULT_ENABLED_FILES)
-        self.config.register("websearch.middle_name_handling", DEFAULT_MIDDLE_NAME_HANDLING)
-        self.config.register("websearch.url_prefix_replacement", DEFAULT_URL_PREFIX_REPLACEMENT)
+        self.config.register(
+            "websearch.middle_name_handling", DEFAULT_MIDDLE_NAME_HANDLING
+        )
+        self.config.register(
+            "websearch.url_prefix_replacement", DEFAULT_URL_PREFIX_REPLACEMENT
+        )
         self.config.register("websearch.show_short_url", DEFAULT_SHOW_SHORT_URL)
-        self.config.register("websearch.url_compactness_level", DEFAULT_URL_COMPACTNESS_LEVEL)
+        self.config.register(
+            "websearch.url_compactness_level", DEFAULT_URL_COMPACTNESS_LEVEL
+        )
         self.config.register("websearch.use_openai", DEFAULT_USE_OPEN_AI)
         self.config.register("websearch.openai_api_key", "")
         self.config.register("websearch.show_url_column", DEFAULT_SHOW_URL_COLUMN)
         self.config.register("websearch.show_vars_column", DEFAULT_SHOW_VARS_COLUMN)
-        self.config.register("websearch.show_user_data_icon", DEFAULT_SHOW_USER_DATA_ICON)
+        self.config.register(
+            "websearch.show_user_data_icon", DEFAULT_SHOW_USER_DATA_ICON
+        )
         self.config.register("websearch.columns_order", DEFAULT_COLUMNS_ORDER)
         self.config.register("websearch.show_flag_icons", DEFAULT_SHOW_FLAG_ICONS)
-        self.config.register("websearch.show_attribute_links", DEFAULT_SHOW_ATTRIBUTE_LINKS)
+        self.config.register(
+            "websearch.show_attribute_links", DEFAULT_SHOW_ATTRIBUTE_LINKS
+        )
         self.config.load()
 
     def get_boolean_option(self, key, default=True):
@@ -30,7 +41,7 @@ class ConfigINIManager:
         if value is None:
             return default
         if isinstance(value, str):
-            return value.lower() == 'true'
+            return value.lower() == "true"
         return bool(value)
 
     def get_enum(self, key, enum_class, default):
@@ -50,7 +61,7 @@ class ConfigINIManager:
 
     def set_boolean_option(self, key, value):
         if isinstance(value, str):
-            value = value.lower() == 'true'
+            value = value.lower() == "true"
         self.config.set(key, bool(value))
         self.save()
 

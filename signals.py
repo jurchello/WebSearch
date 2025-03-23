@@ -21,8 +21,10 @@
 # ----------------------------------------------------------------------------
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import GObject
+
 
 class WebSearchSignalEmitter(GObject.GObject):
     """
@@ -44,9 +46,8 @@ class WebSearchSignalEmitter(GObject.GObject):
     Signals:
     - "sites-fetched": Emitted when a site-fetching operation completes, passing the results as an object.
     """
-    __gsignals__ = {
-        "sites-fetched": (GObject.SignalFlags.RUN_FIRST, None, (object,))
-    }
+
+    __gsignals__ = {"sites-fetched": (GObject.SignalFlags.RUN_FIRST, None, (object,))}
 
     def __init__(self):
         GObject.GObject.__init__(self)

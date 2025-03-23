@@ -4,6 +4,7 @@ import re
 import sys
 from constants import *
 
+
 class AttributeMappingLoader:
     """
     AttributeMappingLoader loads and processes attribute mappings from a JSON file.
@@ -36,14 +37,19 @@ class AttributeMappingLoader:
                 attr_value = attribute.get_value()
 
                 for mapping in self.mappings:
-                    if mapping["nav_type"].lower() == nav_type.lower() and attr_name.lower() == mapping["attribute_name"].lower():
-                        uids_data.append({
-                            "nav_type": mapping["nav_type"],
-                            "attribute_name": mapping["attribute_name"],
-                            "url_regex": mapping["url_regex"],
-                            "variable_name": mapping["variable_name"],
-                            "value": attr_value
-                        })
+                    if (
+                        mapping["nav_type"].lower() == nav_type.lower()
+                        and attr_name.lower() == mapping["attribute_name"].lower()
+                    ):
+                        uids_data.append(
+                            {
+                                "nav_type": mapping["nav_type"],
+                                "attribute_name": mapping["attribute_name"],
+                                "url_regex": mapping["url_regex"],
+                                "variable_name": mapping["variable_name"],
+                                "value": attr_value,
+                            }
+                        )
         except Exception as e:
             print(f"❌ Error processing {nav_type} attributes: {e}", file=sys.stderr)
 

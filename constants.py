@@ -49,10 +49,12 @@ from gramps.gen.const import USER_DATA
 # ENUMS
 # --------------------------
 
+
 class MiddleNameHandling(Enum):
     LEAVE_ALONE = "leave alone"
     SEPARATE = "separate"
     REMOVE = "remove"
+
 
 class SupportedNavTypes(Enum):
     PEOPLE = "People"
@@ -62,6 +64,7 @@ class SupportedNavTypes(Enum):
     EVENTS = "Events"
     CITATIONS = "Citations"
     MEDIA = "Media"
+
 
 class PersonDataKeys(Enum):
     GIVEN = "given"
@@ -83,6 +86,7 @@ class PersonDataKeys(Enum):
     DEATH_ROOT_PLACE = "death_root_place"
 
     SYSTEM_LOCALE = "locale"
+
 
 class FamilyDataKeys(Enum):
     FATHER_GIVEN = "father_given"
@@ -139,6 +143,7 @@ class FamilyDataKeys(Enum):
 
     SYSTEM_LOCALE = "locale"
 
+
 class CsvColumnNames(Enum):
     NAV_TYPE = "Navigation type"
     TITLE = "Title"
@@ -146,11 +151,13 @@ class CsvColumnNames(Enum):
     URL = "URL"
     COMMENT = "Comment"
 
+
 class URLCompactnessLevel(Enum):
     SHORTEST = "shortest"
     COMPACT_NO_ATTRIBUTES = "compact_no_attributes"
     COMPACT_WITH_ATTRIBUTES = "compact_with_attributes"
     LONG = "long"
+
 
 class PlaceDataKeys(Enum):
     PLACE = "place"
@@ -161,9 +168,11 @@ class PlaceDataKeys(Enum):
     TITLE = "title"
     SYSTEM_LOCALE = "locale"
 
+
 class SourceDataKeys(Enum):
     TITLE = "source_title"
     SYSTEM_LOCALE = "locale"
+
 
 # --------------------------
 # CONSTANTS
@@ -198,7 +207,9 @@ ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(CONFIGS_DIR, "attribute_mapping.json"
 VISITED_HASH_FILE_PATH = os.path.join(DATA_DIR, "visited_links.txt")
 SAVED_HASH_FILE_PATH = os.path.join(DATA_DIR, "saved_links.txt")
 HIDDEN_HASH_FILE_PATH = os.path.join(DATA_DIR, "hidden_links.txt")
-SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(DATA_DIR, "skipped_domain_suggestions.txt")
+SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(
+    DATA_DIR, "skipped_domain_suggestions.txt"
+)
 ICON_VISITED_PATH = os.path.join(ICONS_DIR, "emblem-default.png")
 ICON_SAVED_PATH = os.path.join(ICONS_DIR, "media-floppy.png")
 ICON_UID_PATH = os.path.join(ICONS_DIR, "uid.png")
@@ -208,8 +219,12 @@ ICON_EARTH_PATH = os.path.join(ICONS_DIR, "earth.png")
 ICON_CHAIN_PATH = os.path.join(ICONS_DIR, "chain.png")
 
 STYLE_CSS_PATH = os.path.join(ASSETS_DIR, "style.css")
-DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(CONFIGS_DIR, "attribute_mapping.json")
-USER_DATA_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(USER_DATA_JSON_DIR, "attribute_mapping.json")
+DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(
+    CONFIGS_DIR, "attribute_mapping.json"
+)
+USER_DATA_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(
+    USER_DATA_JSON_DIR, "attribute_mapping.json"
+)
 
 
 DEFAULT_CATEGORY_ICON = "gramps-gramplet"
@@ -226,7 +241,7 @@ DEFAULT_SHOW_USER_DATA_ICON = False
 DEFAULT_SHOW_FLAG_ICONS = True
 DEFAULT_SHOW_ATTRIBUTE_LINKS = False
 
-DEFAULT_COLUMNS_ORDER = ['icons', 'locale', 'vars', 'title', 'url', 'comment']
+DEFAULT_COLUMNS_ORDER = ["icons", "locale", "vars", "title", "url", "comment"]
 
 CATEGORY_ICON = {
     "Dashboard": "gramps-gramplet",

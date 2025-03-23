@@ -21,8 +21,10 @@
 # ----------------------------------------------------------------------------
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GObject, Pango
+
 
 class Notification(Gtk.Window):
     """
@@ -43,6 +45,7 @@ class Notification(Gtk.Window):
     - close_window(): Closes the notification window after a timeout.
     - apply_css(): Applies custom CSS for transparency and styling.
     """
+
     def __init__(self, message):
         super().__init__()
 
@@ -92,13 +95,17 @@ class Notification(Gtk.Window):
 
     def apply_css(self):
         css_provider = Gtk.CssProvider()
-        css_provider.load_from_data(b"""
+        css_provider.load_from_data(
+            b"""
             #TransparentWindow {
                 background-color: rgba(0, 0, 0, 0.7);
                 border-radius: 10px;
                 padding: 10px;
             }
-        """)
+        """
+        )
         context = Gtk.StyleContext()
         screen = Gdk.Screen.get_default()
-        context.add_provider_for_screen(screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        context.add_provider_for_screen(
+            screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+        )

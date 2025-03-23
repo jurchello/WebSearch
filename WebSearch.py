@@ -20,9 +20,9 @@
 
 # ----------------------------------------------------------------------------
 """
-    WebSearch - a Gramplet for searching genealogical websites
-    Allows searching for genealogical resources based on the active person's, place's, or source's data.
-    Integrates multiple regional websites into a single sidebar tool with customizable URL templates.
+WebSearch - a Gramplet for searching genealogical websites
+Allows searching for genealogical resources based on the active person's, place's, or source's data.
+Integrates multiple regional websites into a single sidebar tool with customizable URL templates.
 """
 # Standard Python libraries
 import os
@@ -53,6 +53,7 @@ from attribute_links_loader import AttributeLinksLoader
 
 # GTK
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, Pango
 
@@ -91,10 +92,12 @@ MODEL_SCHEMA = [
     ("user_data_icon_visible", bool),
     ("locale_icon", GdkPixbuf.Pixbuf),
     ("locale_icon_visible", bool),
-    ("locale_text_visible", bool)
+    ("locale_text_visible", bool),
 ]
 
-ModelColumns = IntEnum("ModelColumns", {name.upper(): idx for idx, (name, _) in enumerate(MODEL_SCHEMA)})
+ModelColumns = IntEnum(
+    "ModelColumns", {name.upper(): idx for idx, (name, _) in enumerate(MODEL_SCHEMA)}
+)
 MODEL_TYPES = [type_ for _, type_ in MODEL_SCHEMA]
 
 try:
@@ -102,6 +105,7 @@ try:
 except ValueError:
     _trans = glocale.translation
 _ = _trans.gettext
+
 
 class WebSearch(Gramplet):
     """
@@ -116,9 +120,8 @@ class WebSearch(Gramplet):
     - Allows users to add links as notes or attributes in Gramps.
     - Provides a graphical interface using GTK.
     """
-    __gsignals__ = {
-        "sites-fetched": (GObject.SignalFlags.RUN_FIRST, None, (object,))
-    }
+
+    __gsignals__ = {"sites-fetched": (GObject.SignalFlags.RUN_FIRST, None, (object,))}
 
     def __init__(self, gui):
         self._context = SimpleNamespace(
@@ -127,9 +130,13 @@ class WebSearch(Gramplet):
             place=None,
             source=None,
             active_url=None,
-            active_tree_path=None
+            active_tree_path=None,
         )
-        self.system_locale = glocale.language[0] if isinstance(glocale.language, list) else glocale.language
+        self.system_locale = (
+            glocale.language[0]
+            if isinstance(glocale.language, list)
+            else glocale.language
+        )
         self.gui = gui
         self.make_directories()
         self.signal_emitter = WebSearchSignalEmitter()
@@ -151,7 +158,9 @@ class WebSearch(Gramplet):
 
     def post_init(self):
         self.signal_emitter.connect("sites-fetched", self.on_sites_fetched)
-        locales, domains, include_global = self.website_loader.get_domains_data(self.config_ini_manager)
+        locales, domains, include_global = self.website_loader.get_domains_data(
+            self.config_ini_manager
+        )
         if not self._use_openai:
             self.toggle_badges_visibility()
             return
@@ -163,7 +172,7 @@ class WebSearch(Gramplet):
         threading.Thread(
             target=self.fetch_sites_in_background,
             args=(domains, locales, include_global),
-            daemon=True
+            daemon=True,
         ).start()
 
     def make_directories(self):
@@ -175,7 +184,9 @@ class WebSearch(Gramplet):
         skipped_domains = self.website_loader.load_skipped_domains()
         all_excluded_domains = csv_domains.union(skipped_domains)
         try:
-            results = self.finder.find_sites(all_excluded_domains, locales, include_global)
+            results = self.finder.find_sites(
+                all_excluded_domains, locales, include_global
+            )
             GObject.idle_add(self.signal_emitter.emit, "sites-fetched", results)
         except Exception as e:
             print(f"❌ Error fetching sites: {e}", file=sys.stderr)
@@ -189,7 +200,8 @@ class WebSearch(Gramplet):
                     return
                 domain_url_pairs = [
                     (site.get("domain", "").strip(), site.get("url", "").strip())
-                    for site in sites if site.get("domain") and site.get("url")
+                    for site in sites
+                    if site.get("domain") and site.get("url")
                 ]
                 if domain_url_pairs:
                     self.populate_badges(domain_url_pairs)
@@ -239,13 +251,18 @@ class WebSearch(Gramplet):
         obj_handle = obj.get_handle()
 
         if self._show_attribute_links:
-            attr_links = self.attribute_links_loader.get_links_from_attributes(obj, nav_type)
+            attr_links = self.attribute_links_loader.get_links_from_attributes(
+                obj, nav_type
+            )
             websites += attr_links
 
         for nav, locale, title, is_enabled, url_pattern, comment, is_custom in websites:
 
-            if (self.website_loader.has_string_in_file(f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH)
-            or self.website_loader.has_string_in_file(f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH)):
+            if self.website_loader.has_string_in_file(
+                f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH
+            ) or self.website_loader.has_string_in_file(
+                f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH
+            ):
                 continue
 
             if nav == nav_type and self.is_true(is_enabled):
@@ -259,45 +276,73 @@ class WebSearch(Gramplet):
                         variables = {
                             "replaced_variables": [],
                             "not_found_variables": [],
-                            "empty_variables": []
+                            "empty_variables": [],
                         }
                         variables_json = json.dumps(variables)
                         replaced_vars_count = 0
                         total_vars_count = 0
                     else:
-                        filtered_uids_data = self.attribute_loader.add_matching_variables_to_data(uids_data, url_pattern)
+                        filtered_uids_data = (
+                            self.attribute_loader.add_matching_variables_to_data(
+                                uids_data, url_pattern
+                            )
+                        )
                         data = entity_data.copy()
                         data.update(filtered_uids_data)
 
-                        variables = self.url_formatter.check_pattern_variables(url_pattern, data)
+                        variables = self.url_formatter.check_pattern_variables(
+                            url_pattern, data
+                        )
                         variables_json = json.dumps(variables)
 
                         if len(variables["not_found_variables"]):
-                            print(f"Locale: {locale}.\n"
-                                  f"Pattern: {url_pattern}.\n"
-                                  f"Replaced variables: {variables['replaced_variables']}.\n"
-                                  f"Not found variables: {variables['not_found_variables']}.\n"
-                                  f"Empty variables: {variables['empty_variables']}.\n"
-                                  f"Data: {data}.")
+                            print(
+                                f"Locale: {locale}.\n"
+                                f"Pattern: {url_pattern}.\n"
+                                f"Replaced variables: {variables['replaced_variables']}.\n"
+                                f"Not found variables: {variables['not_found_variables']}.\n"
+                                f"Empty variables: {variables['empty_variables']}.\n"
+                                f"Data: {data}."
+                            )
                         final_url = url_pattern % data
                         formatted_url = self.url_formatter.format(final_url, variables)
-                        uid_icon, uid_visible = self.get_uid_icon_data(variables['replaced_variables'], filtered_uids_data)
+                        uid_icon, uid_visible = self.get_uid_icon_data(
+                            variables["replaced_variables"], filtered_uids_data
+                        )
 
                     icon_name = CATEGORY_ICON.get(nav_type, DEFAULT_CATEGORY_ICON)
-                    hash_value = self.website_loader.generate_hash(f"{final_url}|{obj_handle}")
-                    visited_icon, visited_icon_visible = self.get_visited_icon_data(hash_value)
-                    saved_icon, saved_icon_visible = self.get_saved_icon_data(hash_value)
-                    user_data_icon, user_data_icon_visible = self.get_user_data_icon_data(is_custom)
+                    hash_value = self.website_loader.generate_hash(
+                        f"{final_url}|{obj_handle}"
+                    )
+                    visited_icon, visited_icon_visible = self.get_visited_icon_data(
+                        hash_value
+                    )
+                    saved_icon, saved_icon_visible = self.get_saved_icon_data(
+                        hash_value
+                    )
+                    user_data_icon, user_data_icon_visible = (
+                        self.get_user_data_icon_data(is_custom)
+                    )
                     locale_icon, locale_icon_visible = self.get_locale_icon_data(locale)
 
-                    replaced_vars_count = len(variables['replaced_variables'])
-                    total_vars_count = len(variables['not_found_variables']) + len(variables['replaced_variables']) + len(variables['empty_variables'])
+                    replaced_vars_count = len(variables["replaced_variables"])
+                    total_vars_count = (
+                        len(variables["not_found_variables"])
+                        + len(variables["replaced_variables"])
+                        + len(variables["empty_variables"])
+                    )
 
                     if replaced_vars_count == total_vars_count:
                         vars_color = "green"
-                    if replaced_vars_count != total_vars_count and replaced_vars_count != 0:
+                    if (
+                        replaced_vars_count != total_vars_count
+                        and replaced_vars_count != 0
+                    ):
                         vars_color = "orange"
-                    if replaced_vars_count != total_vars_count and replaced_vars_count == 0:
+                    if (
+                        replaced_vars_count != total_vars_count
+                        and replaced_vars_count == 0
+                    ):
                         vars_color = "red"
 
                     locale_text = locale
@@ -328,12 +373,15 @@ class WebSearch(Gramplet):
                         "user_data_icon_visible": user_data_icon_visible,
                         "locale_icon": locale_icon,
                         "locale_icon_visible": locale_icon_visible,
-                        "locale_text_visible": not locale_icon_visible
+                        "locale_text_visible": not locale_icon_visible,
                     }
 
                     self.model.append([data_dict[name] for name, _ in MODEL_SCHEMA])
                 except KeyError as e:
-                    print(f"❌ {locale}. KeyError in template variables: {url_pattern}. Missing key: {e}", file=sys.stderr)
+                    print(
+                        f"❌ {locale}. KeyError in template variables: {url_pattern}. Missing key: {e}",
+                        file=sys.stderr,
+                    )
                     pass
 
     def get_locale_icon_data(self, locale):
@@ -343,15 +391,21 @@ class WebSearch(Gramplet):
         locale_icon_visible = False
 
         if locale == "COMMON":
-            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_EARTH_PATH, ICON_SIZE, ICON_SIZE)
+            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                ICON_EARTH_PATH, ICON_SIZE, ICON_SIZE
+            )
             locale_icon_visible = True
             return locale_icon, locale_icon_visible
         if locale == "STATIC":
-            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_PIN_PATH, ICON_SIZE, ICON_SIZE)
+            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                ICON_PIN_PATH, ICON_SIZE, ICON_SIZE
+            )
             locale_icon_visible = True
             return locale_icon, locale_icon_visible
         if locale == "ATTR":
-            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_CHAIN_PATH, ICON_SIZE, ICON_SIZE)
+            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                ICON_CHAIN_PATH, ICON_SIZE, ICON_SIZE
+            )
             locale_icon_visible = True
             return locale_icon, locale_icon_visible
         if locale == "UID":
@@ -366,7 +420,9 @@ class WebSearch(Gramplet):
 
         if os.path.exists(flag_path):
             try:
-                locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(flag_path, ICON_SIZE, ICON_SIZE)
+                locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                    flag_path, ICON_SIZE, ICON_SIZE
+                )
                 locale_icon_visible = True
             except Exception as e:
                 print(f"❌ Error loading flag icon '{flag_path}': {e}", file=sys.stderr)
@@ -382,7 +438,9 @@ class WebSearch(Gramplet):
 
         if is_custom:
             try:
-                user_data_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_USER_DATA_PATH, ICON_SIZE, ICON_SIZE)
+                user_data_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                    ICON_USER_DATA_PATH, ICON_SIZE, ICON_SIZE
+                )
                 user_data_icon_visible = True
             except Exception as e:
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
@@ -393,7 +451,9 @@ class WebSearch(Gramplet):
         visited_icon_visible = False
         if self.website_loader.has_hash_in_file(hash_value, VISITED_HASH_FILE_PATH):
             try:
-                visited_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_VISITED_PATH, ICON_SIZE, ICON_SIZE)
+                visited_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                    ICON_VISITED_PATH, ICON_SIZE, ICON_SIZE
+                )
                 visited_icon_visible = True
             except Exception as e:
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
@@ -404,7 +464,9 @@ class WebSearch(Gramplet):
         saved_icon_visible = False
         if self.website_loader.has_hash_in_file(hash_value, SAVED_HASH_FILE_PATH):
             try:
-                saved_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_SAVED_PATH, ICON_SIZE, ICON_SIZE)
+                saved_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                    ICON_SAVED_PATH, ICON_SIZE, ICON_SIZE
+                )
                 saved_icon_visible = True
             except Exception as e:
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
@@ -417,7 +479,9 @@ class WebSearch(Gramplet):
         try:
             replaced_vars_set = {list(var.keys())[0] for var in replaced_variables}
             if any(var in replaced_vars_set for var in filtered_uids_data.keys()):
-                uid_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT)
+                uid_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                    ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT
+                )
                 uid_visible = True
         except Exception as e:
             print(f"❌ Error loading UID icon: {e}", file=sys.stderr)
@@ -428,17 +492,27 @@ class WebSearch(Gramplet):
         tree_iter = self.model.get_iter(path)
         url = self.model.get_value(tree_iter, ModelColumns.FINAL_URL.value)
         encoded_url = urllib.parse.quote(url, safe=URL_SAFE_CHARS)
-        self.add_icon_event(VISITED_HASH_FILE_PATH, ICON_VISITED_PATH, tree_iter, ModelColumns.VISITED_ICON.value, ModelColumns.VISITED_ICON_VISIBLE.value)
+        self.add_icon_event(
+            VISITED_HASH_FILE_PATH,
+            ICON_VISITED_PATH,
+            tree_iter,
+            ModelColumns.VISITED_ICON.value,
+            ModelColumns.VISITED_ICON_VISIBLE.value,
+        )
         display_url(encoded_url)
 
-    def add_icon_event(self, file_path, icon_path, tree_iter, model_icon_pos, model_visibility_pos):
+    def add_icon_event(
+        self, file_path, icon_path, tree_iter, model_icon_pos, model_visibility_pos
+    ):
         url = self.model.get_value(tree_iter, ModelColumns.FINAL_URL.value)
         obj_handle = self.model.get_value(tree_iter, ModelColumns.OBJ_HANDLE.value)
         hash_value = self.website_loader.generate_hash(f"{url}|{obj_handle}")
         if not self.website_loader.has_hash_in_file(hash_value, file_path):
             self.website_loader.save_hash_to_file(hash_value, file_path)
             try:
-                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(icon_path, ICON_SIZE, ICON_SIZE)
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                    icon_path, ICON_SIZE, ICON_SIZE
+                )
                 self.model.set_value(tree_iter, model_icon_pos, pixbuf)
                 self.model.set_value(tree_iter, model_visibility_pos, True)
                 self.ui.columns.icons.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
@@ -456,9 +530,11 @@ class WebSearch(Gramplet):
             return
 
         person_data, uids_data = self.get_person_data(person)
-        self.populate_links(person_data, uids_data, SupportedNavTypes.PEOPLE.value, person)
+        self.populate_links(
+            person_data, uids_data, SupportedNavTypes.PEOPLE.value, person
+        )
         self.update()
-        
+
     def active_event_changed(self, handle):
         self.close_context_menu()
 
@@ -469,7 +545,7 @@ class WebSearch(Gramplet):
 
         self.populate_links({}, {}, SupportedNavTypes.EVENTS.value, event)
         self.update()
-        
+
     def active_citation_changed(self, handle):
         self.close_context_menu()
 
@@ -480,7 +556,7 @@ class WebSearch(Gramplet):
 
         self.populate_links({}, {}, SupportedNavTypes.CITATIONS.value, citation)
         self.update()
-        
+
     def active_media_changed(self, handle):
         self.close_context_menu()
 
@@ -490,7 +566,7 @@ class WebSearch(Gramplet):
             return
 
         self.populate_links({}, {}, SupportedNavTypes.MEDIA.value, media)
-        self.update()  
+        self.update()
 
     def close_context_menu(self):
         if self.ui.context_menu and self.ui.context_menu.get_visible():
@@ -533,13 +609,19 @@ class WebSearch(Gramplet):
         try:
             name = person.get_primary_name().get_first_name().strip()
             middle_name_handling = self.config_ini_manager.get_enum(
-                "websearch.middle_name_handling", MiddleNameHandling, DEFAULT_MIDDLE_NAME_HANDLING
+                "websearch.middle_name_handling",
+                MiddleNameHandling,
+                DEFAULT_MIDDLE_NAME_HANDLING,
             )
 
             if middle_name_handling == MiddleNameHandling.SEPARATE.value:
-                given, middle = (name.split(" ", 1) + [None])[:2] if name else (None, None)
+                given, middle = (
+                    (name.split(" ", 1) + [None])[:2] if name else (None, None)
+                )
             elif middle_name_handling == MiddleNameHandling.REMOVE.value:
-                given, middle = (name.split(" ", 1) + [None])[:2] if name else (None, None)
+                given, middle = (
+                    (name.split(" ", 1) + [None])[:2] if name else (None, None)
+                )
                 middle = None
             elif middle_name_handling == MiddleNameHandling.LEAVE_ALONE.value:
                 given, middle = name, None
@@ -551,8 +633,20 @@ class WebSearch(Gramplet):
             print(traceback.format_exc(), file=sys.stderr)
             given, middle, surname = None, None, None
 
-        birth_year, birth_year_from, birth_year_to, birth_year_before, birth_year_after = self.get_birth_years(person)
-        death_year, death_year_from, death_year_to, death_year_before, death_year_after = self.get_death_years(person)
+        (
+            birth_year,
+            birth_year_from,
+            birth_year_to,
+            birth_year_before,
+            birth_year_after,
+        ) = self.get_birth_years(person)
+        (
+            death_year,
+            death_year_from,
+            death_year_to,
+            death_year_before,
+            death_year_after,
+        ) = self.get_death_years(person)
 
         person_data = {
             PersonDataKeys.GIVEN.value: given or "",
@@ -569,81 +663,175 @@ class WebSearch(Gramplet):
             PersonDataKeys.DEATH_YEAR_BEFORE.value: death_year_before or "",
             PersonDataKeys.DEATH_YEAR_AFTER.value: death_year_after or "",
             PersonDataKeys.BIRTH_PLACE.value: self.get_birth_place(person) or "",
-            PersonDataKeys.BIRTH_ROOT_PLACE.value: self.get_birth_root_place(person) or "",
+            PersonDataKeys.BIRTH_ROOT_PLACE.value: self.get_birth_root_place(person)
+            or "",
             PersonDataKeys.DEATH_PLACE.value: self.get_death_place(person) or "",
-            PersonDataKeys.DEATH_ROOT_PLACE.value: self.get_death_root_place(person) or "",
+            PersonDataKeys.DEATH_ROOT_PLACE.value: self.get_death_root_place(person)
+            or "",
             PersonDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
         }
 
-        uids_data = self.attribute_loader.get_attributes_for_nav_type('Person', person)
+        uids_data = self.attribute_loader.get_attributes_for_nav_type("Person", person)
 
         return person_data, uids_data
 
     def get_family_data(self, family):
-        father = self.dbstate.db.get_person_from_handle(family.get_father_handle()) if family.get_father_handle() else None
-        mother = self.dbstate.db.get_person_from_handle(family.get_mother_handle()) if family.get_mother_handle() else None
+        father = (
+            self.dbstate.db.get_person_from_handle(family.get_father_handle())
+            if family.get_father_handle()
+            else None
+        )
+        mother = (
+            self.dbstate.db.get_person_from_handle(family.get_mother_handle())
+            if family.get_mother_handle()
+            else None
+        )
 
         father_data, father_uids_data = self.get_person_data(father) if father else {}
         mother_data, mother_uids_data = self.get_person_data(mother) if mother else {}
 
-        marriage_year = marriage_year_from = marriage_year_to = marriage_year_before = marriage_year_after = ""
+        marriage_year = marriage_year_from = marriage_year_to = marriage_year_before = (
+            marriage_year_after
+        ) = ""
         marriage_place = marriage_root_place = None
 
-        divorce_year = divorce_year_from = divorce_year_to = divorce_year_before = divorce_year_after = ""
+        divorce_year = divorce_year_from = divorce_year_to = divorce_year_before = (
+            divorce_year_after
+        ) = ""
         divorce_place = divorce_root_place = None
 
         event_ref_list = family.get_event_ref_list()
         for event_ref in event_ref_list:
-            event = self.dbstate.db.get_event_from_handle(event_ref.get_reference_handle())
+            event = self.dbstate.db.get_event_from_handle(
+                event_ref.get_reference_handle()
+            )
             event_type = event.get_type()
             event_place = self.get_event_place(event)
             event_root_place = self.get_root_place_name(event_place)
             if event_type == EventType.MARRIAGE:
-                marriage_year, marriage_year_from, marriage_year_to, marriage_year_before, marriage_year_after = self.get_event_years(event)
+                (
+                    marriage_year,
+                    marriage_year_from,
+                    marriage_year_to,
+                    marriage_year_before,
+                    marriage_year_after,
+                ) = self.get_event_years(event)
                 marriage_place = self.get_place_name(event_place)
                 marriage_root_place = event_root_place
             if event_type == EventType.DIVORCE:
-                divorce_year, divorce_year_from, divorce_year_to, divorce_year_before, divorce_year_after = self.get_event_years(event)
+                (
+                    divorce_year,
+                    divorce_year_from,
+                    divorce_year_to,
+                    divorce_year_before,
+                    divorce_year_after,
+                ) = self.get_event_years(event)
                 divorce_place = self.get_place_name(event_place)
                 divorce_root_place = event_root_place
 
         family_data = {
-            FamilyDataKeys.FATHER_GIVEN.value: father_data.get(PersonDataKeys.GIVEN.value, ""),
-            FamilyDataKeys.FATHER_MIDDLE.value: father_data.get(PersonDataKeys.MIDDLE.value, ""),
-            FamilyDataKeys.FATHER_SURNAME.value: father_data.get(PersonDataKeys.SURNAME.value, ""),
-            FamilyDataKeys.FATHER_BIRTH_YEAR.value: father_data.get(PersonDataKeys.BIRTH_YEAR.value, ""),
-            FamilyDataKeys.FATHER_BIRTH_YEAR_FROM.value: father_data.get(PersonDataKeys.BIRTH_YEAR_FROM.value, ""),
-            FamilyDataKeys.FATHER_BIRTH_YEAR_TO.value: father_data.get(PersonDataKeys.BIRTH_YEAR_TO.value, ""),
-            FamilyDataKeys.FATHER_BIRTH_YEAR_BEFORE.value: father_data.get(PersonDataKeys.BIRTH_YEAR_BEFORE.value, ""),
-            FamilyDataKeys.FATHER_BIRTH_YEAR_AFTER.value: father_data.get(PersonDataKeys.BIRTH_YEAR_AFTER.value, ""),
-            FamilyDataKeys.FATHER_DEATH_YEAR.value: father_data.get(PersonDataKeys.DEATH_YEAR.value, ""),
-            FamilyDataKeys.FATHER_DEATH_YEAR_FROM.value: father_data.get(PersonDataKeys.DEATH_YEAR_FROM.value, ""),
-            FamilyDataKeys.FATHER_DEATH_YEAR_TO.value: father_data.get(PersonDataKeys.DEATH_YEAR_TO.value, ""),
-            FamilyDataKeys.FATHER_DEATH_YEAR_BEFORE.value: father_data.get(PersonDataKeys.DEATH_YEAR_BEFORE.value, ""),
-            FamilyDataKeys.FATHER_DEATH_YEAR_AFTER.value: father_data.get(PersonDataKeys.DEATH_YEAR_AFTER.value, ""),
-            FamilyDataKeys.FATHER_BIRTH_PLACE.value: father_data.get(PersonDataKeys.BIRTH_PLACE.value, ""),
-            FamilyDataKeys.FATHER_BIRTH_ROOT_PLACE.value: father_data.get(PersonDataKeys.BIRTH_ROOT_PLACE.value, ""),
-            FamilyDataKeys.FATHER_DEATH_PLACE.value: father_data.get(PersonDataKeys.DEATH_PLACE.value, ""),
-            FamilyDataKeys.FATHER_DEATH_ROOT_PLACE.value: father_data.get(PersonDataKeys.DEATH_ROOT_PLACE.value, ""),
-
-            FamilyDataKeys.MOTHER_GIVEN.value: mother_data.get(PersonDataKeys.GIVEN.value, ""),
-            FamilyDataKeys.MOTHER_MIDDLE.value: mother_data.get(PersonDataKeys.MIDDLE.value, ""),
-            FamilyDataKeys.MOTHER_SURNAME.value: mother_data.get(PersonDataKeys.SURNAME.value, ""),
-            FamilyDataKeys.MOTHER_BIRTH_YEAR.value: mother_data.get(PersonDataKeys.BIRTH_YEAR.value, ""),
-            FamilyDataKeys.MOTHER_BIRTH_YEAR_FROM.value: mother_data.get(PersonDataKeys.BIRTH_YEAR_FROM.value, ""),
-            FamilyDataKeys.MOTHER_BIRTH_YEAR_TO.value: mother_data.get(PersonDataKeys.BIRTH_YEAR_TO.value, ""),
-            FamilyDataKeys.MOTHER_BIRTH_YEAR_BEFORE.value: mother_data.get(PersonDataKeys.BIRTH_YEAR_BEFORE.value, ""),
-            FamilyDataKeys.MOTHER_BIRTH_YEAR_AFTER.value: mother_data.get(PersonDataKeys.BIRTH_YEAR_AFTER.value, ""),
-            FamilyDataKeys.MOTHER_DEATH_YEAR.value: mother_data.get(PersonDataKeys.DEATH_YEAR.value, ""),
-            FamilyDataKeys.MOTHER_DEATH_YEAR_FROM.value: mother_data.get(PersonDataKeys.DEATH_YEAR_FROM.value, ""),
-            FamilyDataKeys.MOTHER_DEATH_YEAR_TO.value: mother_data.get(PersonDataKeys.DEATH_YEAR_TO.value, ""),
-            FamilyDataKeys.MOTHER_DEATH_YEAR_BEFORE.value: mother_data.get(PersonDataKeys.DEATH_YEAR_BEFORE.value, ""),
-            FamilyDataKeys.MOTHER_DEATH_YEAR_AFTER.value: mother_data.get(PersonDataKeys.DEATH_YEAR_AFTER.value, ""),
-            FamilyDataKeys.MOTHER_BIRTH_PLACE.value: mother_data.get(PersonDataKeys.BIRTH_PLACE.value, ""),
-            FamilyDataKeys.MOTHER_BIRTH_ROOT_PLACE.value: mother_data.get(PersonDataKeys.BIRTH_ROOT_PLACE.value, ""),
-            FamilyDataKeys.MOTHER_DEATH_PLACE.value: mother_data.get(PersonDataKeys.DEATH_PLACE.value, ""),
-            FamilyDataKeys.MOTHER_DEATH_ROOT_PLACE.value: mother_data.get(PersonDataKeys.DEATH_ROOT_PLACE.value, ""),
-
+            FamilyDataKeys.FATHER_GIVEN.value: father_data.get(
+                PersonDataKeys.GIVEN.value, ""
+            ),
+            FamilyDataKeys.FATHER_MIDDLE.value: father_data.get(
+                PersonDataKeys.MIDDLE.value, ""
+            ),
+            FamilyDataKeys.FATHER_SURNAME.value: father_data.get(
+                PersonDataKeys.SURNAME.value, ""
+            ),
+            FamilyDataKeys.FATHER_BIRTH_YEAR.value: father_data.get(
+                PersonDataKeys.BIRTH_YEAR.value, ""
+            ),
+            FamilyDataKeys.FATHER_BIRTH_YEAR_FROM.value: father_data.get(
+                PersonDataKeys.BIRTH_YEAR_FROM.value, ""
+            ),
+            FamilyDataKeys.FATHER_BIRTH_YEAR_TO.value: father_data.get(
+                PersonDataKeys.BIRTH_YEAR_TO.value, ""
+            ),
+            FamilyDataKeys.FATHER_BIRTH_YEAR_BEFORE.value: father_data.get(
+                PersonDataKeys.BIRTH_YEAR_BEFORE.value, ""
+            ),
+            FamilyDataKeys.FATHER_BIRTH_YEAR_AFTER.value: father_data.get(
+                PersonDataKeys.BIRTH_YEAR_AFTER.value, ""
+            ),
+            FamilyDataKeys.FATHER_DEATH_YEAR.value: father_data.get(
+                PersonDataKeys.DEATH_YEAR.value, ""
+            ),
+            FamilyDataKeys.FATHER_DEATH_YEAR_FROM.value: father_data.get(
+                PersonDataKeys.DEATH_YEAR_FROM.value, ""
+            ),
+            FamilyDataKeys.FATHER_DEATH_YEAR_TO.value: father_data.get(
+                PersonDataKeys.DEATH_YEAR_TO.value, ""
+            ),
+            FamilyDataKeys.FATHER_DEATH_YEAR_BEFORE.value: father_data.get(
+                PersonDataKeys.DEATH_YEAR_BEFORE.value, ""
+            ),
+            FamilyDataKeys.FATHER_DEATH_YEAR_AFTER.value: father_data.get(
+                PersonDataKeys.DEATH_YEAR_AFTER.value, ""
+            ),
+            FamilyDataKeys.FATHER_BIRTH_PLACE.value: father_data.get(
+                PersonDataKeys.BIRTH_PLACE.value, ""
+            ),
+            FamilyDataKeys.FATHER_BIRTH_ROOT_PLACE.value: father_data.get(
+                PersonDataKeys.BIRTH_ROOT_PLACE.value, ""
+            ),
+            FamilyDataKeys.FATHER_DEATH_PLACE.value: father_data.get(
+                PersonDataKeys.DEATH_PLACE.value, ""
+            ),
+            FamilyDataKeys.FATHER_DEATH_ROOT_PLACE.value: father_data.get(
+                PersonDataKeys.DEATH_ROOT_PLACE.value, ""
+            ),
+            FamilyDataKeys.MOTHER_GIVEN.value: mother_data.get(
+                PersonDataKeys.GIVEN.value, ""
+            ),
+            FamilyDataKeys.MOTHER_MIDDLE.value: mother_data.get(
+                PersonDataKeys.MIDDLE.value, ""
+            ),
+            FamilyDataKeys.MOTHER_SURNAME.value: mother_data.get(
+                PersonDataKeys.SURNAME.value, ""
+            ),
+            FamilyDataKeys.MOTHER_BIRTH_YEAR.value: mother_data.get(
+                PersonDataKeys.BIRTH_YEAR.value, ""
+            ),
+            FamilyDataKeys.MOTHER_BIRTH_YEAR_FROM.value: mother_data.get(
+                PersonDataKeys.BIRTH_YEAR_FROM.value, ""
+            ),
+            FamilyDataKeys.MOTHER_BIRTH_YEAR_TO.value: mother_data.get(
+                PersonDataKeys.BIRTH_YEAR_TO.value, ""
+            ),
+            FamilyDataKeys.MOTHER_BIRTH_YEAR_BEFORE.value: mother_data.get(
+                PersonDataKeys.BIRTH_YEAR_BEFORE.value, ""
+            ),
+            FamilyDataKeys.MOTHER_BIRTH_YEAR_AFTER.value: mother_data.get(
+                PersonDataKeys.BIRTH_YEAR_AFTER.value, ""
+            ),
+            FamilyDataKeys.MOTHER_DEATH_YEAR.value: mother_data.get(
+                PersonDataKeys.DEATH_YEAR.value, ""
+            ),
+            FamilyDataKeys.MOTHER_DEATH_YEAR_FROM.value: mother_data.get(
+                PersonDataKeys.DEATH_YEAR_FROM.value, ""
+            ),
+            FamilyDataKeys.MOTHER_DEATH_YEAR_TO.value: mother_data.get(
+                PersonDataKeys.DEATH_YEAR_TO.value, ""
+            ),
+            FamilyDataKeys.MOTHER_DEATH_YEAR_BEFORE.value: mother_data.get(
+                PersonDataKeys.DEATH_YEAR_BEFORE.value, ""
+            ),
+            FamilyDataKeys.MOTHER_DEATH_YEAR_AFTER.value: mother_data.get(
+                PersonDataKeys.DEATH_YEAR_AFTER.value, ""
+            ),
+            FamilyDataKeys.MOTHER_BIRTH_PLACE.value: mother_data.get(
+                PersonDataKeys.BIRTH_PLACE.value, ""
+            ),
+            FamilyDataKeys.MOTHER_BIRTH_ROOT_PLACE.value: mother_data.get(
+                PersonDataKeys.BIRTH_ROOT_PLACE.value, ""
+            ),
+            FamilyDataKeys.MOTHER_DEATH_PLACE.value: mother_data.get(
+                PersonDataKeys.DEATH_PLACE.value, ""
+            ),
+            FamilyDataKeys.MOTHER_DEATH_ROOT_PLACE.value: mother_data.get(
+                PersonDataKeys.DEATH_ROOT_PLACE.value, ""
+            ),
             FamilyDataKeys.MARRIAGE_YEAR.value: marriage_year or "",
             FamilyDataKeys.MARRIAGE_YEAR_FROM.value: marriage_year_from or "",
             FamilyDataKeys.MARRIAGE_YEAR_TO.value: marriage_year_to or "",
@@ -651,7 +839,6 @@ class WebSearch(Gramplet):
             FamilyDataKeys.MARRIAGE_YEAR_AFTER.value: marriage_year_after or "",
             FamilyDataKeys.MARRIAGE_PLACE.value: marriage_place or "",
             FamilyDataKeys.MARRIAGE_ROOT_PLACE.value: marriage_root_place or "",
-
             FamilyDataKeys.DIVORCE_YEAR.value: divorce_year or "",
             FamilyDataKeys.DIVORCE_YEAR_FROM.value: divorce_year_from or "",
             FamilyDataKeys.DIVORCE_YEAR_TO.value: divorce_year_to or "",
@@ -659,7 +846,6 @@ class WebSearch(Gramplet):
             FamilyDataKeys.DIVORCE_YEAR_AFTER.value: divorce_year_after or "",
             FamilyDataKeys.DIVORCE_PLACE.value: divorce_place or "",
             FamilyDataKeys.DIVORCE_ROOT_PLACE.value: divorce_root_place or "",
-
             FamilyDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
         }
 
@@ -749,12 +935,18 @@ class WebSearch(Gramplet):
             if name is None:
                 return None
             root_place_name = name.get_value()
-            place_ref = place.get_placeref_list()[0] if place.get_placeref_list() else None
+            place_ref = (
+                place.get_placeref_list()[0] if place.get_placeref_list() else None
+            )
             while place_ref:
-                p = self.dbstate.db.get_place_from_handle(place_ref.get_reference_handle())
+                p = self.dbstate.db.get_place_from_handle(
+                    place_ref.get_reference_handle()
+                )
                 if p:
                     root_place_name = p.get_name().get_value()
-                    place_ref = p.get_placeref_list()[0] if p.get_placeref_list() else None
+                    place_ref = (
+                        p.get_placeref_list()[0] if p.get_placeref_list() else None
+                    )
                 else:
                     break
         except Exception as e:
@@ -771,12 +963,20 @@ class WebSearch(Gramplet):
             if not name:
                 return ""
             place_names = [name.get_value()]
-            place_ref = place.get_placeref_list()[0] if place.get_placeref_list() else None
+            place_ref = (
+                place.get_placeref_list()[0] if place.get_placeref_list() else None
+            )
             while place_ref:
-                parent_place = self.dbstate.db.get_place_from_handle(place_ref.get_reference_handle())
+                parent_place = self.dbstate.db.get_place_from_handle(
+                    place_ref.get_reference_handle()
+                )
                 if parent_place:
                     place_names.append(parent_place.get_name().get_value())
-                    place_ref = parent_place.get_placeref_list()[0] if parent_place.get_placeref_list() else None
+                    place_ref = (
+                        parent_place.get_placeref_list()[0]
+                        if parent_place.get_placeref_list()
+                        else None
+                    )
                 else:
                     break
 
@@ -859,17 +1059,23 @@ class WebSearch(Gramplet):
             ref = person.get_birth_ref()
             if ref is None:
                 return None
-            return self.dbstate.db.get_event_from_handle(ref.get_reference_handle()) or None
+            return (
+                self.dbstate.db.get_event_from_handle(ref.get_reference_handle())
+                or None
+            )
         except Exception as e:
             print(traceback.format_exc(), file=sys.stderr)
             return None
 
     def get_death_event(self, person):
         try:
-           ref = person.get_death_ref()
-           if ref is None:
-               return None
-           return self.dbstate.db.get_event_from_handle(ref.get_reference_handle()) or None
+            ref = person.get_death_ref()
+            if ref is None:
+                return None
+            return (
+                self.dbstate.db.get_event_from_handle(ref.get_reference_handle())
+                or None
+            )
         except Exception as e:
             print(traceback.format_exc(), file=sys.stderr)
             return None
@@ -923,48 +1129,50 @@ class WebSearch(Gramplet):
 
         # Get the main container
         self.ui = SimpleNamespace(
-            boxes = SimpleNamespace(
-                main    = self.builder.get_object("main_box"),
-                badges  = SimpleNamespace(
-                    box       = self.builder.get_object("badges_box"),
-                    container = self.builder.get_object("badge_container"),
+            boxes=SimpleNamespace(
+                main=self.builder.get_object("main_box"),
+                badges=SimpleNamespace(
+                    box=self.builder.get_object("badges_box"),
+                    container=self.builder.get_object("badge_container"),
                 ),
             ),
-            ai_recommendations_label  = self.builder.get_object("ai_recommendations_label"),
-            tree_view                 = self.builder.get_object("treeview"),
-            context_menu              = self.builder.get_object("context_menu"),
-            context_menu_items = SimpleNamespace(
-                add_note = self.builder.get_object("add_note"),
-                show_qr = self.builder.get_object("show_qr"),
-                copy_link = self.builder.get_object("copy_link"),
-                hide_selected = self.builder.get_object("hide_selected"),
-                hide_all = self.builder.get_object("hide_all"),
+            ai_recommendations_label=self.builder.get_object(
+                "ai_recommendations_label"
             ),
-            text_renderers = SimpleNamespace(
-                locale          = self.builder.get_object("locale_text_renderer"),
-                vars_replaced   = self.builder.get_object("vars_replaced_renderer"),
-                slash           = self.builder.get_object("slash_renderer"),
-                vars_total      = self.builder.get_object("vars_total_renderer"),
-                title           = self.builder.get_object("title_renderer"),
-                url             = self.builder.get_object("url_renderer"),
-                comment         = self.builder.get_object("comment_renderer"),
+            tree_view=self.builder.get_object("treeview"),
+            context_menu=self.builder.get_object("context_menu"),
+            context_menu_items=SimpleNamespace(
+                add_note=self.builder.get_object("add_note"),
+                show_qr=self.builder.get_object("show_qr"),
+                copy_link=self.builder.get_object("copy_link"),
+                hide_selected=self.builder.get_object("hide_selected"),
+                hide_all=self.builder.get_object("hide_all"),
             ),
-            icon_renderers = SimpleNamespace(
-                category    = self.builder.get_object("category_icon_renderer"),
-                visited     = self.builder.get_object("visited_icon_renderer"),
-                saved       = self.builder.get_object("saved_icon_renderer"),
-                uid         = self.builder.get_object("uid_icon_renderer"),
-                user_data   = self.builder.get_object("user_data_icon_renderer"),
-                locale      = self.builder.get_object("locale_icon_renderer"),
+            text_renderers=SimpleNamespace(
+                locale=self.builder.get_object("locale_text_renderer"),
+                vars_replaced=self.builder.get_object("vars_replaced_renderer"),
+                slash=self.builder.get_object("slash_renderer"),
+                vars_total=self.builder.get_object("vars_total_renderer"),
+                title=self.builder.get_object("title_renderer"),
+                url=self.builder.get_object("url_renderer"),
+                comment=self.builder.get_object("comment_renderer"),
             ),
-            columns = SimpleNamespace(
-                icons   = self.builder.get_object("icons_column"),
-                locale  = self.builder.get_object("locale_column"),
-                vars    = self.builder.get_object("vars_column"),
-                title   = self.builder.get_object("title_column"),
-                url     = self.builder.get_object("url_column"),
-                comment = self.builder.get_object("comment_column"),
-            )
+            icon_renderers=SimpleNamespace(
+                category=self.builder.get_object("category_icon_renderer"),
+                visited=self.builder.get_object("visited_icon_renderer"),
+                saved=self.builder.get_object("saved_icon_renderer"),
+                uid=self.builder.get_object("uid_icon_renderer"),
+                user_data=self.builder.get_object("user_data_icon_renderer"),
+                locale=self.builder.get_object("locale_icon_renderer"),
+            ),
+            columns=SimpleNamespace(
+                icons=self.builder.get_object("icons_column"),
+                locale=self.builder.get_object("locale_column"),
+                vars=self.builder.get_object("vars_column"),
+                title=self.builder.get_object("title_column"),
+                url=self.builder.get_object("url_column"),
+                comment=self.builder.get_object("comment_column"),
+            ),
         )
 
         # Create and set the ListStore model
@@ -994,26 +1202,82 @@ class WebSearch(Gramplet):
         self.add_sorting(self.ui.columns.comment, ModelColumns.COMMENT.value)
 
         # Columns rendering
-        self.ui.columns.icons.add_attribute(self.ui.icon_renderers.category, "icon-name", ModelColumns.ICON_NAME.value)
-        self.ui.columns.icons.add_attribute(self.ui.icon_renderers.visited, "pixbuf", ModelColumns.VISITED_ICON.value)
-        self.ui.columns.icons.add_attribute(self.ui.icon_renderers.visited, "visible", ModelColumns.VISITED_ICON_VISIBLE.value)
-        self.ui.columns.icons.add_attribute(self.ui.icon_renderers.saved, "pixbuf", ModelColumns.SAVED_ICON.value)
-        self.ui.columns.icons.add_attribute(self.ui.icon_renderers.saved, "visible", ModelColumns.SAVED_ICON_VISIBLE.value)
-        self.ui.columns.icons.add_attribute(self.ui.icon_renderers.user_data, "pixbuf", ModelColumns.USER_DATA_ICON.value)
-        self.ui.columns.icons.add_attribute(self.ui.icon_renderers.user_data, "visible", ModelColumns.USER_DATA_ICON_VISIBLE.value)
-        self.ui.columns.vars.add_attribute(self.ui.text_renderers.vars_replaced, "text", ModelColumns.REPLACED_VARS_COUNT.value)
-        self.ui.columns.vars.add_attribute(self.ui.text_renderers.vars_total, "text", ModelColumns.TOTAL_VARS_COUNT.value)
-        self.ui.columns.vars.add_attribute(self.ui.text_renderers.vars_replaced, "foreground", ModelColumns.VARS_COLOR.value)
+        self.ui.columns.icons.add_attribute(
+            self.ui.icon_renderers.category, "icon-name", ModelColumns.ICON_NAME.value
+        )
+        self.ui.columns.icons.add_attribute(
+            self.ui.icon_renderers.visited, "pixbuf", ModelColumns.VISITED_ICON.value
+        )
+        self.ui.columns.icons.add_attribute(
+            self.ui.icon_renderers.visited,
+            "visible",
+            ModelColumns.VISITED_ICON_VISIBLE.value,
+        )
+        self.ui.columns.icons.add_attribute(
+            self.ui.icon_renderers.saved, "pixbuf", ModelColumns.SAVED_ICON.value
+        )
+        self.ui.columns.icons.add_attribute(
+            self.ui.icon_renderers.saved,
+            "visible",
+            ModelColumns.SAVED_ICON_VISIBLE.value,
+        )
+        self.ui.columns.icons.add_attribute(
+            self.ui.icon_renderers.user_data,
+            "pixbuf",
+            ModelColumns.USER_DATA_ICON.value,
+        )
+        self.ui.columns.icons.add_attribute(
+            self.ui.icon_renderers.user_data,
+            "visible",
+            ModelColumns.USER_DATA_ICON_VISIBLE.value,
+        )
+        self.ui.columns.vars.add_attribute(
+            self.ui.text_renderers.vars_replaced,
+            "text",
+            ModelColumns.REPLACED_VARS_COUNT.value,
+        )
+        self.ui.columns.vars.add_attribute(
+            self.ui.text_renderers.vars_total,
+            "text",
+            ModelColumns.TOTAL_VARS_COUNT.value,
+        )
+        self.ui.columns.vars.add_attribute(
+            self.ui.text_renderers.vars_replaced,
+            "foreground",
+            ModelColumns.VARS_COLOR.value,
+        )
         self.ui.text_renderers.vars_total.set_property("foreground", "green")
-        self.ui.columns.locale.add_attribute(self.ui.text_renderers.locale, "text", ModelColumns.LOCALE_TEXT.value)
-        self.ui.columns.locale.add_attribute(self.ui.text_renderers.locale, "visible", ModelColumns.LOCALE_TEXT_VISIBLE.value)
-        self.ui.columns.locale.add_attribute(self.ui.icon_renderers.locale, "pixbuf", ModelColumns.LOCALE_ICON.value)
-        self.ui.columns.locale.add_attribute(self.ui.icon_renderers.locale, "visible", ModelColumns.LOCALE_ICON_VISIBLE.value)
-        self.ui.columns.title.add_attribute(self.ui.text_renderers.title, "text", ModelColumns.TITLE.value)
-        self.ui.columns.url.add_attribute(self.ui.icon_renderers.uid, "pixbuf", ModelColumns.UID_ICON.value)
-        self.ui.columns.url.add_attribute(self.ui.icon_renderers.uid, "visible", ModelColumns.UID_VISIBLE.value)
-        self.ui.columns.url.add_attribute(self.ui.text_renderers.url, "text", ModelColumns.FORMATTED_URL.value)
-        self.ui.columns.comment.add_attribute(self.ui.text_renderers.comment, "text", ModelColumns.COMMENT.value)
+        self.ui.columns.locale.add_attribute(
+            self.ui.text_renderers.locale, "text", ModelColumns.LOCALE_TEXT.value
+        )
+        self.ui.columns.locale.add_attribute(
+            self.ui.text_renderers.locale,
+            "visible",
+            ModelColumns.LOCALE_TEXT_VISIBLE.value,
+        )
+        self.ui.columns.locale.add_attribute(
+            self.ui.icon_renderers.locale, "pixbuf", ModelColumns.LOCALE_ICON.value
+        )
+        self.ui.columns.locale.add_attribute(
+            self.ui.icon_renderers.locale,
+            "visible",
+            ModelColumns.LOCALE_ICON_VISIBLE.value,
+        )
+        self.ui.columns.title.add_attribute(
+            self.ui.text_renderers.title, "text", ModelColumns.TITLE.value
+        )
+        self.ui.columns.url.add_attribute(
+            self.ui.icon_renderers.uid, "pixbuf", ModelColumns.UID_ICON.value
+        )
+        self.ui.columns.url.add_attribute(
+            self.ui.icon_renderers.uid, "visible", ModelColumns.UID_VISIBLE.value
+        )
+        self.ui.columns.url.add_attribute(
+            self.ui.text_renderers.url, "text", ModelColumns.FORMATTED_URL.value
+        )
+        self.ui.columns.comment.add_attribute(
+            self.ui.text_renderers.comment, "text", ModelColumns.COMMENT.value
+        )
 
         # CSS styles, translate, update
         self.apply_styles()
@@ -1026,7 +1290,9 @@ class WebSearch(Gramplet):
         return self.ui.boxes.main
 
     def reorder_columns(self):
-        self._columns_order = self.config_ini_manager.get_list("websearch.columns_order", DEFAULT_COLUMNS_ORDER)
+        self._columns_order = self.config_ini_manager.get_list(
+            "websearch.columns_order", DEFAULT_COLUMNS_ORDER
+        )
 
         columns_map = self.ui.columns
         previous_column = None
@@ -1069,7 +1335,9 @@ class WebSearch(Gramplet):
         self.ui.context_menu_items.add_note.set_label(_("Add link to note"))
         self.ui.context_menu_items.show_qr.set_label(_("Show QR-code"))
         self.ui.context_menu_items.copy_link.set_label(_("Copy link to clipboard"))
-        self.ui.context_menu_items.hide_selected.set_label(_("Hide link for selected item"))
+        self.ui.context_menu_items.hide_selected.set_label(
+            _("Hide link for selected item")
+        )
         self.ui.context_menu_items.hide_all.set_label(_("Hide link for all items"))
 
         self.ui.ai_recommendations_label.set_text(_("🔍 AI Suggestions"))
@@ -1090,11 +1358,13 @@ class WebSearch(Gramplet):
         Gtk.StyleContext.add_provider_for_screen(
             Gdk.Screen.get_default(),
             css_provider,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
 
     def populate_badges(self, domain_url_pairs):
-        self.ui.boxes.badges.container.foreach(lambda widget: self.ui.boxes.badges.container.remove(widget))
+        self.ui.boxes.badges.container.foreach(
+            lambda widget: self.ui.boxes.badges.container.remove(widget)
+        )
         for domain, url in domain_url_pairs:
             badge = self.create_badge(domain, url)
             self.ui.boxes.badges.container.add(badge)
@@ -1116,7 +1386,9 @@ class WebSearch(Gramplet):
 
         event_box = Gtk.EventBox()
         event_box.add(label)
-        event_box.connect("button-press-event", lambda widget, event: self.open_url(url))
+        event_box.connect(
+            "button-press-event", lambda widget, event: self.open_url(url)
+        )
 
         badge_box.pack_start(event_box, True, True, 0)
         badge_box.pack_start(close_button, False, False, 0)
@@ -1153,13 +1425,13 @@ class WebSearch(Gramplet):
                 self._context.active_tree_path = path
                 self._context.active_url = url
                 self.ui.context_menu.show_all()
-                #add_attribute_item = self.builder.get_object("AddAttribute")
+                # add_attribute_item = self.builder.get_object("AddAttribute")
 
                 if nav_type == SupportedNavTypes.PEOPLE.value:
-                    #add_attribute_item.show()
+                    # add_attribute_item.show()
                     self.ui.context_menu_items.add_note.show()
                 else:
-                    #add_attribute_item.hide()
+                    # add_attribute_item.hide()
                     self.ui.context_menu_items.add_note.hide()
 
                 self.ui.context_menu.popup_at_pointer(event)
@@ -1170,9 +1442,12 @@ class WebSearch(Gramplet):
             return
 
         note = Note()
-        note.set(_("📌 This web link was added using the WebSearch gramplet for future reference:\n\n🔗 {url}\n\n"
-                   "You can use this link to revisit the source and verify the information related to this person.")
-                 .format(url=self._context.active_url))
+        note.set(
+            _(
+                "📌 This web link was added using the WebSearch gramplet for future reference:\n\n🔗 {url}\n\n"
+                "You can use this link to revisit the source and verify the information related to this person."
+            ).format(url=self._context.active_url)
+        )
         note.set_privacy(True)
 
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
@@ -1185,7 +1460,13 @@ class WebSearch(Gramplet):
                 self.dbstate.db.commit_person(self._context.person, trans)
 
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
-        self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, ModelColumns.SAVED_ICON.value, ModelColumns.SAVED_ICON_VISIBLE.value)
+        self.add_icon_event(
+            SAVED_HASH_FILE_PATH,
+            ICON_SAVED_PATH,
+            tree_iter,
+            ModelColumns.SAVED_ICON.value,
+            ModelColumns.SAVED_ICON_VISIBLE.value,
+        )
 
     def on_show_qr_code(self, widget):
         selection = self.ui.tree_view.get_selection()
@@ -1213,8 +1494,12 @@ class WebSearch(Gramplet):
             url_pattern = model[tree_iter][ModelColumns.URL_PATTERN.value]
             obj_handle = model[tree_iter][ModelColumns.OBJ_HANDLE.value]
             nav_type = model[tree_iter][ModelColumns.NAV_TYPE.value]
-            if not self.website_loader.has_string_in_file(f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH):
-                self.website_loader.save_string_to_file(f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH)
+            if not self.website_loader.has_string_in_file(
+                f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH
+            ):
+                self.website_loader.save_string_to_file(
+                    f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH
+                )
             model.remove(tree_iter)
 
     def on_hide_link_for_all_items(self, widget):
@@ -1223,8 +1508,12 @@ class WebSearch(Gramplet):
         if tree_iter is not None:
             url_pattern = model[tree_iter][ModelColumns.URL_PATTERN.value]
             nav_type = model[tree_iter][ModelColumns.NAV_TYPE.value]
-            if not self.website_loader.has_string_in_file(f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH):
-                self.website_loader.save_string_to_file(f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH)
+            if not self.website_loader.has_string_in_file(
+                f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH
+            ):
+                self.website_loader.save_string_to_file(
+                    f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH
+                )
             model.remove(tree_iter)
 
     def show_notification(self, message):
@@ -1257,13 +1546,19 @@ class WebSearch(Gramplet):
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
         nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
 
-        #with DbTxn(_("Add Web Link Attribute"), self.dbstate.db) as trans:
+        # with DbTxn(_("Add Web Link Attribute"), self.dbstate.db) as trans:
         #    if nav_type == SupportedNavTypes.PEOPLE.value:
         #        self._context.person.add_attribute(attribute)
         #        self.dbstate.db.commit_person(self._context.person, trans)
 
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
-        self.add_icon_event(SAVED_HASH_FILE_PATH, ICON_SAVED_PATH, tree_iter, ModelColumns.SAVED_ICON.value, ModelColumns.SAVED_ICON_VISIBLE.value)
+        self.add_icon_event(
+            SAVED_HASH_FILE_PATH,
+            ICON_SAVED_PATH,
+            tree_iter,
+            ModelColumns.SAVED_ICON.value,
+            ModelColumns.SAVED_ICON_VISIBLE.value,
+        )
 
     def on_download_page(self, widget):
         pass
@@ -1279,16 +1574,26 @@ class WebSearch(Gramplet):
             title = self.model.get_value(tree_iter, ModelColumns.TITLE.value)
             comment = self.model.get_value(tree_iter, ModelColumns.COMMENT.value) or ""
 
-            variables_json = self.model.get_value(tree_iter, ModelColumns.VARIABLES_JSON.value)
+            variables_json = self.model.get_value(
+                tree_iter, ModelColumns.VARIABLES_JSON.value
+            )
             variables = json.loads(variables_json)
-            replaced_variables = [f"{key}={value}" for var in variables['replaced_variables'] for key, value in var.items()]
-            empty_variables = [var for var in variables['empty_variables']]
+            replaced_variables = [
+                f"{key}={value}"
+                for var in variables["replaced_variables"]
+                for key, value in var.items()
+            ]
+            empty_variables = [var for var in variables["empty_variables"]]
 
             tooltip_text = _("Title: {title}\n").format(title=title)
             if replaced_variables:
-                tooltip_text += _("Replaced: {variables}\n").format(variables=", ".join(replaced_variables))
+                tooltip_text += _("Replaced: {variables}\n").format(
+                    variables=", ".join(replaced_variables)
+                )
             if empty_variables:
-                tooltip_text += _("Empty: {variables}\n").format(variables=", ".join(empty_variables))
+                tooltip_text += _("Empty: {variables}\n").format(
+                    variables=", ".join(empty_variables)
+                )
             if comment:
                 tooltip_text += _("Comment: {comment}\n").format(comment=comment)
             tooltip_text = tooltip_text.rstrip()
@@ -1301,18 +1606,42 @@ class WebSearch(Gramplet):
         list(map(self.add_option, self.opts))
 
     def save_options(self):
-        self.config_ini_manager.set_boolean_list("websearch.enabled_files", self.opts[0].get_selected())
-        self.config_ini_manager.set_enum("websearch.middle_name_handling", self.opts[1].get_value())
-        self.config_ini_manager.set_boolean_option("websearch.show_short_url", self.opts[2].get_value())
-        self.config_ini_manager.set_enum("websearch.url_compactness_level", self.opts[3].get_value())
-        self.config_ini_manager.set_string("websearch.url_prefix_replacement", self.opts[4].get_value())
-        self.config_ini_manager.set_boolean_option("websearch.use_openai", self.opts[5].get_value())
-        self.config_ini_manager.set_string("websearch.openai_api_key", self.opts[6].get_value())
-        self.config_ini_manager.set_boolean_option("websearch.show_url_column", self.opts[7].get_value())
-        self.config_ini_manager.set_boolean_option("websearch.show_vars_column", self.opts[8].get_value())
-        self.config_ini_manager.set_boolean_option("websearch.show_user_data_icon", self.opts[9].get_value())
-        self.config_ini_manager.set_boolean_option("websearch.show_flag_icons", self.opts[10].get_value())
-        self.config_ini_manager.set_boolean_option("websearch.show_attribute_links", self.opts[11].get_value())
+        self.config_ini_manager.set_boolean_list(
+            "websearch.enabled_files", self.opts[0].get_selected()
+        )
+        self.config_ini_manager.set_enum(
+            "websearch.middle_name_handling", self.opts[1].get_value()
+        )
+        self.config_ini_manager.set_boolean_option(
+            "websearch.show_short_url", self.opts[2].get_value()
+        )
+        self.config_ini_manager.set_enum(
+            "websearch.url_compactness_level", self.opts[3].get_value()
+        )
+        self.config_ini_manager.set_string(
+            "websearch.url_prefix_replacement", self.opts[4].get_value()
+        )
+        self.config_ini_manager.set_boolean_option(
+            "websearch.use_openai", self.opts[5].get_value()
+        )
+        self.config_ini_manager.set_string(
+            "websearch.openai_api_key", self.opts[6].get_value()
+        )
+        self.config_ini_manager.set_boolean_option(
+            "websearch.show_url_column", self.opts[7].get_value()
+        )
+        self.config_ini_manager.set_boolean_option(
+            "websearch.show_vars_column", self.opts[8].get_value()
+        )
+        self.config_ini_manager.set_boolean_option(
+            "websearch.show_user_data_icon", self.opts[9].get_value()
+        )
+        self.config_ini_manager.set_boolean_option(
+            "websearch.show_flag_icons", self.opts[10].get_value()
+        )
+        self.config_ini_manager.set_boolean_option(
+            "websearch.show_attribute_links", self.opts[11].get_value()
+        )
         self.config_ini_manager.save()
 
     def save_update_options(self, obj):
@@ -1323,16 +1652,46 @@ class WebSearch(Gramplet):
         self.update_vars_column_visibility()
 
     def on_load(self):
-        self._enabled_files = self.config_ini_manager.get_list("websearch.enabled_files", DEFAULT_ENABLED_FILES)
-        self._use_openai = self.config_ini_manager.get_boolean_option("websearch.use_openai", DEFAULT_USE_OPEN_AI)
-        self._openai_api_key = self.config_ini_manager.get_string("websearch.openai_api_key")
-        self._middle_name_handling = self.config_ini_manager.get_enum("websearch.middle_name_handling", MiddleNameHandling, DEFAULT_MIDDLE_NAME_HANDLING)
-        self._show_short_url = self.config_ini_manager.get_boolean_option("websearch.show_short_url", DEFAULT_SHOW_SHORT_URL)
-        self._url_compactness_level = self.config_ini_manager.get_enum("websearch.url_compactness_level", URLCompactnessLevel, DEFAULT_URL_COMPACTNESS_LEVEL)
-        self._url_prefix_replacement = self.config_ini_manager.get_string("websearch.url_prefix_replacement", DEFAULT_URL_PREFIX_REPLACEMENT)
-        self._show_url_column = self.config_ini_manager.get_boolean_option("websearch.show_url_column", DEFAULT_SHOW_URL_COLUMN)
-        self._show_vars_column = self.config_ini_manager.get_boolean_option("websearch.show_vars_column", DEFAULT_SHOW_VARS_COLUMN)
-        self._show_user_data_icon = self.config_ini_manager.get_boolean_option("websearch.show_user_data_icon", DEFAULT_SHOW_USER_DATA_ICON)
-        self._show_flag_icons = self.config_ini_manager.get_boolean_option("websearch.show_flag_icons", DEFAULT_SHOW_FLAG_ICONS)
-        self._show_attribute_links = self.config_ini_manager.get_boolean_option("websearch.show_attribute_links", DEFAULT_SHOW_ATTRIBUTE_LINKS)
-        self._columns_order = self.config_ini_manager.get_list("websearch.columns_order", DEFAULT_COLUMNS_ORDER)
+        self._enabled_files = self.config_ini_manager.get_list(
+            "websearch.enabled_files", DEFAULT_ENABLED_FILES
+        )
+        self._use_openai = self.config_ini_manager.get_boolean_option(
+            "websearch.use_openai", DEFAULT_USE_OPEN_AI
+        )
+        self._openai_api_key = self.config_ini_manager.get_string(
+            "websearch.openai_api_key"
+        )
+        self._middle_name_handling = self.config_ini_manager.get_enum(
+            "websearch.middle_name_handling",
+            MiddleNameHandling,
+            DEFAULT_MIDDLE_NAME_HANDLING,
+        )
+        self._show_short_url = self.config_ini_manager.get_boolean_option(
+            "websearch.show_short_url", DEFAULT_SHOW_SHORT_URL
+        )
+        self._url_compactness_level = self.config_ini_manager.get_enum(
+            "websearch.url_compactness_level",
+            URLCompactnessLevel,
+            DEFAULT_URL_COMPACTNESS_LEVEL,
+        )
+        self._url_prefix_replacement = self.config_ini_manager.get_string(
+            "websearch.url_prefix_replacement", DEFAULT_URL_PREFIX_REPLACEMENT
+        )
+        self._show_url_column = self.config_ini_manager.get_boolean_option(
+            "websearch.show_url_column", DEFAULT_SHOW_URL_COLUMN
+        )
+        self._show_vars_column = self.config_ini_manager.get_boolean_option(
+            "websearch.show_vars_column", DEFAULT_SHOW_VARS_COLUMN
+        )
+        self._show_user_data_icon = self.config_ini_manager.get_boolean_option(
+            "websearch.show_user_data_icon", DEFAULT_SHOW_USER_DATA_ICON
+        )
+        self._show_flag_icons = self.config_ini_manager.get_boolean_option(
+            "websearch.show_flag_icons", DEFAULT_SHOW_FLAG_ICONS
+        )
+        self._show_attribute_links = self.config_ini_manager.get_boolean_option(
+            "websearch.show_attribute_links", DEFAULT_SHOW_ATTRIBUTE_LINKS
+        )
+        self._columns_order = self.config_ini_manager.get_list(
+            "websearch.columns_order", DEFAULT_COLUMNS_ORDER
+        )
