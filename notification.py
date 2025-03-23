@@ -20,9 +20,14 @@
 
 # ----------------------------------------------------------------------------
 
+"""
+Notification popup for WebSearch Gramplet in Gramps.
+"""
+
 import gi
 
 gi.require_version("Gtk", "3.0")
+
 from gi.repository import Gtk, Gdk, GObject, Pango
 
 
@@ -47,6 +52,7 @@ class Notification(Gtk.Window):
     """
 
     def __init__(self, message):
+        """Initialize the notification window with the provided message."""
         super().__init__()
 
         screen = Gdk.Screen.get_default()
@@ -90,10 +96,12 @@ class Notification(Gtk.Window):
         GObject.timeout_add(2000, self.close_window)
 
     def close_window(self):
+        """Close the notification window after a timeout."""
         self.destroy()
         return False
 
     def apply_css(self):
+        """Apply custom CSS styling to the notification window."""
         css_provider = Gtk.CssProvider()
         css_provider.load_from_data(
             b"""

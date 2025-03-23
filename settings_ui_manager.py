@@ -20,21 +20,36 @@
 
 # ----------------------------------------------------------------------------
 
-from gramps.gen.const import GRAMPS_LOCALE as glocale
+"""
+Manages UI configuration options for the WebSearch Gramplet in Gramps.
+"""
+
+from types import SimpleNamespace
+
 from gramps.gen.plug.menu import (
     BooleanListOption,
     EnumeratedListOption,
     StringOption,
     BooleanOption,
 )
-from constants import *
-from website_loader import WebsiteLoader
 
-try:
-    _trans = glocale.get_addon_translator(__file__)
-except ValueError:
-    _trans = glocale.translation
-_ = _trans.gettext
+from website_loader import WebsiteLoader
+from constants import (
+    DEFAULT_MIDDLE_NAME_HANDLING,
+    DEFAULT_SHOW_SHORT_URL,
+    DEFAULT_URL_COMPACTNESS_LEVEL,
+    DEFAULT_URL_PREFIX_REPLACEMENT,
+    DEFAULT_USE_OPEN_AI,
+    DEFAULT_SHOW_URL_COLUMN,
+    DEFAULT_SHOW_VARS_COLUMN,
+    DEFAULT_SHOW_USER_DATA_ICON,
+    DEFAULT_SHOW_FLAG_ICONS,
+    DEFAULT_SHOW_ATTRIBUTE_LINKS,
+    MiddleNameHandling,
+    URLCompactnessLevel,
+)
+
+from translation_helper import _
 
 
 class SettingsUIManager:
@@ -61,26 +76,40 @@ class SettingsUIManager:
     - add_boolean_option(): Adds a boolean toggle option.
     - add_enum_option(): Adds an enumerated list option with localized descriptions.
     - add_string_option(): Adds a string input option.
-    - print_settings(): Prints the current settings for debugging purposes.
     """
 
     def __init__(self, config_ini_manager):
+        """
+        Initialize the SettingsUIManager.
+
+        Args:
+            config_ini_manager: An instance of ConfigINIManager
+            used to get and set configuration values.
+        """
         self.config_ini_manager = config_ini_manager
         self.opts = []
 
     def build_options(self):
+        """
+        Build the list of configuration options for the settings UI.
+
+        Returns:
+            list: A list of Gramps Option objects representing user-configurable settings.
+        """
         self.opts.clear()
         self.add_csv_files_option()
         self.add_enum_option(
             "websearch.middle_name_handling",
             _("Middle Name Handling"),
-            MiddleNameHandling,
-            DEFAULT_MIDDLE_NAME_HANDLING,
-            descriptions={
-                MiddleNameHandling.LEAVE_ALONE.value: _("Leave alone"),
-                MiddleNameHandling.SEPARATE.value: _("Separate"),
-                MiddleNameHandling.REMOVE.value: _("Remove"),
-            },
+            SimpleNamespace(
+                enum_class=MiddleNameHandling,
+                default=DEFAULT_MIDDLE_NAME_HANDLING,
+                descriptions={
+                    MiddleNameHandling.LEAVE_ALONE.value: _("Leave alone"),
+                    MiddleNameHandling.SEPARATE.value: _("Separate"),
+                    MiddleNameHandling.REMOVE.value: _("Remove"),
+                },
+            ),
         )
         self.add_boolean_option(
             "websearch.show_short_url", "Show Shortened URL", DEFAULT_SHOW_SHORT_URL
@@ -88,20 +117,24 @@ class SettingsUIManager:
         self.add_enum_option(
             "websearch.url_compactness_level",
             _("URL Compactness Level"),
-            URLCompactnessLevel,
-            DEFAULT_URL_COMPACTNESS_LEVEL,
-            descriptions={
-                URLCompactnessLevel.SHORTEST.value: _(
-                    "Shortest - No Prefix, No Variables"
-                ),
-                URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value: _(
-                    "Compact - No Prefix, Variables Without Attributes"
-                ),
-                URLCompactnessLevel.COMPACT_WITH_ATTRIBUTES.value: _(
-                    "Compact - No Prefix, Variables With Attributes"
-                ),
-                URLCompactnessLevel.LONG.value: _("Long - Without Prefix on the Left"),
-            },
+            SimpleNamespace(
+                enum_class=URLCompactnessLevel,
+                default=DEFAULT_URL_COMPACTNESS_LEVEL,
+                descriptions={
+                    URLCompactnessLevel.SHORTEST.value: _(
+                        "Shortest - No Prefix, No Variables"
+                    ),
+                    URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value: _(
+                        "Compact - No Prefix, Variables Without Attributes"
+                    ),
+                    URLCompactnessLevel.COMPACT_WITH_ATTRIBUTES.value: _(
+                        "Compact - No Prefix, Variables With Attributes"
+                    ),
+                    URLCompactnessLevel.LONG.value: _(
+                        "Long - Without Prefix on the Left"
+                    ),
+                },
+            ),
         )
         self.add_string_option(
             "websearch.url_prefix_replacement",
@@ -139,6 +172,9 @@ class SettingsUIManager:
         return self.opts
 
     def add_csv_files_option(self):
+        """
+        Add an option to enable or disable available CSV files for use in WebSearch.
+        """
         all_files, selected_files = WebsiteLoader.get_all_and_selected_files(
             self.config_ini_manager
         )
@@ -148,13 +184,39 @@ class SettingsUIManager:
         self.opts.append(opt)
 
     def add_boolean_option(self, config_key, label, default):
+        """
+        Add a boolean toggle option to the settings.
+
+        Args:
+            config_key (str): The configuration key.
+            label (str): The display label for the option.
+            default (bool): The default value.
+        """
         value = self.config_ini_manager.get_boolean_option(config_key, default)
         opt = BooleanOption(label, value)
         self.opts.append(opt)
 
-    def add_enum_option(
-        self, config_key, label, enum_class, default, descriptions=None
-    ):
+    def add_enum_option(self, config_key, label, options):
+        """
+        Adds an enumerated list option to the settings.
+
+        This method creates a list of enumerated options and adds them to the settings UI.
+        The options are defined by the provided `enum_class`, with an optional description
+        for each value.
+
+        Args:
+            config_key (str): The configuration key used to store the selected value.
+            label (str): The label to display for the option in the UI.
+            options (SimpleNamespace): An object containing the following attributes:
+                - enum_class (Enum): The enumeration class defining the available options.
+                - default: The default value to be selected from the enumeration.
+                - descriptions (dict, optional): A dictionary with localized display labels for
+                  each enum value. If not provided, the enum values are used as labels.
+        """
+        enum_class = options.enum_class
+        default = options.default
+        descriptions = options.descriptions
+
         opt = EnumeratedListOption(label, default)
         for item in enum_class:
             display_text = (
@@ -165,6 +227,14 @@ class SettingsUIManager:
         self.opts.append(opt)
 
     def add_string_option(self, config_key, label, default=""):
+        """
+        Add a string input option to the settings.
+
+        Args:
+            config_key (str): The configuration key.
+            label (str): The display label for the option.
+            default (str, optional): The default string value.
+        """
         value = self.config_ini_manager.get_string(config_key, default)
         opt = StringOption(label, value)
         self.opts.append(opt)

@@ -19,27 +19,42 @@
 #
 
 # ----------------------------------------------------------------------------
+
 """
-WebSearch - a Gramplet for searching genealogical websites
-Allows searching for genealogical resources based on the active person's, place's, or source's data.
-Integrates multiple regional websites into a single sidebar tool with customizable URL templates.
+WebSearch - a Gramplet for searching genealogical websites.
+
+Allows searching for genealogical resources based on the active person's, place's,
+or source's data. Integrates multiple regional websites into a single sidebar tool
+with customizable URL templates.
 """
+
 # Standard Python libraries
 import os
-import csv
 import sys
-import re
 import json
 import traceback
 import threading
 import webbrowser
 import urllib.parse
-from enum import Enum
 from enum import IntEnum
 from types import SimpleNamespace
 
+# Third-party libraries
+import gi
+
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gdk, GdkPixbuf, GObject
+
+# GRAMPS API
+from gramps.gen.plug import Gramplet
+from gramps.gen.const import GRAMPS_LOCALE as glocale
+from gramps.gui.display import display_url
+from gramps.gen.lib import Note, Attribute, Date
+from gramps.gen.db import DbTxn
+from gramps.gen.lib.eventtype import EventType
+from gramps.gen.lib.placetype import PlaceType
+
 # Own project imports
-from constants import *
 from qr_window import QRCodeWindow
 from site_finder import SiteFinder
 from config_ini_manager import ConfigINIManager
@@ -50,23 +65,51 @@ from signals import WebSearchSignalEmitter
 from url_formatter import UrlFormatter
 from attribute_mapping_loader import AttributeMappingLoader
 from attribute_links_loader import AttributeLinksLoader
-
-# GTK
-import gi
-
-gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, Gdk, GdkPixbuf, GObject, Pango
-
-# GRAMPS API
-from gramps.gen.plug import Gramplet
-from gramps.gen.const import GRAMPS_LOCALE as glocale
-from gramps.gui.display import display_url
-from gramps.gen.config import config as configman
-from gramps.gen.plug.menu import BooleanListOption, EnumeratedListOption, StringOption
-from gramps.gen.lib import Note, Attribute, Date
-from gramps.gen.db import DbTxn
-from gramps.gen.lib.eventtype import EventType
-from gramps.gen.lib.placetype import PlaceType
+from constants import (
+    DEFAULT_SHOW_SHORT_URL,
+    DEFAULT_URL_COMPACTNESS_LEVEL,
+    DEFAULT_URL_PREFIX_REPLACEMENT,
+    DEFAULT_USE_OPEN_AI,
+    CATEGORY_ICON,
+    DEFAULT_CATEGORY_ICON,
+    HIDDEN_HASH_FILE_PATH,
+    USER_DATA_CSV_DIR,
+    USER_DATA_JSON_DIR,
+    DATA_DIR,
+    CONFIGS_DIR,
+    DEFAULT_ENABLED_FILES,
+    DEFAULT_MIDDLE_NAME_HANDLING,
+    ICON_EARTH_PATH,
+    ICON_PIN_PATH,
+    ICON_CHAIN_PATH,
+    ICON_UID_PATH,
+    UID_ICON_WIDTH,
+    UID_ICON_HEIGHT,
+    ICON_USER_DATA_PATH,
+    ICON_VISITED_PATH,
+    ICON_SAVED_PATH,
+    FLAGS_DIR,
+    VISITED_HASH_FILE_PATH,
+    SAVED_HASH_FILE_PATH,
+    URL_SAFE_CHARS,
+    ICON_SIZE,
+    INTERFACE_FILE_PATH,
+    RIGHT_MOUSE_BUTTON,
+    STYLE_CSS_PATH,
+    DEFAULT_COLUMNS_ORDER,
+    DEFAULT_SHOW_URL_COLUMN,
+    DEFAULT_SHOW_VARS_COLUMN,
+    DEFAULT_SHOW_USER_DATA_ICON,
+    DEFAULT_SHOW_FLAG_ICONS,
+    DEFAULT_SHOW_ATTRIBUTE_LINKS,
+    URLCompactnessLevel,
+    MiddleNameHandling,
+    PersonDataKeys,
+    FamilyDataKeys,
+    PlaceDataKeys,
+    SourceDataKeys,
+    SupportedNavTypes,
+)
 
 MODEL_SCHEMA = [
     ("icon_name", str),
@@ -100,18 +143,15 @@ ModelColumns = IntEnum(
 )
 MODEL_TYPES = [type_ for _, type_ in MODEL_SCHEMA]
 
-try:
-    _trans = glocale.get_addon_translator(__file__)
-except ValueError:
-    _trans = glocale.translation
-_ = _trans.gettext
+from translation_helper import _
 
 
 class WebSearch(Gramplet):
     """
-    WebSearch is a Gramplet for Gramps that provides an interface to search genealogy-related websites.
-    It integrates with various online resources, formats search URLs based on genealogical data,
-    and allows users to track visited and saved links.
+    WebSearch is a Gramplet for Gramps that provides an interface to search
+    genealogy-related websites. It integrates with various online resources,
+    formats search URLs based on genealogical data, and allows users to track
+    visited and saved links.
 
     Features:
     - Fetches recommended genealogy websites based on provided data.
@@ -124,6 +164,12 @@ class WebSearch(Gramplet):
     __gsignals__ = {"sites-fetched": (GObject.SignalFlags.RUN_FIRST, None, (object,))}
 
     def __init__(self, gui):
+        """
+        Initialize the WebSearch Gramplet.
+
+        Sets up all required components, directories, signal emitters, and configuration managers.
+        Also initializes the Gramplet GUI and internal context for tracking active Gramps objects.
+        """
         self._context = SimpleNamespace(
             person=None,
             family=None,
@@ -138,6 +184,62 @@ class WebSearch(Gramplet):
             else glocale.language
         )
         self.gui = gui
+
+        self.builder = Gtk.Builder()
+        self.builder.add_from_file(INTERFACE_FILE_PATH)
+        self.ui = SimpleNamespace(
+            boxes=SimpleNamespace(
+                main=self.builder.get_object("main_box"),
+                badges=SimpleNamespace(
+                    box=self.builder.get_object("badges_box"),
+                    container=self.builder.get_object("badge_container"),
+                ),
+            ),
+            ai_recommendations_label=self.builder.get_object(
+                "ai_recommendations_label"
+            ),
+            tree_view=self.builder.get_object("treeview"),
+            context_menu=self.builder.get_object("context_menu"),
+            context_menu_items=SimpleNamespace(
+                add_note=self.builder.get_object("add_note"),
+                show_qr=self.builder.get_object("show_qr"),
+                copy_link=self.builder.get_object("copy_link"),
+                hide_selected=self.builder.get_object("hide_selected"),
+                hide_all=self.builder.get_object("hide_all"),
+            ),
+            text_renderers=SimpleNamespace(
+                locale=self.builder.get_object("locale_text_renderer"),
+                vars_replaced=self.builder.get_object("vars_replaced_renderer"),
+                slash=self.builder.get_object("slash_renderer"),
+                vars_total=self.builder.get_object("vars_total_renderer"),
+                title=self.builder.get_object("title_renderer"),
+                url=self.builder.get_object("url_renderer"),
+                comment=self.builder.get_object("comment_renderer"),
+            ),
+            icon_renderers=SimpleNamespace(
+                category=self.builder.get_object("category_icon_renderer"),
+                visited=self.builder.get_object("visited_icon_renderer"),
+                saved=self.builder.get_object("saved_icon_renderer"),
+                uid=self.builder.get_object("uid_icon_renderer"),
+                user_data=self.builder.get_object("user_data_icon_renderer"),
+                locale=self.builder.get_object("locale_icon_renderer"),
+            ),
+            columns=SimpleNamespace(
+                icons=self.builder.get_object("icons_column"),
+                locale=self.builder.get_object("locale_column"),
+                vars=self.builder.get_object("vars_column"),
+                title=self.builder.get_object("title_column"),
+                url=self.builder.get_object("url_column"),
+                comment=self.builder.get_object("comment_column"),
+            ),
+        )
+
+        self._columns_order = []
+        self._show_url_column = False
+        self._show_vars_column = False
+
+        self.model = Gtk.ListStore(*MODEL_TYPES)
+
         self.make_directories()
         self.signal_emitter = WebSearchSignalEmitter()
         self.attribute_loader = AttributeMappingLoader()
@@ -149,6 +251,7 @@ class WebSearch(Gramplet):
         Gramplet.__init__(self, gui)
 
     def init(self):
+        """Initializes and attaches the main GTK interface to the gramplet container."""
         self.gui.WIDGET = self.build_gui()
         container = self.gui.get_container_widget()
         if self.gui.textview in container.get_children():
@@ -157,6 +260,10 @@ class WebSearch(Gramplet):
         self.gui.WIDGET.show_all()
 
     def post_init(self):
+        """
+        Performs additional setup after the GUI is initialized, including optional
+        AI site fetching.
+        """
         self.signal_emitter.connect("sites-fetched", self.on_sites_fetched)
         locales, domains, include_global = self.website_loader.get_domains_data(
             self.config_ini_manager
@@ -165,7 +272,7 @@ class WebSearch(Gramplet):
             self.toggle_badges_visibility()
             return
         if not self._openai_api_key:
-            print("⚠️ ERROR: No OpenAI API Key found.", file=sys.stderr)
+            print("❌ ERROR: No OpenAI API Key found.", file=sys.stderr)
             self.toggle_badges_visibility()
             return
         self.finder = SiteFinder(self._openai_api_key)
@@ -176,11 +283,13 @@ class WebSearch(Gramplet):
         ).start()
 
     def make_directories(self):
+        """Creates necessary directories for storing configurations and user data."""
         for directory in [DATA_DIR, CONFIGS_DIR, USER_DATA_CSV_DIR, USER_DATA_JSON_DIR]:
             if not os.path.exists(directory):
                 os.makedirs(directory, exist_ok=True)
 
     def fetch_sites_in_background(self, csv_domains, locales, include_global):
+        """Fetches AI-recommended genealogy sites in a background thread."""
         skipped_domains = self.website_loader.load_skipped_domains()
         all_excluded_domains = csv_domains.union(skipped_domains)
         try:
@@ -193,6 +302,9 @@ class WebSearch(Gramplet):
             GObject.idle_add(self.signal_emitter.emit, "sites-fetched", None)
 
     def on_sites_fetched(self, gramplet, results):
+        """
+        Handles the 'sites-fetched' signal and populates badges if valid results are received.
+        """
         if results:
             try:
                 sites = json.loads(results)
@@ -211,6 +323,7 @@ class WebSearch(Gramplet):
                 print(f"❌ Error processing sites: {e}", file=sys.stderr)
 
     def db_changed(self):
+        """Responds to changes in the database and updates the active context accordingly."""
         self.connect_signal("Person", self.active_person_changed)
         self.connect_signal("Place", self.active_place_changed)
         self.connect_signal("Source", self.active_source_changed)
@@ -243,9 +356,11 @@ class WebSearch(Gramplet):
             self.active_media_changed(active_media_handle)
 
     def is_true(self, value):
+        """Checks whether a given string value represents a boolean 'true'."""
         return str(value).strip().lower() in {"1", "true", "yes", "y"}
 
     def populate_links(self, entity_data, uids_data, nav_type, obj):
+        """Populates the list model with formatted website links relevant to the current entity."""
         self.model.clear()
         websites = self.website_loader.load_websites(self.config_ini_manager)
         obj_handle = obj.get_handle()
@@ -295,15 +410,6 @@ class WebSearch(Gramplet):
                         )
                         variables_json = json.dumps(variables)
 
-                        if len(variables["not_found_variables"]):
-                            print(
-                                f"Locale: {locale}.\n"
-                                f"Pattern: {url_pattern}.\n"
-                                f"Replaced variables: {variables['replaced_variables']}.\n"
-                                f"Not found variables: {variables['not_found_variables']}.\n"
-                                f"Empty variables: {variables['empty_variables']}.\n"
-                                f"Data: {data}."
-                            )
                         final_url = url_pattern % data
                         formatted_url = self.url_formatter.format(final_url, variables)
                         uid_icon, uid_visible = self.get_uid_icon_data(
@@ -332,17 +438,12 @@ class WebSearch(Gramplet):
                         + len(variables["empty_variables"])
                     )
 
+                    vars_color = "black"
                     if replaced_vars_count == total_vars_count:
                         vars_color = "green"
-                    if (
-                        replaced_vars_count != total_vars_count
-                        and replaced_vars_count != 0
-                    ):
+                    elif replaced_vars_count not in (total_vars_count, 0):
                         vars_color = "orange"
-                    if (
-                        replaced_vars_count != total_vars_count
-                        and replaced_vars_count == 0
-                    ):
+                    elif replaced_vars_count == 0:
                         vars_color = "red"
 
                     locale_text = locale
@@ -377,16 +478,11 @@ class WebSearch(Gramplet):
                     }
 
                     self.model.append([data_dict[name] for name, _ in MODEL_SCHEMA])
-                except KeyError as e:
-                    print(
-                        f"❌ {locale}. KeyError in template variables: {url_pattern}. Missing key: {e}",
-                        file=sys.stderr,
-                    )
+                except KeyError:
                     pass
 
     def get_locale_icon_data(self, locale):
-        from gi.repository import GdkPixbuf
-
+        """Returns an appropriate flag or icon based on the locale identifier."""
         locale_icon = None
         locale_icon_visible = False
 
@@ -430,6 +526,7 @@ class WebSearch(Gramplet):
         return locale_icon, locale_icon_visible
 
     def get_user_data_icon_data(self, is_custom):
+        """Returns the user data icon if the entry is from a user-defined source."""
         user_data_icon = None
         user_data_icon_visible = False
 
@@ -447,6 +544,7 @@ class WebSearch(Gramplet):
         return user_data_icon, user_data_icon_visible
 
     def get_visited_icon_data(self, hash_value):
+        """Returns the visited icon if the URL hash exists in the visited list."""
         visited_icon = None
         visited_icon_visible = False
         if self.website_loader.has_hash_in_file(hash_value, VISITED_HASH_FILE_PATH):
@@ -460,6 +558,7 @@ class WebSearch(Gramplet):
         return visited_icon, visited_icon_visible
 
     def get_saved_icon_data(self, hash_value):
+        """Returns the saved icon if the URL hash exists in the saved list."""
         saved_icon = None
         saved_icon_visible = False
         if self.website_loader.has_hash_in_file(hash_value, SAVED_HASH_FILE_PATH):
@@ -473,6 +572,7 @@ class WebSearch(Gramplet):
         return saved_icon, saved_icon_visible
 
     def get_uid_icon_data(self, replaced_variables, filtered_uids_data):
+        """Returns the UID icon if a matching variable from UID data was used."""
         uid_icon = None
         uid_visible = False
 
@@ -489,21 +589,28 @@ class WebSearch(Gramplet):
         return uid_icon, uid_visible
 
     def on_link_clicked(self, tree_view, path, column):
+        """Handles the event when a URL is clicked in the tree view and opens the link."""
         tree_iter = self.model.get_iter(path)
         url = self.model.get_value(tree_iter, ModelColumns.FINAL_URL.value)
         encoded_url = urllib.parse.quote(url, safe=URL_SAFE_CHARS)
         self.add_icon_event(
-            VISITED_HASH_FILE_PATH,
-            ICON_VISITED_PATH,
-            tree_iter,
-            ModelColumns.VISITED_ICON.value,
-            ModelColumns.VISITED_ICON_VISIBLE.value,
+            SimpleNamespace(
+                file_path=VISITED_HASH_FILE_PATH,
+                icon_path=ICON_VISITED_PATH,
+                tree_iter=tree_iter,
+                model_icon_pos=ModelColumns.VISITED_ICON.value,
+                model_visibility_pos=ModelColumns.VISITED_ICON_VISIBLE.value,
+            )
         )
         display_url(encoded_url)
 
-    def add_icon_event(
-        self, file_path, icon_path, tree_iter, model_icon_pos, model_visibility_pos
-    ):
+    def add_icon_event(self, settings):
+        """Adds a visual icon to the model and saves the hash when a link is clicked."""
+        file_path = settings.file_path
+        icon_path = settings.icon_path
+        tree_iter = settings.tree_iter
+        model_icon_pos = settings.model_icon_pos
+        model_visibility_pos = settings.model_visibility_pos
         url = self.model.get_value(tree_iter, ModelColumns.FINAL_URL.value)
         obj_handle = self.model.get_value(tree_iter, ModelColumns.OBJ_HANDLE.value)
         hash_value = self.website_loader.generate_hash(f"{url}|{obj_handle}")
@@ -522,6 +629,7 @@ class WebSearch(Gramplet):
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
 
     def active_person_changed(self, handle):
+        """Handles updates when the active person changes in the GUI."""
         self.close_context_menu()
 
         person = self.dbstate.db.get_person_from_handle(handle)
@@ -536,6 +644,7 @@ class WebSearch(Gramplet):
         self.update()
 
     def active_event_changed(self, handle):
+        """Handles updates when the active event changes in the GUI."""
         self.close_context_menu()
 
         event = self.dbstate.db.get_event_from_handle(handle)
@@ -547,6 +656,7 @@ class WebSearch(Gramplet):
         self.update()
 
     def active_citation_changed(self, handle):
+        """Handles updates when the active citation changes in the GUI."""
         self.close_context_menu()
 
         citation = self.dbstate.db.get_citation_from_handle(handle)
@@ -558,6 +668,7 @@ class WebSearch(Gramplet):
         self.update()
 
     def active_media_changed(self, handle):
+        """Handles updates when the active media changes in the GUI."""
         self.close_context_menu()
 
         media = self.dbstate.db.get_media_from_handle(handle)
@@ -569,10 +680,12 @@ class WebSearch(Gramplet):
         self.update()
 
     def close_context_menu(self):
+        """Closes the context menu if it is currently visible."""
         if self.ui.context_menu and self.ui.context_menu.get_visible():
             self.ui.context_menu.hide()
 
     def active_place_changed(self, handle):
+        """Handles updates when the active place changes in the GUI."""
         try:
             place = self.dbstate.db.get_place_from_handle(handle)
             self._context.place = place
@@ -582,10 +695,11 @@ class WebSearch(Gramplet):
             place_data = self.get_place_data(place)
             self.populate_links(place_data, {}, SupportedNavTypes.PLACES.value, place)
             self.update()
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc(), file=sys.stderr)
 
     def active_source_changed(self, handle):
+        """Handles updates when the active source changes in the GUI."""
         source = self.dbstate.db.get_source_from_handle(handle)
         self._context.source = source
         if not source:
@@ -596,6 +710,7 @@ class WebSearch(Gramplet):
         self.update()
 
     def active_family_changed(self, handle):
+        """Handles updates when the active family changes in the GUI."""
         family = self.dbstate.db.get_family_from_handle(handle)
         self._context.family = family
         if not family:
@@ -606,6 +721,7 @@ class WebSearch(Gramplet):
         self.update()
 
     def get_person_data(self, person):
+        """Extracts structured personal and date-related data from a Person object."""
         try:
             name = person.get_primary_name().get_first_name().strip()
             middle_name_handling = self.config_ini_manager.get_enum(
@@ -629,7 +745,7 @@ class WebSearch(Gramplet):
                 given, middle = name, None
 
             surname = person.get_primary_name().get_primary().strip() or None
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc(), file=sys.stderr)
             given, middle, surname = None, None, None
 
@@ -676,6 +792,7 @@ class WebSearch(Gramplet):
         return person_data, uids_data
 
     def get_family_data(self, family):
+        """Extracts structured data related to a family, including parents and events."""
         father = (
             self.dbstate.db.get_person_from_handle(family.get_father_handle())
             if family.get_father_handle()
@@ -852,15 +969,16 @@ class WebSearch(Gramplet):
         return family_data
 
     def get_place_data(self, place):
-        place_name = root_place_name = latitude = longitude = type = None
+        """Extracts structured place data such as name, coordinates, and type."""
+        place_name = root_place_name = latitude = longitude = place_type = None
         try:
             place_name = self.get_place_name(place)
             root_place_name = self.get_root_place_name(place)
             place_title = self.get_place_title(place)
             latitude = self.get_place_latitude(place)
             longitude = self.get_place_longitude(place)
-            type = self.get_place_type(place)
-        except Exception as e:
+            place_type = self.get_place_type(place)
+        except Exception:
             print(traceback.format_exc(), file=sys.stderr)
 
         place_data = {
@@ -868,7 +986,7 @@ class WebSearch(Gramplet):
             PlaceDataKeys.ROOT_PLACE.value: root_place_name or "",
             PlaceDataKeys.LATITUDE.value: latitude or "",
             PlaceDataKeys.LONGITUDE.value: longitude or "",
-            PlaceDataKeys.TYPE.value: type or "",
+            PlaceDataKeys.TYPE.value: place_type or "",
             PlaceDataKeys.TITLE.value: place_title or "",
             PlaceDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
         }
@@ -876,26 +994,29 @@ class WebSearch(Gramplet):
         return place_data
 
     def get_place_latitude(self, place):
+        """Returns the latitude of the place if available."""
         try:
             if place is None:
                 return None
             latitude = place.get_latitude()
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc(), file=sys.stderr)
             return None
         return latitude
 
     def get_place_longitude(self, place):
+        """Returns the longitude of the place if available."""
         try:
             if place is None:
                 return None
             longitude = place.get_longitude()
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc(), file=sys.stderr)
             return None
         return longitude
 
     def get_place_type(self, place):
+        """Returns the place type as a string or XML identifier."""
         try:
             if place is None:
                 return None
@@ -908,15 +1029,16 @@ class WebSearch(Gramplet):
             else:
                 place_type_value = None
 
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc(), file=sys.stderr)
             return None
         return place_type_value
 
     def get_source_data(self, source):
+        """Extracts basic information from a source object, including title and locale."""
         try:
             title = source.get_title() or None
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc(), file=sys.stderr)
             title = None
 
@@ -928,6 +1050,7 @@ class WebSearch(Gramplet):
         return source_data
 
     def get_root_place_name(self, place):
+        """Returns the root place name by traversing place hierarchy upward."""
         try:
             if place is None:
                 return None
@@ -949,13 +1072,14 @@ class WebSearch(Gramplet):
                     )
                 else:
                     break
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc(), file=sys.stderr)
             return None
 
         return root_place_name
 
     def get_place_title(self, place):
+        """Returns a full hierarchical title for the place (including parents)."""
         try:
             if not place:
                 return ""
@@ -981,26 +1105,29 @@ class WebSearch(Gramplet):
                     break
 
             return ", ".join(place_names) if place_names else ""
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc(), file=sys.stderr)
             return ""
 
     def get_birth_year(self, person):
+        """Returns the exact birth year from a person's birth event."""
         event = self.get_birth_event(person)
         return self.get_event_exact_year(event)
 
     def get_birth_years(self, person):
+        """Returns different birth year formats from the person's birth event."""
         event = self.get_birth_event(person)
         year, year_from, year_to, year_before, year_after = self.get_event_years(event)
         return year, year_from, year_to, year_before, year_after
 
     def get_death_years(self, person):
+        """Returns different death year formats from the person's death event."""
         event = self.get_death_event(person)
         year, year_from, year_to, year_before, year_after = self.get_event_years(event)
         return year, year_from, year_to, year_before, year_after
 
     def get_event_years(self, event):
-
+        """Returns a tuple of year values extracted from an event's date object."""
         year = None
         year_from = None
         year_to = None
@@ -1028,31 +1155,36 @@ class WebSearch(Gramplet):
                 year_from = start_date[2] if start_date else None
                 year_to = stop_date[2] if stop_date else None
             return year, year_from, year_to, year_before, year_after
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc(), file=sys.stderr)
         return year, year_from, year_to, year_before, year_after
 
     def get_birth_place(self, person):
+        """Returns the place name associated with the person's birth."""
         event = self.get_birth_event(person)
         place = self.get_event_place(event)
         return self.get_place_name(place)
 
     def get_birth_root_place(self, person):
+        """Returns the root place name from the person's birth event."""
         event = self.get_birth_event(person)
         place = self.get_event_place(event)
         return self.get_root_place_name(place)
 
     def get_death_root_place(self, person):
+        """Returns the root place name from the person's death event."""
         event = self.get_death_event(person)
         place = self.get_event_place(event)
         return self.get_root_place_name(place)
 
     def get_death_place(self, person):
+        """Returns the place name associated with the person's death."""
         event = self.get_death_event(person)
         place = self.get_event_place(event)
         return self.get_place_name(place)
 
     def get_birth_event(self, person):
+        """Returns the birth event object for the given person."""
         try:
             if person is None:
                 return None
@@ -1063,11 +1195,12 @@ class WebSearch(Gramplet):
                 self.dbstate.db.get_event_from_handle(ref.get_reference_handle())
                 or None
             )
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc(), file=sys.stderr)
             return None
 
     def get_death_event(self, person):
+        """Returns the death event object for the given person."""
         try:
             ref = person.get_death_ref()
             if ref is None:
@@ -1076,15 +1209,17 @@ class WebSearch(Gramplet):
                 self.dbstate.db.get_event_from_handle(ref.get_reference_handle())
                 or None
             )
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc(), file=sys.stderr)
             return None
 
     def get_death_year(self, person):
+        """Returns the exact year of the person's death."""
         event = self.get_death_event(person)
         return self.get_event_exact_year(event)
 
     def get_event_place(self, event):
+        """Returns the place object associated with the given event."""
         try:
             if event is None:
                 return None
@@ -1092,23 +1227,24 @@ class WebSearch(Gramplet):
             if not place_ref:
                 return None
             return self.dbstate.db.get_place_from_handle(place_ref) or None
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc(), file=sys.stderr)
             return None
 
     def get_event_exact_year(self, event):
+        """Returns the exact year from a non-compound event date."""
         try:
             if event is None:
                 return None
             date = event.get_date_object()
             if date and not date.is_compound():
                 return date.get_year() or None
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc(), file=sys.stderr)
-            pass
         return None
 
     def get_place_name(self, place):
+        """Returns the primary name value of the given place."""
         try:
             if place is None:
                 return None
@@ -1117,69 +1253,18 @@ class WebSearch(Gramplet):
                 return None
             value = name.get_value()
             return value or None
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc(), file=sys.stderr)
             return None
 
     def build_gui(self):
-        # Load UI from XML
-        self.builder = Gtk.Builder()
-        self.builder.add_from_file(INTERFACE_FILE_PATH)
+        """Constructs and returns the full GTK UI for the WebSearch Gramplet."""
+
         self.builder.connect_signals(self)
 
-        # Get the main container
-        self.ui = SimpleNamespace(
-            boxes=SimpleNamespace(
-                main=self.builder.get_object("main_box"),
-                badges=SimpleNamespace(
-                    box=self.builder.get_object("badges_box"),
-                    container=self.builder.get_object("badge_container"),
-                ),
-            ),
-            ai_recommendations_label=self.builder.get_object(
-                "ai_recommendations_label"
-            ),
-            tree_view=self.builder.get_object("treeview"),
-            context_menu=self.builder.get_object("context_menu"),
-            context_menu_items=SimpleNamespace(
-                add_note=self.builder.get_object("add_note"),
-                show_qr=self.builder.get_object("show_qr"),
-                copy_link=self.builder.get_object("copy_link"),
-                hide_selected=self.builder.get_object("hide_selected"),
-                hide_all=self.builder.get_object("hide_all"),
-            ),
-            text_renderers=SimpleNamespace(
-                locale=self.builder.get_object("locale_text_renderer"),
-                vars_replaced=self.builder.get_object("vars_replaced_renderer"),
-                slash=self.builder.get_object("slash_renderer"),
-                vars_total=self.builder.get_object("vars_total_renderer"),
-                title=self.builder.get_object("title_renderer"),
-                url=self.builder.get_object("url_renderer"),
-                comment=self.builder.get_object("comment_renderer"),
-            ),
-            icon_renderers=SimpleNamespace(
-                category=self.builder.get_object("category_icon_renderer"),
-                visited=self.builder.get_object("visited_icon_renderer"),
-                saved=self.builder.get_object("saved_icon_renderer"),
-                uid=self.builder.get_object("uid_icon_renderer"),
-                user_data=self.builder.get_object("user_data_icon_renderer"),
-                locale=self.builder.get_object("locale_icon_renderer"),
-            ),
-            columns=SimpleNamespace(
-                icons=self.builder.get_object("icons_column"),
-                locale=self.builder.get_object("locale_column"),
-                vars=self.builder.get_object("vars_column"),
-                title=self.builder.get_object("title_column"),
-                url=self.builder.get_object("url_column"),
-                comment=self.builder.get_object("comment_column"),
-            ),
-        )
-
         # Create and set the ListStore model
-        self.model = Gtk.ListStore(*MODEL_TYPES)
         self.ui.tree_view.set_model(self.model)
         self.ui.tree_view.set_has_tooltip(True)
-        self.ui.tree_view.set_fixed_height_mode(True)
 
         # Get selection object
         selection = self.ui.tree_view.get_selection()
@@ -1290,6 +1375,7 @@ class WebSearch(Gramplet):
         return self.ui.boxes.main
 
     def reorder_columns(self):
+        """Reorders the treeview columns based on user configuration."""
         self._columns_order = self.config_ini_manager.get_list(
             "websearch.columns_order", DEFAULT_COLUMNS_ORDER
         )
@@ -1307,25 +1393,28 @@ class WebSearch(Gramplet):
                 previous_column = column
 
     def on_column_changed(self, tree_view):
+        """Saves the current order of columns when changed by the user."""
         columns = tree_view.get_columns()
         column_map = {v: k for k, v in self.ui.columns.__dict__.items()}
         columns_order = [column_map[col] for col in columns]
-        print(columns_order)
         self.config_ini_manager.set_list("websearch.columns_order", columns_order)
 
     def update_url_column_visibility(self):
+        """Updates the visibility of the 'Website URL' column."""
         self._show_url_column = self.config_ini_manager.get_boolean_option(
             "websearch.show_url_column", DEFAULT_SHOW_URL_COLUMN
         )
         self.ui.columns.url.set_visible(self._show_url_column)
 
     def update_vars_column_visibility(self):
+        """Updates the visibility of the 'Vars' column."""
         self._show_vars_column = self.config_ini_manager.get_boolean_option(
             "websearch.show_vars_column", DEFAULT_SHOW_VARS_COLUMN
         )
         self.ui.columns.vars.set_visible(self._show_vars_column)
 
     def translate(self):
+        """Sets translated text for UI elements and context menu."""
         self.ui.columns.locale.set_title("")
         self.ui.columns.vars.set_title(_("Vars"))
         self.ui.columns.title.set_title(_("Title"))
@@ -1343,16 +1432,19 @@ class WebSearch(Gramplet):
         self.ui.ai_recommendations_label.set_text(_("🔍 AI Suggestions"))
 
     def toggle_badges_visibility(self):
+        """Shows or hides the badge container based on OpenAI usage."""
         if self._use_openai:
             self.ui.boxes.badges.box.show()
         else:
             self.ui.boxes.badges.box.hide()
 
     def add_sorting(self, column, index):
+        """Enables sorting for the specified column."""
         column.set_sort_column_id(index)
         self.model.set_sort_column_id(index, Gtk.SortType.ASCENDING)
 
     def apply_styles(self):
+        """Applies custom CSS styling to the WebSearch interface."""
         css_provider = Gtk.CssProvider()
         css_provider.load_from_path(STYLE_CSS_PATH)
         Gtk.StyleContext.add_provider_for_screen(
@@ -1362,15 +1454,19 @@ class WebSearch(Gramplet):
         )
 
     def populate_badges(self, domain_url_pairs):
-        self.ui.boxes.badges.container.foreach(
-            lambda widget: self.ui.boxes.badges.container.remove(widget)
-        )
+        """Displays AI-suggested site badges in the interface."""
+        self.ui.boxes.badges.container.foreach(self.remove_widget)
         for domain, url in domain_url_pairs:
             badge = self.create_badge(domain, url)
             self.ui.boxes.badges.container.add(badge)
         self.ui.boxes.badges.container.show_all()
 
+    def remove_widget(self, widget):
+        """Removes a widget from the container."""
+        self.ui.boxes.badges.container.remove(widget)
+
     def create_badge(self, domain, url):
+        """Creates a clickable badge widget for an AI-suggested domain."""
         badge_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         badge_box.get_style_context().add_class("badge")
 
@@ -1386,19 +1482,23 @@ class WebSearch(Gramplet):
 
         event_box = Gtk.EventBox()
         event_box.add(label)
-        event_box.connect(
-            "button-press-event", lambda widget, event: self.open_url(url)
-        )
+        event_box.connect("button-press-event", self.on_button_press_event, url)
 
         badge_box.pack_start(event_box, True, True, 0)
         badge_box.pack_start(close_button, False, False, 0)
 
         return badge_box
 
+    def on_button_press_event(self, widget, event, url):
+        """Handles button press event to open a URL."""
+        self.open_url(url)
+
     def open_url(self, url):
+        """Opens the given URL in the default web browser."""
         webbrowser.open(urllib.parse.quote(url, safe=URL_SAFE_CHARS))
 
     def on_remove_badge(self, button, badge):
+        """Handles removing a badge and saving its domain to skipped list."""
         domain_label = None
         for child in badge.get_children():
             if isinstance(child, Gtk.EventBox):
@@ -1412,6 +1512,7 @@ class WebSearch(Gramplet):
         self.ui.boxes.badges.container.remove(badge)
 
     def on_button_press(self, widget, event):
+        """Handles right-click context menu activation in the treeview."""
         if event.button == RIGHT_MOUSE_BUTTON:
             path_info = widget.get_path_at_pos(event.x, event.y)
             if path_info:
@@ -1437,6 +1538,7 @@ class WebSearch(Gramplet):
                 self.ui.context_menu.popup_at_pointer(event)
 
     def on_add_note(self, widget):
+        """Adds the current selected URL as a note to the person record."""
         if not self._context.active_tree_path:
             print("❌ Error: No saved path to the iterator!", file=sys.stderr)
             return
@@ -1444,10 +1546,12 @@ class WebSearch(Gramplet):
         note = Note()
         note.set(
             _(
-                "📌 This web link was added using the WebSearch gramplet for future reference:\n\n🔗 {url}\n\n"
-                "You can use this link to revisit the source and verify the information related to this person."
+                "📌 This web link was added using the WebSearch gramplet for future reference:\n\n"
+                "🔗 {url}\n\nYou can use this link to revisit the source and verify the "
+                "information related to this person."
             ).format(url=self._context.active_url)
         )
+
         note.set_privacy(True)
 
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
@@ -1460,15 +1564,19 @@ class WebSearch(Gramplet):
                 self.dbstate.db.commit_person(self._context.person, trans)
 
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
+
         self.add_icon_event(
-            SAVED_HASH_FILE_PATH,
-            ICON_SAVED_PATH,
-            tree_iter,
-            ModelColumns.SAVED_ICON.value,
-            ModelColumns.SAVED_ICON_VISIBLE.value,
+            SimpleNamespace(
+                file_path=SAVED_HASH_FILE_PATH,
+                icon_path=ICON_SAVED_PATH,
+                tree_iter=tree_iter,
+                model_icon_pos=ModelColumns.SAVED_ICON.value,
+                model_visibility_pos=ModelColumns.SAVED_ICON_VISIBLE.value,
+            )
         )
 
     def on_show_qr_code(self, widget):
+        """Opens a window showing the QR code for the selected URL."""
         selection = self.ui.tree_view.get_selection()
         model, tree_iter = selection.get_selected()
         if tree_iter is not None:
@@ -1477,6 +1585,7 @@ class WebSearch(Gramplet):
             qr_window.show_all()
 
     def on_copy_url_to_clipboard(self, widget):
+        """Copies the selected URL to the system clipboard."""
         selection = self.ui.tree_view.get_selection()
         model, tree_iter = selection.get_selected()
         if tree_iter is not None:
@@ -1488,6 +1597,7 @@ class WebSearch(Gramplet):
             notification.show_all()
 
     def on_hide_link_for_selected_item(self, widget):
+        """Hides the selected link only for the current Gramps object."""
         selection = self.ui.tree_view.get_selection()
         model, tree_iter = selection.get_selected()
         if tree_iter is not None:
@@ -1503,6 +1613,7 @@ class WebSearch(Gramplet):
             model.remove(tree_iter)
 
     def on_hide_link_for_all_items(self, widget):
+        """Hides the selected link for all Gramps objects."""
         selection = self.ui.tree_view.get_selection()
         model, tree_iter = selection.get_selected()
         if tree_iter is not None:
@@ -1517,11 +1628,13 @@ class WebSearch(Gramplet):
             model.remove(tree_iter)
 
     def show_notification(self, message):
+        """Displays a floating notification with the given message."""
         notification = Notification(message)
         notification.show_all()
         return notification
 
     def get_active_tree_iter(self, path):
+        """Returns the tree iter for the given tree path."""
         path_str = str(path)
         try:
             tree_path = Gtk.TreePath.new_from_string(path_str)
@@ -1534,6 +1647,7 @@ class WebSearch(Gramplet):
             return None
 
     def on_add_attribute(self, widget):
+        """(Unused) Adds the selected URL as an attribute to the person."""
         if not self._context.active_tree_path:
             print("❌ Error: No saved path to the iterator!", file=sys.stderr)
             return
@@ -1553,18 +1667,17 @@ class WebSearch(Gramplet):
 
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
         self.add_icon_event(
-            SAVED_HASH_FILE_PATH,
-            ICON_SAVED_PATH,
-            tree_iter,
-            ModelColumns.SAVED_ICON.value,
-            ModelColumns.SAVED_ICON_VISIBLE.value,
+            SimpleNamespace(
+                file_path=SAVED_HASH_FILE_PATH,
+                icon_path=ICON_SAVED_PATH,
+                tree_iter=tree_iter,
+                model_icon_pos=ModelColumns.SAVED_ICON.value,
+                model_visibility_pos=ModelColumns.SAVED_ICON_VISIBLE.value,
+            )
         )
 
-    def on_download_page(self, widget):
-        pass
-
     def on_query_tooltip(self, widget, x, y, keyboard_mode, tooltip):
-
+        """Displays a tooltip with variable and comment information."""
         bin_x, bin_y = widget.convert_widget_to_bin_window_coords(x, y)
         path_info = widget.get_path_at_pos(bin_x, bin_y)
 
@@ -1583,7 +1696,7 @@ class WebSearch(Gramplet):
                 for var in variables["replaced_variables"]
                 for key, value in var.items()
             ]
-            empty_variables = [var for var in variables["empty_variables"]]
+            empty_variables = list(variables["empty_variables"])
 
             tooltip_text = _("Title: {title}\n").format(title=title)
             if replaced_variables:
@@ -1602,10 +1715,12 @@ class WebSearch(Gramplet):
         return False
 
     def build_options(self):
+        """Builds the list of configurable options for the Gramplet."""
         self.opts = self.settings_ui_manager.build_options()
         list(map(self.add_option, self.opts))
 
     def save_options(self):
+        """Saves the current state of the configuration options."""
         self.config_ini_manager.set_boolean_list(
             "websearch.enabled_files", self.opts[0].get_selected()
         )
@@ -1645,6 +1760,7 @@ class WebSearch(Gramplet):
         self.config_ini_manager.save()
 
     def save_update_options(self, obj):
+        """Saves configuration options and refreshes the Gramplet view."""
         self.save_options()
         self.update()
         self.on_load()
@@ -1652,6 +1768,7 @@ class WebSearch(Gramplet):
         self.update_vars_column_visibility()
 
     def on_load(self):
+        """Loads all persistent WebSearch configuration settings."""
         self._enabled_files = self.config_ini_manager.get_list(
             "websearch.enabled_files", DEFAULT_ENABLED_FILES
         )

@@ -9,7 +9,7 @@ People,Gallica (search SRU),1,"https://gallica.bnf.fr/services/engine/search/sru
 People,Gallica (search),1,"https://gallica.bnf.fr/Search?ArianeWireIndex=index&p=1&lang=FR&q=""%(surname)s,+%(given)s""",
 People,RetroNews,1,https://www.retronews.fr/search#allTerms=%(surname)s&sort=score&page=1&searchIn=all,
 People,GeneaBook,1,https://www.geneanet.org/fonds/bibliotheque/?&nom=%(surname)s&prenom=&q=%(given)s&go=1,
-People,Google,1,https://www.google.fr/search?hl=fr&q=%(surname)s,+%(given)s,
+People,Google,1,https://www.google.fr/search?hl=fr&q=%(surname)s+%(given)s,
 People,Hathi Trust,1,"https://babel.hathitrust.org/cgi/ls?q1=%(surname)s+%(given)s+&lmt=ft&a=srchls&facet=language008_full:""French""",
 People,Open Library,1,"https://openlibrary.org/search?q=""%(surname)s, %(given)s""&language=fre'",
 Places,Geneanet,1,https://search.geneanet.org/result.php?lang=fr&place=%(place)s,

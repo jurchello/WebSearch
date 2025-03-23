@@ -20,12 +20,27 @@
 
 # ----------------------------------------------------------------------------
 
+"""
+This module provides the WebsiteLoader class responsible for managing
+CSV-based website data for the WebSearch Gramplet in Gramps.
+
+It supports loading genealogy websites from both built-in and user-defined
+CSV files, handles state tracking via hash files, and extracts locale/domain
+information for site suggestions and filtering.
+"""
+
 import os
 import csv
 import sys
 import hashlib
 
-from constants import *
+from constants import (
+    CSV_DIR,
+    USER_DATA_CSV_DIR,
+    DEFAULT_ENABLED_FILES,
+    CsvColumnNames,
+    SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH,
+)
 
 
 class WebsiteLoader:
@@ -47,6 +62,9 @@ class WebsiteLoader:
 
     @staticmethod
     def get_csv_files():
+        """
+        Returns a list of all available CSV file paths from both built-in and user directories.
+        """
         files = {}
         if os.path.exists(CSV_DIR):
             for f in os.listdir(CSV_DIR):
@@ -60,6 +78,7 @@ class WebsiteLoader:
 
     @staticmethod
     def get_selected_csv_files(config_ini_manager):
+        """Returns only the user-enabled CSV file paths based on current configuration."""
         csv_files = WebsiteLoader.get_csv_files()
         selected_files = config_ini_manager.get_list(
             "websearch.enabled_files", DEFAULT_ENABLED_FILES
@@ -68,6 +87,7 @@ class WebsiteLoader:
 
     @staticmethod
     def get_all_and_selected_files(config_ini_manager):
+        """Returns a tuple of (all_files, selected_files), where both are filename lists."""
         all_files = [os.path.basename(f) for f in WebsiteLoader.get_csv_files()]
         selected_files = config_ini_manager.get_list(
             "websearch.enabled_files", DEFAULT_ENABLED_FILES
@@ -76,10 +96,12 @@ class WebsiteLoader:
 
     @staticmethod
     def generate_hash(string: str) -> str:
+        """Generates a 16-character SHA-256 hash for a given string (used for link tracking)."""
         return hashlib.sha256(string.encode()).hexdigest()[:16]
 
     @staticmethod
     def has_hash_in_file(hash_value: str, file_path) -> bool:
+        """Checks if the given hash exists in the specified file."""
         if not os.path.exists(file_path):
             return False
         with open(file_path, "r", encoding="utf-8") as file:
@@ -87,6 +109,7 @@ class WebsiteLoader:
 
     @staticmethod
     def has_string_in_file(string_value: str, file_path) -> bool:
+        """Checks if the given string exists in the specified file."""
         if not os.path.exists(file_path):
             return False
         with open(file_path, "r", encoding="utf-8") as file:
@@ -94,18 +117,21 @@ class WebsiteLoader:
 
     @staticmethod
     def save_hash_to_file(hash_value: str, file_path):
+        """Appends the hash to the file only if it doesn't already exist."""
         if not WebsiteLoader.has_hash_in_file(hash_value, file_path):
             with open(file_path, "a", encoding="utf-8") as file:
                 file.write(hash_value + "\n")
 
     @staticmethod
     def save_string_to_file(string_value: str, file_path):
+        """Appends the string to the file only if it doesn't already exist."""
         if not WebsiteLoader.has_string_in_file(string_value, file_path):
             with open(file_path, "a", encoding="utf-8") as file:
                 file.write(string_value + "\n")
 
     @staticmethod
     def load_skipped_domains() -> set:
+        """Loads and returns a set of skipped domain names from file."""
         if not os.path.exists(SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH):
             return set()
         with open(SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH, "r", encoding="utf-8") as file:
@@ -113,11 +139,19 @@ class WebsiteLoader:
 
     @staticmethod
     def save_skipped_domain(domain: str):
+        """Saves a domain name to the skipped domains file."""
         with open(SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH, "a", encoding="utf-8") as file:
             file.write(domain + "\n")
 
     @classmethod
     def load_websites(cls, config_ini_manager):
+        """
+        Loads websites from selected CSV files into a list.
+
+        Returns:
+            list: Each item is a list containing:
+                [nav_type, locale, title, is_enabled, url, comment, is_custom_file]
+        """
         websites = []
         selected_csv_files = cls.get_selected_csv_files(config_ini_manager)
 
@@ -150,9 +184,11 @@ class WebsiteLoader:
 
                     if not all([nav_type, title, is_enabled, url]):
                         print(
-                            f"⚠️ Some data are missing in: {selected_file_path}. A row is skipped: {row}",
+                            f"⚠️ Some data missing in: {selected_file_path}. A row is skipped: "
+                            f"{row}",
                             file=sys.stderr,
                         )
+
                         continue
 
                     websites.append(
@@ -170,6 +206,12 @@ class WebsiteLoader:
 
     @classmethod
     def get_domains_data(cls, config_ini_manager):
+        """
+        Scans selected CSV files and extracts locales, domains, and include_global flag.
+
+        Returns:
+            tuple: (locales: set, domains: set, include_global: bool)
+        """
         selected_csv_files = cls.get_selected_csv_files(config_ini_manager)
         cls.locales = set()
         cls.domains = set()

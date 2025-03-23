@@ -20,8 +20,16 @@
 
 # ----------------------------------------------------------------------------
 
-import gi
+"""
+Provides a GTK window to display a QR code for a given URL in the WebSearch Gramplet.
+"""
+
 import sys
+import gi
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("GdkPixbuf", "2.0")
+from gi.repository import Gtk, GdkPixbuf
 
 try:
     import qrcode
@@ -31,17 +39,7 @@ except ImportError:
         file=sys.stderr,
     )
 
-gi.require_version("Gtk", "3.0")
-gi.require_version("GdkPixbuf", "2.0")
-from gi.repository import Gtk, GdkPixbuf
-
-try:
-    from gramps.gen.const import GRAMPS_LOCALE as glocale
-
-    _trans = glocale.get_addon_translator(__file__)
-except ValueError:
-    _trans = glocale.translation
-_ = _trans.gettext
+from translation_helper import _
 
 
 class QRCodeWindow(Gtk.Window):
@@ -68,6 +66,13 @@ class QRCodeWindow(Gtk.Window):
     """
 
     def __init__(self, url):
+        """
+        Initialize the QRCodeWindow with a QR code or an error message.
+
+        Args:
+            url (str): The URL to generate a QR code for. The resulting QR code
+                       or an error message will be displayed in the window.
+        """
         super().__init__(title=_("QR-code"))
         self.set_default_size(300, 300)
         self.set_position(Gtk.WindowPosition.CENTER)
@@ -87,6 +92,16 @@ class QRCodeWindow(Gtk.Window):
             self.add(error_label)
 
     def generate_qr(self, url):
+        """
+        Generate a QR code image for the given URL.
+
+        Args:
+            url (str): The URL to encode as a QR code.
+
+        Returns:
+            tuple: (GdkPixbuf.Pixbuf, None) if successful,
+                   (None, str) with error message otherwise.
+        """
         try:
             qr = qrcode.make(url)
             qr.save("/tmp/qrcode.png")

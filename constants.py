@@ -21,7 +21,8 @@
 # ----------------------------------------------------------------------------
 
 """
-This module defines various enumerations and constants used in the WebSearch Gramplet for Gramps.
+This module defines various enumerations and constants used in the
+WebSearch Gramplet for Gramps.
 
 Enums:
 - MiddleNameHandling: Specifies how to handle middle names.
@@ -38,7 +39,8 @@ Constants:
 - Default settings for URL handling and file management.
 - Category icons for different genealogy-related sections.
 
-These enums and constants help standardize data representation and ensure consistency in website data processing.
+These enums and constants help standardize data representation and
+ensure consistency in website data processing.
 """
 
 import os
@@ -51,12 +53,16 @@ from gramps.gen.const import USER_DATA
 
 
 class MiddleNameHandling(Enum):
+    """Specifies strategies for handling middle names in generated URLs."""
+
     LEAVE_ALONE = "leave alone"
     SEPARATE = "separate"
     REMOVE = "remove"
 
 
 class SupportedNavTypes(Enum):
+    """Enumerates supported navigation types in Gramps for WebSearch."""
+
     PEOPLE = "People"
     PLACES = "Places"
     SOURCES = "Sources"
@@ -67,6 +73,8 @@ class SupportedNavTypes(Enum):
 
 
 class PersonDataKeys(Enum):
+    """Defines all available variable keys for 'Person' navigation type."""
+
     GIVEN = "given"
     MIDDLE = "middle"
     SURNAME = "surname"
@@ -89,6 +97,8 @@ class PersonDataKeys(Enum):
 
 
 class FamilyDataKeys(Enum):
+    """Defines all available variable keys for 'Family' navigation type."""
+
     FATHER_GIVEN = "father_given"
     FATHER_MIDDLE = "father_middle"
     FATHER_SURNAME = "father_surname"
@@ -145,6 +155,8 @@ class FamilyDataKeys(Enum):
 
 
 class CsvColumnNames(Enum):
+    """Defines expected column headers for CSV files."""
+
     NAV_TYPE = "Navigation type"
     TITLE = "Title"
     IS_ENABLED = "Is enabled"
@@ -153,6 +165,8 @@ class CsvColumnNames(Enum):
 
 
 class URLCompactnessLevel(Enum):
+    """Enumerates levels of URL compactness in formatting."""
+
     SHORTEST = "shortest"
     COMPACT_NO_ATTRIBUTES = "compact_no_attributes"
     COMPACT_WITH_ATTRIBUTES = "compact_with_attributes"
@@ -160,6 +174,8 @@ class URLCompactnessLevel(Enum):
 
 
 class PlaceDataKeys(Enum):
+    """Defines all variable keys for the 'Place' navigation type."""
+
     PLACE = "place"
     ROOT_PLACE = "root_place"
     LATITUDE = "latitude"
@@ -170,6 +186,8 @@ class PlaceDataKeys(Enum):
 
 
 class SourceDataKeys(Enum):
+    """Defines variable keys for source-based navigation."""
+
     TITLE = "source_title"
     SYSTEM_LOCALE = "locale"
 
