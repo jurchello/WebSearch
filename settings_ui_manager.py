@@ -212,6 +212,21 @@ class SettingsUIManager:
         all_files, selected_files = WebsiteLoader.get_all_and_selected_files(
             self.config_ini_manager
         )
+
+        priority_files = [
+            "common-links.csv",
+            "static-links.csv",
+            "uid-links.csv",
+        ]
+
+        def sort_key(f):
+            try:
+                return (0, priority_files.index(f))
+            except ValueError:
+                return (1, f.lower())
+
+        all_files.sort(key=sort_key)
+
         opt = BooleanListOption(_("Enable CSV Files"))
         for file in all_files:
             opt.add_button(file, file in selected_files)
