@@ -38,15 +38,15 @@ msgid "URL Compactness Level"
 msgstr ""
 
 #: settings_ui_manager.py:125
-msgid "Shortest - No Prefix, No Variables"
+msgid "Shortest - No Prefix, No Keys"
 msgstr ""
 
 #: settings_ui_manager.py:128
-msgid "Compact - No Prefix, Variables Without Attributes"
+msgid "Compact - No Prefix, keys Without Attributes"
 msgstr ""
 
 #: settings_ui_manager.py:131
-msgid "Compact - No Prefix, Variables With Attributes"
+msgid "Compact - No Prefix, keys With Attributes"
 msgstr ""
 
 #: settings_ui_manager.py:134
@@ -180,12 +180,12 @@ msgstr ""
 
 #: WebSearch.py:1703
 #, python-brace-format
-msgid "Replaced: {variables}\n"
+msgid "Replaced: {keys}\n"
 msgstr ""
 
 #: WebSearch.py:1707
 #, python-brace-format
-msgid "Empty: {variables}\n"
+msgid "Empty: {keys}\n"
 msgstr ""
 
 #: WebSearch.py:1711

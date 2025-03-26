@@ -27,7 +27,7 @@ If the translator initialization through GRAMPS_LOCALE is successful,
 the appropriate translation is used.
 Otherwise, the default translation is applied.
 
-The variable _ contains the gettext function for retrieving translated strings.
+The key _ contains the gettext function for retrieving translated strings.
 """
 
 try:

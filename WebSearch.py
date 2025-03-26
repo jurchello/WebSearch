@@ -120,7 +120,7 @@ MODEL_SCHEMA = [
     ("final_url", str),
     ("comment", str),
     ("url_pattern", str),
-    ("variables_json", str),
+    ("keys_json", str),
     ("formatted_url", str),
     ("visited_icon", GdkPixbuf.Pixbuf),
     ("saved_icon", GdkPixbuf.Pixbuf),
@@ -401,32 +401,32 @@ class WebSearch(Gramplet):
                         formatted_url = url_pattern
                         uid_icon = None
                         uid_visible = False
-                        variables = {
-                            "replaced_variables": [],
-                            "not_found_variables": [],
-                            "empty_variables": [],
+                        keys = {
+                            "replaced_keys": [],
+                            "not_found_keys": [],
+                            "empty_keys": [],
                         }
-                        variables_json = json.dumps(variables)
+                        keys_json = json.dumps(keys)
                         replaced_vars_count = 0
                         total_vars_count = 0
                     else:
                         filtered_uids_data = (
-                            self.attribute_loader.add_matching_variables_to_data(
+                            self.attribute_loader.add_matching_keys_to_data(
                                 uids_data, url_pattern
                             )
                         )
                         data = entity_data.copy()
                         data.update(filtered_uids_data)
 
-                        variables = self.url_formatter.check_pattern_variables(
+                        keys = self.url_formatter.check_pattern_keys(
                             url_pattern, data
                         )
-                        variables_json = json.dumps(variables)
+                        keys_json = json.dumps(keys)
 
                         final_url = url_pattern % data
-                        formatted_url = self.url_formatter.format(final_url, variables)
+                        formatted_url = self.url_formatter.format(final_url, keys)
                         uid_icon, uid_visible = self.get_uid_icon_data(
-                            variables["replaced_variables"], filtered_uids_data
+                            keys["replaced_keys"], filtered_uids_data
                         )
 
                     icon_name = CATEGORY_ICON.get(nav_type, DEFAULT_CATEGORY_ICON)
@@ -444,11 +444,11 @@ class WebSearch(Gramplet):
                     )
                     locale_icon, locale_icon_visible = self.get_locale_icon_data(locale)
 
-                    replaced_vars_count = len(variables["replaced_variables"])
+                    replaced_vars_count = len(keys["replaced_keys"])
                     total_vars_count = (
-                        len(variables["not_found_variables"])
-                        + len(variables["replaced_variables"])
-                        + len(variables["empty_variables"])
+                        len(keys["not_found_keys"])
+                        + len(keys["replaced_keys"])
+                        + len(keys["empty_keys"])
                     )
 
                     vars_color = "black"
@@ -470,7 +470,7 @@ class WebSearch(Gramplet):
                         "final_url": final_url,
                         "comment": comment,
                         "url_pattern": url_pattern,
-                        "variables_json": variables_json,
+                        "keys_json": keys_json,
                         "formatted_url": formatted_url,
                         "visited_icon": visited_icon,
                         "saved_icon": saved_icon,
@@ -584,13 +584,13 @@ class WebSearch(Gramplet):
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
         return saved_icon, saved_icon_visible
 
-    def get_uid_icon_data(self, replaced_variables, filtered_uids_data):
-        """Returns the UID icon if a matching variable from UID data was used."""
+    def get_uid_icon_data(self, replaced_keys, filtered_uids_data):
+        """Returns the UID icon if a matching key from UID data was used."""
         uid_icon = None
         uid_visible = False
 
         try:
-            replaced_vars_set = {list(var.keys())[0] for var in replaced_variables}
+            replaced_vars_set = {list(var.keys())[0] for var in replaced_keys}
             if any(var in replaced_vars_set for var in filtered_uids_data.keys()):
                 uid_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
                     ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT
@@ -1429,7 +1429,7 @@ class WebSearch(Gramplet):
     def translate(self):
         """Sets translated text for UI elements and context menu."""
         self.ui.columns.locale.set_title("")
-        self.ui.columns.vars.set_title(_("Vars"))
+        self.ui.columns.vars.set_title(_("Keys"))
         self.ui.columns.title.set_title(_("Title"))
         self.ui.columns.url.set_title(_("Website URL"))
         self.ui.columns.comment.set_title(_("Comment"))
@@ -1690,7 +1690,7 @@ class WebSearch(Gramplet):
         )
 
     def on_query_tooltip(self, widget, x, y, keyboard_mode, tooltip):
-        """Displays a tooltip with variable and comment information."""
+        """Displays a tooltip with key and comment information."""
         bin_x, bin_y = widget.convert_widget_to_bin_window_coords(x, y)
         path_info = widget.get_path_at_pos(bin_x, bin_y)
 
@@ -1700,25 +1700,25 @@ class WebSearch(Gramplet):
             title = self.model.get_value(tree_iter, ModelColumns.TITLE.value)
             comment = self.model.get_value(tree_iter, ModelColumns.COMMENT.value) or ""
 
-            variables_json = self.model.get_value(
-                tree_iter, ModelColumns.VARIABLES_JSON.value
+            keys_json = self.model.get_value(
+                tree_iter, ModelColumns.KEYS_JSON.value
             )
-            variables = json.loads(variables_json)
-            replaced_variables = [
+            keys = json.loads(keys_json)
+            replaced_keys = [
                 f"{key}={value}"
-                for var in variables["replaced_variables"]
+                for var in keys["replaced_keys"]
                 for key, value in var.items()
             ]
-            empty_variables = list(variables["empty_variables"])
+            empty_keys = list(keys["empty_keys"])
 
             tooltip_text = _("Title: {title}\n").format(title=title)
-            if replaced_variables:
-                tooltip_text += _("Replaced: {variables}\n").format(
-                    variables=", ".join(replaced_variables)
+            if replaced_keys:
+                tooltip_text += _("Replaced: {keys}\n").format(
+                    keys=", ".join(replaced_keys)
                 )
-            if empty_variables:
-                tooltip_text += _("Empty: {variables}\n").format(
-                    variables=", ".join(empty_variables)
+            if empty_keys:
+                tooltip_text += _("Empty: {keys}\n").format(
+                    keys=", ".join(empty_keys)
                 )
             if comment:
                 tooltip_text += _("Comment: {comment}\n").format(comment=comment)

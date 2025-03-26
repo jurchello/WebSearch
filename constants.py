@@ -73,7 +73,7 @@ class SupportedNavTypes(Enum):
 
 
 class PersonDataKeys(Enum):
-    """Defines all available variable keys for 'Person' navigation type."""
+    """Defines all available key keys for 'Person' navigation type."""
 
     GIVEN = "given"
     MIDDLE = "middle"
@@ -97,7 +97,7 @@ class PersonDataKeys(Enum):
 
 
 class FamilyDataKeys(Enum):
-    """Defines all available variable keys for 'Family' navigation type."""
+    """Defines all available key keys for 'Family' navigation type."""
 
     FATHER_GIVEN = "father_given"
     FATHER_MIDDLE = "father_middle"
@@ -174,7 +174,7 @@ class URLCompactnessLevel(Enum):
 
 
 class PlaceDataKeys(Enum):
-    """Defines all variable keys for the 'Place' navigation type."""
+    """Defines all key keys for the 'Place' navigation type."""
 
     PLACE = "place"
     ROOT_PLACE = "root_place"
@@ -186,7 +186,7 @@ class PlaceDataKeys(Enum):
 
 
 class SourceDataKeys(Enum):
-    """Defines variable keys for source-based navigation."""
+    """Defines key keys for source-based navigation."""
 
     TITLE = "source_title"
     SYSTEM_LOCALE = "locale"
