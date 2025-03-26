@@ -35,6 +35,13 @@ except ImportError:
         file=sys.stderr,
     )
 
+try:
+    import mistralai
+except ImportError:
+    print(
+        "⚠ MistralAI module is missing. Install it using: `pip install mistralai`.",
+        file=sys.stderr,
+    )
 
 class SiteFinder:
     """
@@ -118,6 +125,29 @@ class SiteFinder:
             )
         except Exception as e:
             print(f"❌ Unexpected error while calling OpenAI: {e}", file=sys.stderr)
+            return "[]"
+
+        try:
+            return completion.choices[0].message.content
+        except Exception as e:
+            print(f"❌ Error parsing OpenAI response: {e}", file=sys.stderr)
+            return "[]"
+
+        try:
+            from mistralai import Mistral
+            import os
+            with Mistral(
+                api_key=os.getenv("MISTRAL_API_KEY", ""),
+                ) as mistral:
+
+                res = mistral.chat.complete(model="mistral-small-latest", messages=[
+                    {
+                        "content": "Who is the best French painter? Answer in one short sentence.",
+                        "role": "user",
+                    },
+                ])
+        except Exception as e:
+            print(f"❌ Unexpected error while calling MistralAI: {e}", file=sys.stderr)
             return "[]"
 
         try:
