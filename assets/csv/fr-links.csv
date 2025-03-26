@@ -12,6 +12,8 @@ People,GeneaBook,1,https://www.geneanet.org/fonds/bibliotheque/?&nom=%(surname)s
 People,Google,1,https://www.google.fr/search?hl=fr&q=%(surname)s+%(given)s,
 People,Hathi Trust,1,"https://babel.hathitrust.org/cgi/ls?q1=%(surname)s+%(given)s+&lmt=ft&a=srchls&facet=language008_full:""French""",
 People,Open Library,1,"https://openlibrary.org/search?q=""%(surname)s, %(given)s""&language=fre'",
+People,France Archives,1,"https://francearchives.gouv.fr/fr/basedenoms?es_names=%(surname)s&es_forenames=%(given)s&fulltext_facet=%(surname)s",
+Places,France Archives,1,"https://francearchives.gouv.fr/fr/basedenoms?es_locations=%(place)s,
 Places,Geneanet,1,https://search.geneanet.org/result.php?lang=fr&place=%(place)s,
 Places,Historical Families Center,1,https://www.cdhf.net/fr/index.php?t=villages&d=villages&c=villages&f=results&p=&page=&lieu2=%(place)s,
 Places,Gallica (places),1,https://gallica.bnf.fr/Search?ArianeWireIndex=index&p=1&lang=FR&q=%(place)s,
