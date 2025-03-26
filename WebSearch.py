@@ -70,6 +70,7 @@ from constants import (
     DEFAULT_URL_COMPACTNESS_LEVEL,
     DEFAULT_URL_PREFIX_REPLACEMENT,
     DEFAULT_USE_OPEN_AI,
+    DEFAULT_USE_MISTRAL_AI,
     CATEGORY_ICON,
     DEFAULT_CATEGORY_ICON,
     HIDDEN_HASH_FILE_PATH,
@@ -268,14 +269,28 @@ class WebSearch(Gramplet):
         locales, domains, include_global = self.website_loader.get_domains_data(
             self.config_ini_manager
         )
-        if not self._use_openai:
+        #if not self._use_openai:
+            #self.toggle_badges_visibility()
+            #return
+        #if not self._openai_api_key:
+            #print("❌ ERROR: No OpenAI API Key found.", file=sys.stderr)
+            #self.toggle_badges_visibility()
+            #return
+        #self.finder = SiteFinder(self._openai_api_key)
+        #threading.Thread(
+            #target=self.fetch_sites_in_background,
+            #args=(domains, locales, include_global),
+            #daemon=True,
+        #).start()
+
+        if not self._use_mistralai:
             self.toggle_badges_visibility()
             return
-        if not self._openai_api_key:
-            print("❌ ERROR: No OpenAI API Key found.", file=sys.stderr)
+        if not self._mistralai_api_key:
+            print("❌ ERROR: No MistralAI API Key found.", file=sys.stderr)
             self.toggle_badges_visibility()
             return
-        self.finder = SiteFinder(self._openai_api_key)
+        self.finder = SiteFinder(self._mistralai_api_key)
         threading.Thread(
             target=self.fetch_sites_in_background,
             args=(domains, locales, include_global),
@@ -1433,7 +1448,11 @@ class WebSearch(Gramplet):
 
     def toggle_badges_visibility(self):
         """Shows or hides the badge container based on OpenAI usage."""
-        if self._use_openai:
+        #if self._use_openai:
+            #self.ui.boxes.badges.box.show()
+        #else:
+            #self.ui.boxes.badges.box.hide()
+        if self._use_mistralai:
             self.ui.boxes.badges.box.show()
         else:
             self.ui.boxes.badges.box.hide()
@@ -1737,10 +1756,10 @@ class WebSearch(Gramplet):
             "websearch.url_prefix_replacement", self.opts[4].get_value()
         )
         self.config_ini_manager.set_boolean_option(
-            "websearch.use_openai", self.opts[5].get_value()
+            "websearch.use_mistralai", self.opts[5].get_value()
         )
         self.config_ini_manager.set_string(
-            "websearch.openai_api_key", self.opts[6].get_value()
+            "websearch.mistralai_api_key", self.opts[6].get_value()
         )
         self.config_ini_manager.set_boolean_option(
             "websearch.show_url_column", self.opts[7].get_value()
@@ -1772,11 +1791,17 @@ class WebSearch(Gramplet):
         self._enabled_files = self.config_ini_manager.get_list(
             "websearch.enabled_files", DEFAULT_ENABLED_FILES
         )
-        self._use_openai = self.config_ini_manager.get_boolean_option(
-            "websearch.use_openai", DEFAULT_USE_OPEN_AI
+        #self._use_openai = self.config_ini_manager.get_boolean_option(
+            #"websearch.use_openai", DEFAULT_USE_OPEN_AI
+        #)
+        #self._openai_api_key = self.config_ini_manager.get_string(
+            #"websearch.openai_api_key"
+
+        self._use_mistralai = self.config_ini_manager.get_boolean_option(
+            "websearch.use_mistralai", DEFAULT_USE_MISTRAL_AI
         )
-        self._openai_api_key = self.config_ini_manager.get_string(
-            "websearch.openai_api_key"
+        self._mistralai_api_key = self.config_ini_manager.get_string(
+            "websearch.mistralai_api_key"
         )
         self._middle_name_handling = self.config_ini_manager.get_enum(
             "websearch.middle_name_handling",

@@ -40,6 +40,7 @@ from constants import (
     DEFAULT_URL_COMPACTNESS_LEVEL,
     DEFAULT_URL_PREFIX_REPLACEMENT,
     DEFAULT_USE_OPEN_AI,
+    DEFAULT_USE_MISTRAL_AI,
     DEFAULT_SHOW_URL_COLUMN,
     DEFAULT_SHOW_VARS_COLUMN,
     DEFAULT_SHOW_USER_DATA_ICON,
@@ -142,9 +143,9 @@ class SettingsUIManager:
             DEFAULT_URL_PREFIX_REPLACEMENT,
         )
         self.add_boolean_option(
-            "websearch.use_openai", _("Use OpenAI"), DEFAULT_USE_OPEN_AI
+            "websearch.use_mistralai", _("Use MistralAI"), DEFAULT_USE_OPEN_AI
         )
-        self.add_string_option("websearch.openai_api_key", _("OpenAI API Key"))
+        self.add_string_option("websearch.mistralai_api_key", _("MistralAI API Key"))
         self.add_boolean_option(
             "websearch.show_url_column",
             _("Display 'Website URL' Column"),

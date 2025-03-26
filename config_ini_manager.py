@@ -38,6 +38,7 @@ from constants import (
     DEFAULT_SHOW_SHORT_URL,
     DEFAULT_URL_COMPACTNESS_LEVEL,
     DEFAULT_USE_OPEN_AI,
+    DEFAULT_USE_MISTRAL_AI,
     DEFAULT_SHOW_URL_COLUMN,
     DEFAULT_SHOW_VARS_COLUMN,
     DEFAULT_SHOW_USER_DATA_ICON,
@@ -74,8 +75,8 @@ class ConfigINIManager:
         self.config.register(
             "websearch.url_compactness_level", DEFAULT_URL_COMPACTNESS_LEVEL
         )
-        self.config.register("websearch.use_openai", DEFAULT_USE_OPEN_AI)
-        self.config.register("websearch.openai_api_key", "")
+        self.config.register("websearch.use_mistralai", DEFAULT_USE_MISTRAL_AI)
+        self.config.register("websearch.mistralai_api_key", "")
         self.config.register("websearch.show_url_column", DEFAULT_SHOW_URL_COLUMN)
         self.config.register("websearch.show_vars_column", DEFAULT_SHOW_VARS_COLUMN)
         self.config.register(
