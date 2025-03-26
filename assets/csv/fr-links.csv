@@ -15,7 +15,7 @@ People,Open Library,1,https://openlibrary.org/search/inside?q="%(surname)s+%(giv
 People,France Archives,1,"https://francearchives.gouv.fr/fr/basedenoms?es_names=%(surname)s&es_forenames=%(given)s&fulltext_facet=%(surname)s",
 Places,France Archives,1,"https://francearchives.gouv.fr/fr/basedenoms?es_locations=%(place)s,
 Places,Geneanet,1,https://search.geneanet.org/result.php?lang=fr&place=%(place)s,
-Places,Historical Families Center,1,https://www.cdhf.net/fr/index.php?t=villages&d=villages&c=villages&f=results&p=&page=&lieu2=%(place)s,
+Places,Historical Families Center,1,https://www.crhf.net/fr/index.php?t=bases&d=bases%2Fmoteurpat&c=moteurpat&f=selection&p=&patronyme=%(surname)s,
 Places,Gallica (places),1,https://gallica.bnf.fr/Search?ArianeWireIndex=index&p=1&lang=FR&q=%(place)s,
 Places,Open Library,1,https://openlibrary.org/search?place=%(places)s&language=fre,
 Sources,Gallica (sources),1,https://gallica.bnf.fr/Search?ArianeWireIndex=index&p=1&lang=FR&q=%(source_title)s,
