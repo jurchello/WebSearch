@@ -20,7 +20,4 @@ Places,Gallica (places),1,https://gallica.bnf.fr/Search?ArianeWireIndex=index&p=
 Places,Open Library,1,https://openlibrary.org/search?place=%(places)s&language=fre,
 Sources,Gallica (sources),1,https://gallica.bnf.fr/Search?ArianeWireIndex=index&p=1&lang=FR&q=%(source_title)s,
 Sources,Google books,1,https://www.google.fr/search?tbs=bks:1&q=%(source_title)s,
-People,Canadian source (people),1,https://www.fichierorigine.com/recherche?nom=%(surname)s,
-Places,Canadian source (places),1,https://www.fichierorigine.com/recherche?commune=%(place)s&pays=%(root_place)s,
-People,Belgium's Archives,1,https://search.arch.be/fr/rechercher-des-personnes/resultats/q/zoekwijze/s?text=%(surname)s,
 Places,Index GOV,1,https://gov.genealogy.net/search/name?name=%(place)s&lang=fr,

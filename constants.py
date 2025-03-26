@@ -213,6 +213,7 @@ URL_PREFIXES_TO_TRIM = ["https://www.", "http://www.", "https://", "http://"]
 COMMON_CSV_FILE_NAME = "common-links.csv"
 UID_CSV_FILE_NAME = "uid-links.csv"
 STATIC_CSV_FILE_NAME = "static-links.csv"
+CROSS_CSV_FILE_NAME = "cross-links.csv"
 
 CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -240,6 +241,7 @@ ICON_USER_DATA_PATH = os.path.join(ICONS_DIR, "user-file.png")
 ICON_PIN_PATH = os.path.join(ICONS_DIR, "pin.png")
 ICON_EARTH_PATH = os.path.join(ICONS_DIR, "earth.png")
 ICON_CHAIN_PATH = os.path.join(ICONS_DIR, "chain.png")
+ICON_CROSS_PATH = os.path.join(ICONS_DIR, "cross.png")
 
 STYLE_CSS_PATH = os.path.join(ASSETS_DIR, "style.css")
 DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(

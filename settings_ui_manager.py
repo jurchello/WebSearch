@@ -45,6 +45,10 @@ from constants import (
     DEFAULT_SHOW_FLAG_ICONS,
     DEFAULT_SHOW_ATTRIBUTE_LINKS,
     DEFAULT_AI_PROVIDER,
+    COMMON_CSV_FILE_NAME,
+    UID_CSV_FILE_NAME,
+    STATIC_CSV_FILE_NAME,
+    CROSS_CSV_FILE_NAME,
     MiddleNameHandling,
     URLCompactnessLevel,
     AIProviders,
@@ -214,9 +218,10 @@ class SettingsUIManager:
         )
 
         priority_files = [
-            "common-links.csv",
-            "static-links.csv",
-            "uid-links.csv",
+            COMMON_CSV_FILE_NAME,
+            UID_CSV_FILE_NAME,
+            STATIC_CSV_FILE_NAME,
+            CROSS_CSV_FILE_NAME,
         ]
 
         def sort_key(f):

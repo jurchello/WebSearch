@@ -103,6 +103,7 @@ from constants import (
     DEFAULT_SHOW_FLAG_ICONS,
     DEFAULT_SHOW_ATTRIBUTE_LINKS,
     DEFAULT_AI_PROVIDER,
+    ICON_CROSS_PATH,
     URLCompactnessLevel,
     MiddleNameHandling,
     PersonDataKeys,
@@ -508,6 +509,12 @@ class WebSearch(Gramplet):
         if locale == "STATIC":
             locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
                 ICON_PIN_PATH, ICON_SIZE, ICON_SIZE
+            )
+            locale_icon_visible = True
+            return locale_icon, locale_icon_visible
+        if locale == "CROSS":
+            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                ICON_CROSS_PATH, ICON_SIZE, ICON_SIZE
             )
             locale_icon_visible = True
             return locale_icon, locale_icon_visible
