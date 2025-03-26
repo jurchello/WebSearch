@@ -1,4 +1,4 @@
-#
+# ----------------------------------------------------------------------------
 # Gramps - a GTK+/GNOME based genealogy program
 #
 # Copyright (C) 2025 Yurii Liubymyi <jurchello@gmail.com>
@@ -16,58 +16,46 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-#
-
 # ----------------------------------------------------------------------------
 
 """
-Provides the SiteFinder class, which uses OpenAI to suggest genealogy-related
+Provides the MistralSiteFinder class, which uses Mistral AI to suggest genealogy-related
 websites in JSON format.
 """
 
 import sys
-
-try:
-    import openai
-except ImportError:
-    print(
-        "⚠ OpenAI module is missing. Install it using: `pip install openai`.",
-        file=sys.stderr,
-    )
+import requests
 
 
-class SiteFinder:
+class MistralSiteFinder:
     """
-    SiteFinder class for retrieving genealogy-related websites using OpenAI.
+    MistralSiteFinder class for retrieving genealogy-related websites using Mistral AI.
 
-    This class interacts with OpenAI's API to fetch a list of genealogy research websites
+    This class interacts with Mistral's API to fetch a list of genealogy research websites
     while excluding certain domains and filtering results based on locale preferences.
 
-    Key Features:
-    - Uses OpenAI to generate a list of relevant genealogy research sites.
-    - Accepts excluded domains and locale-based filters.
-    - Returns results in strict JSON format with "domain" and "url" keys.
-
     Attributes:
-    - api_key (str): API key for OpenAI authentication.
+    - api_key (str): API key for Mistral authentication.
 
     Methods:
     - find_sites(excluded_domains, locales, include_global):
-        Sends a query to OpenAI and returns a JSON-formatted list of relevant genealogy websites.
+        Sends a query to Mistral and returns a JSON-formatted list of relevant genealogy websites.
     """
 
-    def __init__(self, api_key):
+    def __init__(self, api_key, model):
         """
-        Initialize the SiteFinder with an OpenAI API key.
+        Initialize the MistralSiteFinder with a Mistral API key.
 
         Args:
-            api_key (str): OpenAI API key used for authentication.
+            api_key (str): Mistral API key used for authentication.
         """
         self.api_key = api_key
+        self.model = model
+        self.api_url = "https://api.mistral.ai/v1/chat/completions"
 
     def find_sites(self, excluded_domains, locales, include_global):
         """
-        Query OpenAI to find genealogy research websites.
+        Query Mistral to find genealogy research websites.
 
         Args:
             excluded_domains (list of str): List of domains to exclude from results.
@@ -107,21 +95,24 @@ class SiteFinder:
             "If no relevant websites are found, return an empty array [] without any explanations."
         )
 
-        try:
-            client = openai.OpenAI(api_key=self.api_key)
-            completion = client.chat.completions.create(
-                model="gpt-4-turbo",
-                messages=[
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": user_message},
-                ],
-            )
-        except Exception as e:
-            print(f"❌ Unexpected error while calling OpenAI: {e}", file=sys.stderr)
-            return "[]"
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
+        payload = {
+            "model": self.model,
+            "messages": [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message},
+            ],
+        }
 
         try:
-            return completion.choices[0].message.content
+            response = requests.post(self.api_url, json=payload, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
         except Exception as e:
-            print(f"❌ Error parsing OpenAI response: {e}", file=sys.stderr)
+            print(f"❌ Error while calling Mistral API: {e}", file=sys.stderr)
             return "[]"

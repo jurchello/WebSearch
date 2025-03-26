@@ -182,12 +182,12 @@ Allows users to replace or remove certain URL prefixes (e.g., removing `https://
 #### **Use OpenAI (`websearch.use_openai`)**
 If enabled, OpenAI will be used to generate additional genealogy research suggestions.
 
-#### **OpenAI API Key (`websearch.openai_api_key`)**
+#### **AI API Key (`websearch.ai_api_key`)**
 The API key required to use OpenAI services for generating additional research links.
 
 Most settings take effect immediately. However, the following two settings require a restart, as OpenAI is only initialized once when the application starts:
 - **Use OpenAI**
-- **OpenAI API Key**
+- **AI API Key**
 
 For details on how OpenAI is used, the costs associated with it, and what data is transmitted, see the [See OpenAI Usage](#7-openai-usage) section.
 
@@ -522,7 +522,7 @@ This section provides an overview of how OpenAI is integrated into the WebSearch
 - **No data from the Gramps database is transmitted to OpenAI.**
 - **Cost Considerations:** As of **March 18, 2025**, the average cost per request is **0.0091 USD** (0.91 cents). With this pricing, approximately **109 requests** can be made for **1 USD**.
 - **Data Transmission**: When a request is made to OpenAI, the Gramplet sends a structured prompt describing the required genealogy resources.
-- **Disabling OpenAI Integration:** Users can **disable** the use of OpenAI in the settings at any time. Additionally, they can remove the OpenAI API key from the configuration. When OpenAI is disabled, the **AI-generated suggestions section will no longer appear** in the lower part of the Gramplet.
+- **Disabling OpenAI Integration:** Users can **disable** the use of OpenAI in the settings at any time. Additionally, they can remove the AI API key from the configuration. When OpenAI is disabled, the **AI-generated suggestions section will no longer appear** in the lower part of the Gramplet.
 - **Disclaimer:** The author assumes **no responsibility** for the use of OpenAI within this Gramplet. The user **accepts all risks** associated with its usage, whatever they may be. By enabling OpenAI integration, the user acknowledges and agrees that all interactions with OpenAI are subject to OpenAI’s terms of service and privacy policies.
 
 ## 8. Community Contributions and Support

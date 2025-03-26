@@ -192,6 +192,11 @@ class SourceDataKeys(Enum):
     SYSTEM_LOCALE = "locale"
 
 
+class AIProviders(Enum):
+    DISABLED = ""
+    OPENAI = "openai"
+    MISTRAL = "mistral"
+
 # --------------------------
 # CONSTANTS
 # --------------------------
@@ -247,7 +252,6 @@ USER_DATA_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(
 
 DEFAULT_CATEGORY_ICON = "gramps-gramplet"
 DEFAULT_SHOW_SHORT_URL = False
-DEFAULT_USE_OPEN_AI = False
 DEFAULT_URL_PREFIX_REPLACEMENT = ""
 DEFAULT_QUERY_PARAMETERS_REPLACEMENT = "..."
 DEFAULT_URL_COMPACTNESS_LEVEL = URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value
@@ -258,6 +262,7 @@ DEFAULT_SHOW_VARS_COLUMN = False
 DEFAULT_SHOW_USER_DATA_ICON = False
 DEFAULT_SHOW_FLAG_ICONS = True
 DEFAULT_SHOW_ATTRIBUTE_LINKS = False
+DEFAULT_AI_PROVIDER = AIProviders.DISABLED.value
 
 DEFAULT_COLUMNS_ORDER = ["icons", "locale", "vars", "title", "url", "comment"]
 

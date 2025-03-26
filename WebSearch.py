@@ -56,7 +56,8 @@ from gramps.gen.lib.placetype import PlaceType
 
 # Own project imports
 from qr_window import QRCodeWindow
-from site_finder import SiteFinder
+from openai_site_finder import OpenaiSiteFinder
+from mistral_site_finder import MistralSiteFinder
 from config_ini_manager import ConfigINIManager
 from settings_ui_manager import SettingsUIManager
 from website_loader import WebsiteLoader
@@ -69,7 +70,6 @@ from constants import (
     DEFAULT_SHOW_SHORT_URL,
     DEFAULT_URL_COMPACTNESS_LEVEL,
     DEFAULT_URL_PREFIX_REPLACEMENT,
-    DEFAULT_USE_OPEN_AI,
     CATEGORY_ICON,
     DEFAULT_CATEGORY_ICON,
     HIDDEN_HASH_FILE_PATH,
@@ -102,6 +102,7 @@ from constants import (
     DEFAULT_SHOW_USER_DATA_ICON,
     DEFAULT_SHOW_FLAG_ICONS,
     DEFAULT_SHOW_ATTRIBUTE_LINKS,
+    DEFAULT_AI_PROVIDER,
     URLCompactnessLevel,
     MiddleNameHandling,
     PersonDataKeys,
@@ -109,6 +110,7 @@ from constants import (
     PlaceDataKeys,
     SourceDataKeys,
     SupportedNavTypes,
+    AIProviders
 )
 
 MODEL_SCHEMA = [
@@ -268,14 +270,25 @@ class WebSearch(Gramplet):
         locales, domains, include_global = self.website_loader.get_domains_data(
             self.config_ini_manager
         )
-        if not self._use_openai:
+
+        if self._ai_provider == AIProviders.DISABLED.value:
             self.toggle_badges_visibility()
             return
-        if not self._openai_api_key:
-            print("❌ ERROR: No OpenAI API Key found.", file=sys.stderr)
+
+        if not self._ai_api_key:
+            print("❌ ERROR: No AI API Key found.", file=sys.stderr)
             self.toggle_badges_visibility()
             return
-        self.finder = SiteFinder(self._openai_api_key)
+
+        if self._ai_provider == AIProviders.OPENAI.value:
+            self.finder = OpenaiSiteFinder(self._ai_api_key, self._ai_model)
+        elif self._ai_provider == AIProviders.MISTRAL.value:
+            self.finder = MistralSiteFinder(self._ai_api_key, self._ai_model)
+        else:
+            print(f"⚠ Unknown AI provider: {self._ai_provider}", file=sys.stderr)
+            self.toggle_badges_visibility()
+            return
+
         threading.Thread(
             target=self.fetch_sites_in_background,
             args=(domains, locales, include_global),
@@ -1433,7 +1446,7 @@ class WebSearch(Gramplet):
 
     def toggle_badges_visibility(self):
         """Shows or hides the badge container based on OpenAI usage."""
-        if self._use_openai:
+        if self._ai_provider != AIProviders.DISABLED.value:
             self.ui.boxes.badges.box.show()
         else:
             self.ui.boxes.badges.box.hide()
@@ -1736,26 +1749,27 @@ class WebSearch(Gramplet):
         self.config_ini_manager.set_string(
             "websearch.url_prefix_replacement", self.opts[4].get_value()
         )
+
+        self.config_ini_manager.set_enum("websearch.ai_provider", self.opts[5].get_value())
+        self.config_ini_manager.set_string("websearch.openai_api_key", self.opts[6].get_value())
+        self.config_ini_manager.set_string("websearch.openai_model", self.opts[7].get_value())
+        self.config_ini_manager.set_string("websearch.mistral_api_key", self.opts[8].get_value())
+        self.config_ini_manager.set_string("websearch.mistral_model", self.opts[9].get_value())
+
         self.config_ini_manager.set_boolean_option(
-            "websearch.use_openai", self.opts[5].get_value()
-        )
-        self.config_ini_manager.set_string(
-            "websearch.openai_api_key", self.opts[6].get_value()
-        )
-        self.config_ini_manager.set_boolean_option(
-            "websearch.show_url_column", self.opts[7].get_value()
-        )
-        self.config_ini_manager.set_boolean_option(
-            "websearch.show_vars_column", self.opts[8].get_value()
+            "websearch.show_url_column", self.opts[10].get_value()
         )
         self.config_ini_manager.set_boolean_option(
-            "websearch.show_user_data_icon", self.opts[9].get_value()
+            "websearch.show_vars_column", self.opts[11].get_value()
         )
         self.config_ini_manager.set_boolean_option(
-            "websearch.show_flag_icons", self.opts[10].get_value()
+            "websearch.show_user_data_icon", self.opts[12].get_value()
         )
         self.config_ini_manager.set_boolean_option(
-            "websearch.show_attribute_links", self.opts[11].get_value()
+            "websearch.show_flag_icons", self.opts[13].get_value()
+        )
+        self.config_ini_manager.set_boolean_option(
+            "websearch.show_attribute_links", self.opts[14].get_value()
         )
         self.config_ini_manager.save()
 
@@ -1772,12 +1786,40 @@ class WebSearch(Gramplet):
         self._enabled_files = self.config_ini_manager.get_list(
             "websearch.enabled_files", DEFAULT_ENABLED_FILES
         )
-        self._use_openai = self.config_ini_manager.get_boolean_option(
-            "websearch.use_openai", DEFAULT_USE_OPEN_AI
+        self._ai_provider = self.config_ini_manager.get_enum(
+            "websearch.ai_provider",
+            AIProviders,
+            DEFAULT_AI_PROVIDER,
         )
+
         self._openai_api_key = self.config_ini_manager.get_string(
-            "websearch.openai_api_key"
+            "websearch.openai_api_key",
+            ""
         )
+        self._openai_model = self.config_ini_manager.get_string(
+            "websearch.openai_model",
+            ""
+        )
+
+        self._mistral_api_key = self.config_ini_manager.get_string(
+            "websearch.mistral_api_key",
+            ""
+        )
+        self._mistral_model = self.config_ini_manager.get_string(
+            "websearch.mistral_model",
+            ""
+        )
+
+        if (self._ai_provider == AIProviders.OPENAI.value):
+            self._ai_api_key = self._openai_api_key
+            self._ai_model = self._openai_model
+        if (self._ai_provider == AIProviders.MISTRAL.value):
+            self._ai_api_key = self._mistral_api_key
+            self._ai_model = self._mistral_model
+        elif (self._ai_provider == AIProviders.DISABLED.value):
+            self._ai_api_key = ''
+            self._ai_model = ''
+
         self._middle_name_handling = self.config_ini_manager.get_enum(
             "websearch.middle_name_handling",
             MiddleNameHandling,

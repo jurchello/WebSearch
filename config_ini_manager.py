@@ -22,7 +22,7 @@
 
 """Configuration manager for the WebSearch Gramplet.
 
-This module handles reading and writing user settings (such as OpenAI API key,
+This module handles reading and writing user settings (such as AI API key,
 URL formatting preferences, enabled data sources, display toggles, etc.) from
 a configuration file using Gramps' config system.
 """
@@ -37,13 +37,13 @@ from constants import (
     DEFAULT_URL_PREFIX_REPLACEMENT,
     DEFAULT_SHOW_SHORT_URL,
     DEFAULT_URL_COMPACTNESS_LEVEL,
-    DEFAULT_USE_OPEN_AI,
     DEFAULT_SHOW_URL_COLUMN,
     DEFAULT_SHOW_VARS_COLUMN,
     DEFAULT_SHOW_USER_DATA_ICON,
     DEFAULT_COLUMNS_ORDER,
     DEFAULT_SHOW_FLAG_ICONS,
     DEFAULT_SHOW_ATTRIBUTE_LINKS,
+    DEFAULT_AI_PROVIDER,
 )
 
 
@@ -74,8 +74,11 @@ class ConfigINIManager:
         self.config.register(
             "websearch.url_compactness_level", DEFAULT_URL_COMPACTNESS_LEVEL
         )
-        self.config.register("websearch.use_openai", DEFAULT_USE_OPEN_AI)
+        self.config.register("websearch.ai_provider", DEFAULT_AI_PROVIDER)
         self.config.register("websearch.openai_api_key", "")
+        self.config.register("websearch.openai_model", "")
+        self.config.register("websearch.mistral_api_key", "")
+        self.config.register("websearch.mistral_model", "")
         self.config.register("websearch.show_url_column", DEFAULT_SHOW_URL_COLUMN)
         self.config.register("websearch.show_vars_column", DEFAULT_SHOW_VARS_COLUMN)
         self.config.register(

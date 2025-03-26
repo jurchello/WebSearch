@@ -63,7 +63,7 @@ msgid "Use OpenAI"
 msgstr "Використовувати OpenAI"
 
 #: settings_ui_manager.py:147
-msgid "OpenAI API Key"
+msgid "AI API Key"
 msgstr "Ключ API OpenAI"
 
 #: settings_ui_manager.py:150

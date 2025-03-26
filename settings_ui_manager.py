@@ -39,14 +39,15 @@ from constants import (
     DEFAULT_SHOW_SHORT_URL,
     DEFAULT_URL_COMPACTNESS_LEVEL,
     DEFAULT_URL_PREFIX_REPLACEMENT,
-    DEFAULT_USE_OPEN_AI,
     DEFAULT_SHOW_URL_COLUMN,
     DEFAULT_SHOW_VARS_COLUMN,
     DEFAULT_SHOW_USER_DATA_ICON,
     DEFAULT_SHOW_FLAG_ICONS,
     DEFAULT_SHOW_ATTRIBUTE_LINKS,
+    DEFAULT_AI_PROVIDER,
     MiddleNameHandling,
     URLCompactnessLevel,
+    AIProviders,
 )
 
 from translation_helper import _
@@ -141,10 +142,43 @@ class SettingsUIManager:
             _("URL Prefix Replacement"),
             DEFAULT_URL_PREFIX_REPLACEMENT,
         )
-        self.add_boolean_option(
-            "websearch.use_openai", _("Use OpenAI"), DEFAULT_USE_OPEN_AI
+
+        # AI Provider selection (OpenAI, Mistral, etc.)
+        self.add_enum_option(
+            "websearch.ai_provider",
+            _("AI Provider"),
+            SimpleNamespace(
+                enum_class=AIProviders,
+                default=DEFAULT_AI_PROVIDER,
+                descriptions={
+                    AIProviders.DISABLED.value: _("(Disabled)"),
+                    AIProviders.OPENAI.value: _("OpenAI"),
+                    AIProviders.MISTRAL.value: _("Mistral AI"),
+                },
+            ),
         )
-        self.add_string_option("websearch.openai_api_key", _("OpenAI API Key"))
+
+        self.add_string_option(
+            "websearch.openai_api_key",
+            _("OpenAI API Key"),
+            "",
+        )
+        self.add_string_option(
+            "websearch.openai_model",
+            _("OpenAI Model"),
+            "",
+        )
+        self.add_string_option(
+            "websearch.mistral_api_key",
+            _("Mistral API Key"),
+            "",
+        )
+        self.add_string_option(
+            "websearch.mistral_model",
+            _("Mistral Model"),
+            "",
+        )
+
         self.add_boolean_option(
             "websearch.show_url_column",
             _("Display 'Website URL' Column"),
