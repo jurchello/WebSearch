@@ -149,9 +149,3 @@ class SiteFinder:
         except Exception as e:
             print(f"❌ Unexpected error while calling MistralAI: {e}", file=sys.stderr)
             return "[]"
-
-        try:
-            return completion.choices[0].message.content
-        except Exception as e:
-            print(f"❌ Error parsing OpenAI response: {e}", file=sys.stderr)
-            return "[]"
