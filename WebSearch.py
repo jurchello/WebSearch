@@ -382,10 +382,10 @@ class WebSearch(Gramplet):
         obj_handle = obj.get_handle()
 
         if self._show_attribute_links:
-            attr_links = self.attribute_links_loader.get_links_from_attributes(
+            attr_websites = self.attribute_links_loader.get_links_from_attributes(
                 obj, nav_type
             )
-            websites += attr_links
+            websites += attr_websites
 
         for nav, locale, title, is_enabled, url_pattern, comment, is_custom in websites:
 
