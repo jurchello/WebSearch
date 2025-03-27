@@ -125,8 +125,6 @@ MODEL_SCHEMA = [
     ("formatted_url", str),
     ("visited_icon", GdkPixbuf.Pixbuf),
     ("saved_icon", GdkPixbuf.Pixbuf),
-    ("uid_icon", GdkPixbuf.Pixbuf),
-    ("uid_visible", bool),
     ("nav_type", str),
     ("visited_icon_visible", bool),
     ("saved_icon_visible", bool),
@@ -223,7 +221,6 @@ class WebSearch(Gramplet):
                 category=self.builder.get_object("category_icon_renderer"),
                 visited=self.builder.get_object("visited_icon_renderer"),
                 saved=self.builder.get_object("saved_icon_renderer"),
-                uid=self.builder.get_object("uid_icon_renderer"),
                 user_data=self.builder.get_object("user_data_icon_renderer"),
                 locale=self.builder.get_object("locale_icon_renderer"),
             ),
@@ -400,8 +397,6 @@ class WebSearch(Gramplet):
                     if locale in ["STATIC", "ATTR"]:
                         final_url = url_pattern
                         formatted_url = url_pattern
-                        uid_icon = None
-                        uid_visible = False
                         keys = {
                             "replaced_keys": [],
                             "not_found_keys": [],
@@ -426,9 +421,13 @@ class WebSearch(Gramplet):
 
                         final_url = url_pattern % data
                         formatted_url = self.url_formatter.format(final_url, keys)
-                        uid_icon, uid_visible = self.get_uid_icon_data(
-                            keys["replaced_keys"], filtered_uids_data
-                        )
+
+                        try:
+                            replaced_vars_set = {list(var.keys())[0] for var in keys["replaced_keys"]}
+                            if any(var in replaced_vars_set for var in filtered_uids_data.keys()):
+                                locale = 'UID'
+                        except Exception:
+                            pass
 
                     icon_name = CATEGORY_ICON.get(nav_type, DEFAULT_CATEGORY_ICON)
                     hash_value = self.website_loader.generate_hash(
@@ -461,7 +460,7 @@ class WebSearch(Gramplet):
                         vars_color = "red"
 
                     locale_text = locale
-                    if locale_text in ["COMMON", "UID", "STATIC"]:
+                    if locale_text in ["COMMON", "UID", "STATIC", "CROSS", "ATTR"]:
                         locale_text = ""
 
                     data_dict = {
@@ -475,8 +474,6 @@ class WebSearch(Gramplet):
                         "formatted_url": formatted_url,
                         "visited_icon": visited_icon,
                         "saved_icon": saved_icon,
-                        "uid_icon": uid_icon,
-                        "uid_visible": uid_visible,
                         "nav_type": nav_type,
                         "visited_icon_visible": visited_icon_visible,
                         "saved_icon_visible": saved_icon_visible,
@@ -518,13 +515,17 @@ class WebSearch(Gramplet):
             )
             locale_icon_visible = True
             return locale_icon, locale_icon_visible
+        if locale == "UID":
+            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT
+            )
+            locale_icon_visible = True
+            return locale_icon, locale_icon_visible
         if locale == "ATTR":
             locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
                 ICON_CHAIN_PATH, ICON_SIZE, ICON_SIZE
             )
             locale_icon_visible = True
-            return locale_icon, locale_icon_visible
-        if locale == "UID":
             return locale_icon, locale_icon_visible
 
         if not locale or not self._show_flag_icons:
@@ -590,23 +591,6 @@ class WebSearch(Gramplet):
             except Exception as e:
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
         return saved_icon, saved_icon_visible
-
-    def get_uid_icon_data(self, replaced_keys, filtered_uids_data):
-        """Returns the UID icon if a matching key from UID data was used."""
-        uid_icon = None
-        uid_visible = False
-
-        try:
-            replaced_vars_set = {list(var.keys())[0] for var in replaced_keys}
-            if any(var in replaced_vars_set for var in filtered_uids_data.keys()):
-                uid_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT
-                )
-                uid_visible = True
-        except Exception as e:
-            print(f"❌ Error loading UID icon: {e}", file=sys.stderr)
-
-        return uid_icon, uid_visible
 
     def on_link_clicked(self, tree_view, path, column):
         """Handles the event when a URL is clicked in the tree view and opens the link."""
@@ -1370,12 +1354,6 @@ class WebSearch(Gramplet):
         )
         self.ui.columns.title.add_attribute(
             self.ui.text_renderers.title, "text", ModelColumns.TITLE.value
-        )
-        self.ui.columns.url.add_attribute(
-            self.ui.icon_renderers.uid, "pixbuf", ModelColumns.UID_ICON.value
-        )
-        self.ui.columns.url.add_attribute(
-            self.ui.icon_renderers.uid, "visible", ModelColumns.UID_VISIBLE.value
         )
         self.ui.columns.url.add_attribute(
             self.ui.text_renderers.url, "text", ModelColumns.FORMATTED_URL.value

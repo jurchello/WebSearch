@@ -102,9 +102,6 @@
                                 <property name="resizable">True</property>
                                 <property name="sizing">autosize</property>
                                 <child>
-                                    <object class="GtkCellRendererPixbuf" id="uid_icon_renderer"/>
-                                </child>
-                                <child>
                                     <object class="GtkCellRendererText" id="url_renderer"/>
                                 </child>
                             </object>
