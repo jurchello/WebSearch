@@ -132,7 +132,7 @@ MODEL_SCHEMA = [
     ("obj_handle", str),
     ("replaced_keys_count", int),
     ("total_keys_count", int),
-    ("vars_color", str),
+    ("keys_color", str),
     ("user_data_icon", GdkPixbuf.Pixbuf),
     ("user_data_icon_visible", bool),
     ("locale_icon", GdkPixbuf.Pixbuf),
@@ -460,13 +460,13 @@ class WebSearch(Gramplet):
                         + len(keys["empty_keys"])
                     )
 
-                    vars_color = "black"
+                    keys_color = "black"
                     if replaced_keys_count == total_keys_count:
-                        vars_color = "green"
+                        keys_color = "green"
                     elif replaced_keys_count not in (total_keys_count, 0):
-                        vars_color = "orange"
+                        keys_color = "orange"
                     elif replaced_keys_count == 0:
-                        vars_color = "red"
+                        keys_color = "red"
 
                     locale_text = locale
                     if locale_text in ["COMMON", "UID", "STATIC", "CROSS", "ATTR"]:
@@ -495,7 +495,7 @@ class WebSearch(Gramplet):
                         "obj_handle": obj_handle,
                         "replaced_keys_count": replaced_keys_count,
                         "total_keys_count": total_keys_count,
-                        "vars_color": vars_color,
+                        "keys_color": keys_color,
                         "user_data_icon": user_data_icon,
                         "user_data_icon_visible": user_data_icon_visible,
                         "locale_icon": locale_icon,
@@ -1366,7 +1366,7 @@ class WebSearch(Gramplet):
         self.ui.columns.vars.add_attribute(
             self.ui.text_renderers.vars_replaced,
             "foreground",
-            ModelColumns.VARS_COLOR.value,
+            ModelColumns.KEYS_COLOR.value,
         )
         self.ui.columns.vars.add_attribute(
             self.ui.text_renderers.vars_replaced,
