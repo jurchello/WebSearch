@@ -130,8 +130,8 @@ MODEL_SCHEMA = [
     ("visited_icon_visible", bool),
     ("saved_icon_visible", bool),
     ("obj_handle", str),
-    ("replaced_vars_count", int),
-    ("total_vars_count", int),
+    ("replaced_keys_count", int),
+    ("total_keys_count", int),
     ("vars_color", str),
     ("user_data_icon", GdkPixbuf.Pixbuf),
     ("user_data_icon_visible", bool),
@@ -139,6 +139,7 @@ MODEL_SCHEMA = [
     ("locale_icon_visible", bool),
     ("locale_text_visible", bool),
     ("display_keys_count", bool),
+    ("source_type_sort", str),
 ]
 
 ModelColumns = IntEnum(
@@ -405,8 +406,8 @@ class WebSearch(Gramplet):
                             "empty_keys": [],
                         }
                         keys_json = json.dumps(keys)
-                        replaced_vars_count = 0
-                        total_vars_count = 0
+                        replaced_keys_count = 0
+                        total_keys_count = 0
                     else:
                         filtered_uids_data = (
                             self.attribute_loader.add_matching_keys_to_data(
@@ -452,19 +453,19 @@ class WebSearch(Gramplet):
                     )
                     locale_icon, locale_icon_visible = self.get_locale_icon_data(locale)
 
-                    replaced_vars_count = len(keys["replaced_keys"])
-                    total_vars_count = (
+                    replaced_keys_count = len(keys["replaced_keys"])
+                    total_keys_count = (
                         len(keys["not_found_keys"])
                         + len(keys["replaced_keys"])
                         + len(keys["empty_keys"])
                     )
 
                     vars_color = "black"
-                    if replaced_vars_count == total_vars_count:
+                    if replaced_keys_count == total_keys_count:
                         vars_color = "green"
-                    elif replaced_vars_count not in (total_vars_count, 0):
+                    elif replaced_keys_count not in (total_keys_count, 0):
                         vars_color = "orange"
-                    elif replaced_vars_count == 0:
+                    elif replaced_keys_count == 0:
                         vars_color = "red"
 
                     locale_text = locale
@@ -474,6 +475,8 @@ class WebSearch(Gramplet):
                     display_keys_count = True
                     if locale in ["STATIC", "ATTR"]:
                         display_keys_count = False
+
+                    source_type_sort = self.get_source_type_sort(locale)
 
                     data_dict = {
                         "icon_name": icon_name,
@@ -490,8 +493,8 @@ class WebSearch(Gramplet):
                         "visited_icon_visible": visited_icon_visible,
                         "saved_icon_visible": saved_icon_visible,
                         "obj_handle": obj_handle,
-                        "replaced_vars_count": replaced_vars_count,
-                        "total_vars_count": total_vars_count,
+                        "replaced_keys_count": replaced_keys_count,
+                        "total_keys_count": total_keys_count,
                         "vars_color": vars_color,
                         "user_data_icon": user_data_icon,
                         "user_data_icon_visible": user_data_icon_visible,
@@ -499,11 +502,22 @@ class WebSearch(Gramplet):
                         "locale_icon_visible": locale_icon_visible,
                         "locale_text_visible": not locale_icon_visible,
                         "display_keys_count": display_keys_count,
+                        "source_type_sort": source_type_sort,
                     }
 
                     self.model.append([data_dict[name] for name, _ in MODEL_SCHEMA])
                 except KeyError:
                     pass
+
+    def get_source_type_sort(self, locale):
+        special_sort_order = {
+            "COMMON": "0",
+            "UID": "1",
+            "STATIC": "2",
+            "ATTR": "3",
+            "CROSS": "4",
+        }
+        return special_sort_order.get(locale, locale)
 
     def safe_percent_format(self, template: str, data: dict) -> str:
         """
@@ -1304,7 +1318,7 @@ class WebSearch(Gramplet):
             column.set_reorderable(True)
 
         # Columns sorting
-        self.add_sorting(self.ui.columns.locale, ModelColumns.LOCALE_TEXT.value)
+        self.add_sorting(self.ui.columns.locale, ModelColumns.SOURCE_TYPE_SORT.value)
         self.add_sorting(self.ui.columns.title, ModelColumns.TITLE.value)
         self.add_sorting(self.ui.columns.url, ModelColumns.FORMATTED_URL.value)
         self.add_sorting(self.ui.columns.comment, ModelColumns.COMMENT.value)
@@ -1342,12 +1356,12 @@ class WebSearch(Gramplet):
         self.ui.columns.vars.add_attribute(
             self.ui.text_renderers.vars_replaced,
             "text",
-            ModelColumns.REPLACED_VARS_COUNT.value,
+            ModelColumns.REPLACED_KEYS_COUNT.value,
         )
         self.ui.columns.vars.add_attribute(
             self.ui.text_renderers.vars_total,
             "text",
-            ModelColumns.TOTAL_VARS_COUNT.value,
+            ModelColumns.TOTAL_KEYS_COUNT.value,
         )
         self.ui.columns.vars.add_attribute(
             self.ui.text_renderers.vars_replaced,
