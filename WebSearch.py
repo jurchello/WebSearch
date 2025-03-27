@@ -111,7 +111,7 @@ from constants import (
     PlaceDataKeys,
     SourceDataKeys,
     SupportedNavTypes,
-    AIProviders
+    AIProviders,
 )
 
 MODEL_SCHEMA = [
@@ -415,18 +415,21 @@ class WebSearch(Gramplet):
                         data = entity_data.copy()
                         data.update(filtered_uids_data)
 
-                        keys = self.url_formatter.check_pattern_keys(
-                            url_pattern, data
-                        )
+                        keys = self.url_formatter.check_pattern_keys(url_pattern, data)
                         keys_json = json.dumps(keys)
 
                         final_url = url_pattern % data
                         formatted_url = self.url_formatter.format(final_url, keys)
 
                         try:
-                            replaced_vars_set = {list(var.keys())[0] for var in keys["replaced_keys"]}
-                            if any(var in replaced_vars_set for var in filtered_uids_data.keys()):
-                                locale = 'UID'
+                            replaced_vars_set = {
+                                list(var.keys())[0] for var in keys["replaced_keys"]
+                            }
+                            if any(
+                                var in replaced_vars_set
+                                for var in filtered_uids_data.keys()
+                            ):
+                                locale = "UID"
                         except Exception:
                             pass
 
@@ -1392,7 +1395,6 @@ class WebSearch(Gramplet):
 
         return self.ui.boxes.main
 
-
     def reorder_columns(self):
         """Reorders the treeview columns based on user configuration."""
         self._columns_order = self.config_ini_manager.get_list(
@@ -1706,9 +1708,7 @@ class WebSearch(Gramplet):
             title = self.model.get_value(tree_iter, ModelColumns.TITLE.value)
             comment = self.model.get_value(tree_iter, ModelColumns.COMMENT.value) or ""
 
-            keys_json = self.model.get_value(
-                tree_iter, ModelColumns.KEYS_JSON.value
-            )
+            keys_json = self.model.get_value(tree_iter, ModelColumns.KEYS_JSON.value)
             keys = json.loads(keys_json)
             replaced_keys = [
                 f"{key}={value}"
@@ -1723,9 +1723,7 @@ class WebSearch(Gramplet):
                     keys=", ".join(replaced_keys)
                 )
             if empty_keys:
-                tooltip_text += _("Empty: {keys}\n").format(
-                    keys=", ".join(empty_keys)
-                )
+                tooltip_text += _("Empty: {keys}\n").format(keys=", ".join(empty_keys))
             if comment:
                 tooltip_text += _("Comment: {comment}\n").format(comment=comment)
             tooltip_text = tooltip_text.rstrip()
@@ -1756,11 +1754,21 @@ class WebSearch(Gramplet):
             "websearch.url_prefix_replacement", self.opts[4].get_value()
         )
 
-        self.config_ini_manager.set_enum("websearch.ai_provider", self.opts[5].get_value())
-        self.config_ini_manager.set_string("websearch.openai_api_key", self.opts[6].get_value())
-        self.config_ini_manager.set_string("websearch.openai_model", self.opts[7].get_value())
-        self.config_ini_manager.set_string("websearch.mistral_api_key", self.opts[8].get_value())
-        self.config_ini_manager.set_string("websearch.mistral_model", self.opts[9].get_value())
+        self.config_ini_manager.set_enum(
+            "websearch.ai_provider", self.opts[5].get_value()
+        )
+        self.config_ini_manager.set_string(
+            "websearch.openai_api_key", self.opts[6].get_value()
+        )
+        self.config_ini_manager.set_string(
+            "websearch.openai_model", self.opts[7].get_value()
+        )
+        self.config_ini_manager.set_string(
+            "websearch.mistral_api_key", self.opts[8].get_value()
+        )
+        self.config_ini_manager.set_string(
+            "websearch.mistral_model", self.opts[9].get_value()
+        )
 
         self.config_ini_manager.set_boolean_option(
             "websearch.show_url_column", self.opts[10].get_value()
@@ -1799,32 +1807,28 @@ class WebSearch(Gramplet):
         )
 
         self._openai_api_key = self.config_ini_manager.get_string(
-            "websearch.openai_api_key",
-            ""
+            "websearch.openai_api_key", ""
         )
         self._openai_model = self.config_ini_manager.get_string(
-            "websearch.openai_model",
-            ""
+            "websearch.openai_model", ""
         )
 
         self._mistral_api_key = self.config_ini_manager.get_string(
-            "websearch.mistral_api_key",
-            ""
+            "websearch.mistral_api_key", ""
         )
         self._mistral_model = self.config_ini_manager.get_string(
-            "websearch.mistral_model",
-            ""
+            "websearch.mistral_model", ""
         )
 
-        if (self._ai_provider == AIProviders.OPENAI.value):
+        if self._ai_provider == AIProviders.OPENAI.value:
             self._ai_api_key = self._openai_api_key
             self._ai_model = self._openai_model
-        if (self._ai_provider == AIProviders.MISTRAL.value):
+        if self._ai_provider == AIProviders.MISTRAL.value:
             self._ai_api_key = self._mistral_api_key
             self._ai_model = self._mistral_model
-        elif (self._ai_provider == AIProviders.DISABLED.value):
-            self._ai_api_key = ''
-            self._ai_model = ''
+        elif self._ai_provider == AIProviders.DISABLED.value:
+            self._ai_api_key = ""
+            self._ai_model = ""
 
         self._middle_name_handling = self.config_ini_manager.get_enum(
             "websearch.middle_name_handling",

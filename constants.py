@@ -197,6 +197,7 @@ class AIProviders(Enum):
     OPENAI = "openai"
     MISTRAL = "mistral"
 
+
 # --------------------------
 # CONSTANTS
 # --------------------------
