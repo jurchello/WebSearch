@@ -197,6 +197,21 @@ class AIProviders(Enum):
     OPENAI = "openai"
     MISTRAL = "mistral"
 
+class SourceTypes(Enum):
+    COMMON = "COMMON"
+    UID = "UID"
+    STATIC = "STATIC"
+    CROSS = "CROSS"
+    ATTR = "ATTR"
+
+SOURCE_TYPE_SORT_ORDER = {
+    SourceTypes.COMMON.value: "0",
+    SourceTypes.UID.value: "1",
+    SourceTypes.STATIC.value: "2",
+    SourceTypes.ATTR.value: "3",
+    SourceTypes.CROSS.value: "4",
+}
+
 
 # --------------------------
 # CONSTANTS

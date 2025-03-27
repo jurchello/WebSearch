@@ -105,6 +105,7 @@ from constants import (
     DEFAULT_SHOW_ATTRIBUTE_LINKS,
     DEFAULT_AI_PROVIDER,
     ICON_CROSS_PATH,
+    SOURCE_TYPE_SORT_ORDER,
     URLCompactnessLevel,
     MiddleNameHandling,
     PersonDataKeys,
@@ -113,6 +114,7 @@ from constants import (
     SourceDataKeys,
     SupportedNavTypes,
     AIProviders,
+    SourceTypes,
 )
 
 MODEL_SCHEMA = [
@@ -373,7 +375,7 @@ class WebSearch(Gramplet):
         """Checks whether a given string value represents a boolean 'true'."""
         return str(value).strip().lower() in {"1", "true", "yes", "y"}
 
-    def populate_links(self, entity_data, uids_data, nav_type, obj):
+    def populate_links(self, core_keys, attribute_keys, nav_type, obj):
         """Populates the list model with formatted website links relevant to the current entity."""
         self.model.clear()
         websites = self.website_loader.load_websites(self.config_ini_manager)
@@ -387,95 +389,38 @@ class WebSearch(Gramplet):
 
         for nav, locale, title, is_enabled, url_pattern, comment, is_custom in websites:
 
-            if self.website_loader.has_string_in_file(
-                f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH
-            ) or self.website_loader.has_string_in_file(
-                f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH
-            ):
+            if self.should_be_hidden_link(url_pattern, nav_type, obj_handle):
                 continue
 
             if nav == nav_type and self.is_true(is_enabled):
                 try:
 
-                    if locale in ["STATIC", "ATTR"]:
+                    if locale in [SourceTypes.STATIC.value, SourceTypes.ATTR.value]:
                         final_url = url_pattern
                         formatted_url = url_pattern
-                        keys = {
-                            "replaced_keys": [],
-                            "not_found_keys": [],
-                            "empty_keys": [],
-                        }
-                        keys_json = json.dumps(keys)
-                        replaced_keys_count = 0
-                        total_keys_count = 0
+                        keys, keys_json, replaced_keys_count, total_keys_count = self.get_empty_keys()
                     else:
-                        filtered_uids_data = (
-                            self.attribute_loader.add_matching_keys_to_data(
-                                uids_data, url_pattern
-                            )
+                        combined_keys, matched_attribute_keys, pattern_keys_info, pattern_keys_json = self.prepare_data_keys(
+                            core_keys, attribute_keys, url_pattern
                         )
-                        data = entity_data.copy()
-                        data.update(filtered_uids_data)
 
-                        keys = self.url_formatter.check_pattern_keys(url_pattern, data)
-                        keys_json = json.dumps(keys)
+                        final_url, formatted_url = self.prepare_urls(url_pattern, combined_keys, pattern_keys_info)
 
-                        final_url = self.safe_percent_format(url_pattern, data)
-                        formatted_url = self.url_formatter.format(final_url, keys)
-
-                        try:
-                            replaced_vars_set = {
-                                list(var.keys())[0] for var in keys["replaced_keys"]
-                            }
-                            if any(
-                                var in replaced_vars_set
-                                for var in filtered_uids_data.keys()
-                            ):
-                                locale = "UID"
-                        except Exception:
-                            pass
-
-                    if locale == "UID" and not replaced_vars_set:
-                        continue
+                        locale, should_skip = self.evaluate_uid_locale(locale, pattern_keys_info, matched_attribute_keys)
+                        if should_skip:
+                            continue
 
                     icon_name = CATEGORY_ICON.get(nav_type, DEFAULT_CATEGORY_ICON)
-                    hash_value = self.website_loader.generate_hash(
-                        f"{final_url}|{obj_handle}"
-                    )
-                    visited_icon, visited_icon_visible = self.get_visited_icon_data(
-                        hash_value
-                    )
-                    saved_icon, saved_icon_visible = self.get_saved_icon_data(
-                        hash_value
-                    )
-                    user_data_icon, user_data_icon_visible = (
-                        self.get_user_data_icon_data(is_custom)
-                    )
+                    hash_value = self.website_loader.generate_hash(f"{final_url}|{obj_handle}")
+                    visited_icon, visited_icon_visible = self.get_visited_icon_data(hash_value)
+                    saved_icon, saved_icon_visible = self.get_saved_icon_data(hash_value)
+                    user_data_icon, user_data_icon_visible = (self.get_user_data_icon_data(is_custom))
                     locale_icon, locale_icon_visible = self.get_locale_icon_data(locale)
-
-                    replaced_keys_count = len(keys["replaced_keys"])
-                    total_keys_count = (
-                        len(keys["not_found_keys"])
-                        + len(keys["replaced_keys"])
-                        + len(keys["empty_keys"])
-                    )
-
-                    keys_color = "black"
-                    if replaced_keys_count == total_keys_count:
-                        keys_color = "green"
-                    elif replaced_keys_count not in (total_keys_count, 0):
-                        keys_color = "orange"
-                    elif replaced_keys_count == 0:
-                        keys_color = "red"
-
-                    locale_text = locale
-                    if locale_text in ["COMMON", "UID", "STATIC", "CROSS", "ATTR"]:
-                        locale_text = ""
-
-                    display_keys_count = True
-                    if locale in ["STATIC", "ATTR"]:
-                        display_keys_count = False
-
+                    replaced_keys_count = len(pattern_keys_info["replaced_keys"])
+                    total_keys_count = self.get_total_keys_count(pattern_keys_info)
+                    keys_color = self.get_keys_color(replaced_keys_count, total_keys_count)
+                    locale_text = self.get_locale_text(locale)
+                    display_keys_count = self.get_display_keys_count(locale)
                     source_type_sort = self.get_source_type_sort(locale)
 
                     data_dict = {
@@ -485,7 +430,7 @@ class WebSearch(Gramplet):
                         "final_url": final_url,
                         "comment": comment,
                         "url_pattern": url_pattern,
-                        "keys_json": keys_json,
+                        "keys_json": pattern_keys_json,
                         "formatted_url": formatted_url,
                         "visited_icon": visited_icon,
                         "saved_icon": saved_icon,
@@ -509,27 +454,99 @@ class WebSearch(Gramplet):
                 except KeyError:
                     pass
 
-    def get_source_type_sort(self, locale):
-        special_sort_order = {
-            "COMMON": "0",
-            "UID": "1",
-            "STATIC": "2",
-            "ATTR": "3",
-            "CROSS": "4",
+    def prepare_data_keys(self, core_keys, attribute_keys, url_pattern):
+        """
+        Combines core entity keys with matched attribute keys relevant to the URL pattern.
+        """
+        matched_attribute_keys = self.attribute_loader.add_matching_keys_to_data(
+            attribute_keys, url_pattern
+        )
+        combined_keys = core_keys.copy()
+        combined_keys.update(matched_attribute_keys)
+        pattern_keys_info = self.url_formatter.check_pattern_keys(url_pattern, combined_keys)
+        pattern_keys_json = json.dumps(pattern_keys_info)
+        return combined_keys, matched_attribute_keys, pattern_keys_info, pattern_keys_json
+
+    def prepare_urls(self, url_pattern, combined_keys, keys):
+        """Generate final and formatted URLs using combined keys and pattern keys info."""
+        final_url = self.safe_percent_format(url_pattern, combined_keys)
+        formatted_url = self.url_formatter.format(final_url, keys)
+        return final_url, formatted_url
+
+    def evaluate_uid_locale(self, locale, keys, matched_attribute_keys):
+        """Check if the locale should be changed to UID and whether the link should be skipped."""
+        should_skip = False
+        final_locale = locale
+        try:
+            replaced_vars_set = {
+                list(var.keys())[0] for var in keys["replaced_keys"]
+            }
+            if any(var in replaced_vars_set for var in matched_attribute_keys.keys()):
+                final_locale = SourceTypes.UID.value
+            if final_locale == SourceTypes.UID.value and not replaced_vars_set:
+                should_skip = True
+        except Exception:
+            pass
+
+        return final_locale, should_skip
+
+    def get_empty_keys(self):
+        """Return an empty pattern keys dictionary, its JSON, and zero counts."""
+        keys = {
+            "replaced_keys": [],
+            "not_found_keys": [],
+            "empty_keys": [],
         }
-        return special_sort_order.get(locale, locale)
+        return keys, json.dumps(keys), 0, 0
+
+    def should_be_hidden_link(self, url_pattern, nav_type, obj_handle):
+        """Determine if a link should be skipped based on hidden hash entries."""
+        return (
+            self.website_loader.has_string_in_file(f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH)
+            or self.website_loader.has_string_in_file(f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH)
+        )
+
+    def get_display_keys_count(self, locale):
+        """Return False if key count display is not needed for this locale type."""
+        display_keys_count = True
+        if locale in [SourceTypes.STATIC.value, SourceTypes.ATTR.value]:
+            display_keys_count = False
+        return display_keys_count
+
+    def get_total_keys_count(self, pattern_keys_info):
+        """Calculate total number of keys from pattern keys info."""
+        return (
+            len(pattern_keys_info["not_found_keys"])
+            + len(pattern_keys_info["replaced_keys"])
+            + len(pattern_keys_info["empty_keys"])
+        )
+
+    def get_locale_text(self, locale):
+        """Return locale text unless it is a special source type (like UID or STATIC)."""
+        locale_text = locale
+        if locale_text in [SourceTypes.COMMON.value, SourceTypes.UID.value, SourceTypes.STATIC.value, SourceTypes.CROSS.value, SourceTypes.ATTR.value]:
+            locale_text = ""
+        return locale_text
+
+    def get_keys_color(self, replaced_keys_count, total_keys_count):
+        """Determine color based on how many variables were replaced in the URL."""
+        keys_color = "black"
+        if replaced_keys_count == total_keys_count:
+            keys_color = "green"
+        elif replaced_keys_count not in (total_keys_count, 0):
+            keys_color = "orange"
+        elif replaced_keys_count == 0:
+            keys_color = "red"
+        return keys_color
+
+    def get_source_type_sort(self, locale):
+        """Return sorting key for the locale based on predefined source type order."""
+        return SOURCE_TYPE_SORT_ORDER.get(locale, locale)
 
     def safe_percent_format(self, template: str, data: dict) -> str:
         """
         Safely replaces %(key)s-style placeholders in the template with values from data.
         Leaves unknown keys untouched and prevents TypeError.
-
-        Args:
-            template (str): The URL template string.
-            data (dict): Dictionary of values to substitute.
-
-        Returns:
-            str: The formatted string with values inserted.
         """
         def replacer(match):
             key = match.group(1)
@@ -548,11 +565,11 @@ class WebSearch(Gramplet):
         locale_icon_visible = False
 
         special_icons = {
-            "COMMON": (ICON_EARTH_PATH, ICON_SIZE, ICON_SIZE),
-            "STATIC": (ICON_PIN_PATH, ICON_SIZE, ICON_SIZE),
-            "CROSS": (ICON_CROSS_PATH, ICON_SIZE, ICON_SIZE),
-            "UID": (ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT),
-            "ATTR": (ICON_CHAIN_PATH, ICON_SIZE, ICON_SIZE),
+            SourceTypes.COMMON.value: (ICON_EARTH_PATH, ICON_SIZE, ICON_SIZE),
+            SourceTypes.STATIC.value: (ICON_PIN_PATH, ICON_SIZE, ICON_SIZE),
+            SourceTypes.CROSS.value: (ICON_CROSS_PATH, ICON_SIZE, ICON_SIZE),
+            SourceTypes.UID.value: (ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT),
+            SourceTypes.ATTR.value: (ICON_CHAIN_PATH, ICON_SIZE, ICON_SIZE),
         }
 
         if locale in special_icons:
@@ -674,9 +691,9 @@ class WebSearch(Gramplet):
         if not person:
             return
 
-        person_data, uids_data = self.get_person_data(person)
+        person_data, attribute_keys = self.get_person_data(person)
         self.populate_links(
-            person_data, uids_data, SupportedNavTypes.PEOPLE.value, person
+            person_data, attribute_keys, SupportedNavTypes.PEOPLE.value, person
         )
         self.update()
 
@@ -824,9 +841,9 @@ class WebSearch(Gramplet):
             PersonDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
         }
 
-        uids_data = self.attribute_loader.get_attributes_for_nav_type("Person", person)
+        attribute_keys = self.attribute_loader.get_attributes_for_nav_type("Person", person)
 
-        return person_data, uids_data
+        return person_data, attribute_keys
 
     def get_family_data(self, family):
         """Extracts structured data related to a family, including parents and events."""
@@ -841,8 +858,8 @@ class WebSearch(Gramplet):
             else None
         )
 
-        father_data, father_uids_data = self.get_person_data(father) if father else {}
-        mother_data, mother_uids_data = self.get_person_data(mother) if mother else {}
+        father_data, father_attribute_keys = self.get_person_data(father) if father else {}
+        mother_data, mother_attribute_keys = self.get_person_data(mother) if mother else {}
 
         marriage_year = marriage_year_from = marriage_year_to = marriage_year_before = (
             marriage_year_after
