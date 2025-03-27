@@ -30,6 +30,7 @@ with customizable URL templates.
 
 # Standard Python libraries
 import os
+import re
 import sys
 import json
 import traceback
@@ -433,6 +434,9 @@ class WebSearch(Gramplet):
                         except Exception:
                             pass
 
+                    if locale == "UID" and not replaced_vars_set:
+                        continue
+
                     icon_name = CATEGORY_ICON.get(nav_type, DEFAULT_CATEGORY_ICON)
                     hash_value = self.website_loader.generate_hash(
                         f"{final_url}|{obj_handle}"
@@ -502,9 +506,25 @@ class WebSearch(Gramplet):
                     pass
 
     def safe_percent_format(self, template: str, data: dict) -> str:
+        """
+        Safely replaces %(key)s-style placeholders in the template with values from data.
+        Leaves unknown keys untouched and prevents TypeError.
+
+        Args:
+            template (str): The URL template string.
+            data (dict): Dictionary of values to substitute.
+
+        Returns:
+            str: The formatted string with values inserted.
+        """
+        def replacer(match):
+            key = match.group(1)
+            return str(data.get(key, f"%({key})s"))
+
         try:
-            return template % data
-        except (KeyError, TypeError) as e:
+            pattern = re.compile(r"%\((\w+)\)s")
+            return pattern.sub(replacer, template)
+        except Exception as e:
             print(f"❌ URL formatting error: {e}\nTemplate: {template}\nData: {data}", file=sys.stderr)
             return template
 
