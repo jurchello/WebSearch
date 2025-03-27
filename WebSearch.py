@@ -137,6 +137,7 @@ MODEL_SCHEMA = [
     ("locale_icon", GdkPixbuf.Pixbuf),
     ("locale_icon_visible", bool),
     ("locale_text_visible", bool),
+    ("display_keys_count", bool),
 ]
 
 ModelColumns = IntEnum(
@@ -463,6 +464,10 @@ class WebSearch(Gramplet):
                     if locale_text in ["COMMON", "UID", "STATIC", "CROSS", "ATTR"]:
                         locale_text = ""
 
+                    display_keys_count = True
+                    if locale in ["STATIC", "ATTR"]:
+                        display_keys_count = False
+
                     data_dict = {
                         "icon_name": icon_name,
                         "locale_text": locale_text,
@@ -486,6 +491,7 @@ class WebSearch(Gramplet):
                         "locale_icon": locale_icon,
                         "locale_icon_visible": locale_icon_visible,
                         "locale_text_visible": not locale_icon_visible,
+                        "display_keys_count": display_keys_count,
                     }
 
                     self.model.append([data_dict[name] for name, _ in MODEL_SCHEMA])
@@ -1335,6 +1341,21 @@ class WebSearch(Gramplet):
             "foreground",
             ModelColumns.VARS_COLOR.value,
         )
+        self.ui.columns.vars.add_attribute(
+            self.ui.text_renderers.vars_replaced,
+            "visible",
+            ModelColumns.DISPLAY_KEYS_COUNT.value,
+        )
+        self.ui.columns.vars.add_attribute(
+            self.ui.text_renderers.vars_total,
+            "visible",
+            ModelColumns.DISPLAY_KEYS_COUNT.value,
+        )
+        self.ui.columns.vars.add_attribute(
+            self.ui.text_renderers.slash,
+            "visible",
+            ModelColumns.DISPLAY_KEYS_COUNT.value,
+        )
         self.ui.text_renderers.vars_total.set_property("foreground", "green")
         self.ui.columns.locale.add_attribute(
             self.ui.text_renderers.locale, "text", ModelColumns.LOCALE_TEXT.value
@@ -1367,10 +1388,10 @@ class WebSearch(Gramplet):
         self.translate()
         self.update_url_column_visibility()
         self.update_vars_column_visibility()
-
         self.reorder_columns()
 
         return self.ui.boxes.main
+
 
     def reorder_columns(self):
         """Reorders the treeview columns based on user configuration."""
