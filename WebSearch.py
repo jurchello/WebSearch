@@ -418,7 +418,7 @@ class WebSearch(Gramplet):
                         keys = self.url_formatter.check_pattern_keys(url_pattern, data)
                         keys_json = json.dumps(keys)
 
-                        final_url = url_pattern % data
+                        final_url = self.safe_percent_format(url_pattern, data)
                         formatted_url = self.url_formatter.format(final_url, keys)
 
                         try:
@@ -501,59 +501,49 @@ class WebSearch(Gramplet):
                 except KeyError:
                     pass
 
+    def safe_percent_format(self, template: str, data: dict) -> str:
+        try:
+            return template % data
+        except (KeyError, TypeError) as e:
+            print(f"❌ URL formatting error: {e}\nTemplate: {template}\nData: {data}", file=sys.stderr)
+            return template
+
     def get_locale_icon_data(self, locale):
         """Returns an appropriate flag or icon based on the locale identifier."""
         locale_icon = None
         locale_icon_visible = False
 
-        if locale == "COMMON":
-            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                ICON_EARTH_PATH, ICON_SIZE, ICON_SIZE
-            )
-            locale_icon_visible = True
-            return locale_icon, locale_icon_visible
-        if locale == "STATIC":
-            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                ICON_PIN_PATH, ICON_SIZE, ICON_SIZE
-            )
-            locale_icon_visible = True
-            return locale_icon, locale_icon_visible
-        if locale == "CROSS":
-            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                ICON_CROSS_PATH, ICON_SIZE, ICON_SIZE
-            )
-            locale_icon_visible = True
-            return locale_icon, locale_icon_visible
-        if locale == "UID":
-            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT
-            )
-            locale_icon_visible = True
-            return locale_icon, locale_icon_visible
-        if locale == "ATTR":
-            locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                ICON_CHAIN_PATH, ICON_SIZE, ICON_SIZE
-            )
-            locale_icon_visible = True
-            return locale_icon, locale_icon_visible
+        special_icons = {
+            "COMMON": (ICON_EARTH_PATH, ICON_SIZE, ICON_SIZE),
+            "STATIC": (ICON_PIN_PATH, ICON_SIZE, ICON_SIZE),
+            "CROSS": (ICON_CROSS_PATH, ICON_SIZE, ICON_SIZE),
+            "UID": (ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT),
+            "ATTR": (ICON_CHAIN_PATH, ICON_SIZE, ICON_SIZE),
+        }
+
+        if locale in special_icons:
+            path, width, height = special_icons[locale]
+            return self.load_icon(path, width, height, label=locale)
 
         if not locale or not self._show_flag_icons:
-            return locale_icon, locale_icon_visible
+            return None, False
 
         locale = locale.lower()
         flag_filename = f"{locale}.png"
         flag_path = os.path.join(FLAGS_DIR, flag_filename)
-
         if os.path.exists(flag_path):
-            try:
-                locale_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    flag_path, ICON_SIZE, ICON_SIZE
-                )
-                locale_icon_visible = True
-            except Exception as e:
-                print(f"❌ Error loading flag icon '{flag_path}': {e}", file=sys.stderr)
+            return self.load_icon(flag_path, ICON_SIZE, ICON_SIZE, label=locale)
 
-        return locale_icon, locale_icon_visible
+        return None, False
+
+    def load_icon(self, path, width, height, label=""):
+        """Try to load and resize an icon. Returns (pixbuf, visible)."""
+        try:
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(path, width, height)
+            return pixbuf, True
+        except Exception as e:
+            print(f"❌ Error loading icon '{path}' {f'for {label}' if label else ''}: {e}", file=sys.stderr)
+            return None, False
 
     def get_user_data_icon_data(self, is_custom):
         """Returns the user data icon if the entry is from a user-defined source."""
