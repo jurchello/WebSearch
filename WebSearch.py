@@ -30,7 +30,6 @@ with customizable URL templates.
 
 # Standard Python libraries
 import os
-import re
 import sys
 import json
 import traceback
@@ -48,14 +47,14 @@ from gi.repository import Gtk, Gdk, GdkPixbuf, GObject
 
 # GRAMPS API
 from gramps.gen.plug import Gramplet
-from gramps.gen.const import GRAMPS_LOCALE as glocale
 from gramps.gui.display import display_url
-from gramps.gen.lib import Note, Attribute, Date
+from gramps.gen.lib import Note, Attribute
 from gramps.gen.db import DbTxn
-from gramps.gen.lib.eventtype import EventType
-from gramps.gen.lib.placetype import PlaceType
 
 # Own project imports
+from entity_data_builder import EntityDataBuilder
+from model_row_generator import ModelRowGenerator
+from helpers import get_system_locale
 from qr_window import QRCodeWindow
 from openai_site_finder import OpenaiSiteFinder
 from mistral_site_finder import MistralSiteFinder
@@ -71,8 +70,6 @@ from constants import (
     DEFAULT_SHOW_SHORT_URL,
     DEFAULT_URL_COMPACTNESS_LEVEL,
     DEFAULT_URL_PREFIX_REPLACEMENT,
-    CATEGORY_ICON,
-    DEFAULT_CATEGORY_ICON,
     HIDDEN_HASH_FILE_PATH,
     USER_DATA_CSV_DIR,
     USER_DATA_JSON_DIR,
@@ -80,16 +77,8 @@ from constants import (
     CONFIGS_DIR,
     DEFAULT_ENABLED_FILES,
     DEFAULT_MIDDLE_NAME_HANDLING,
-    ICON_EARTH_PATH,
-    ICON_PIN_PATH,
-    ICON_CHAIN_PATH,
-    ICON_UID_PATH,
-    UID_ICON_WIDTH,
-    UID_ICON_HEIGHT,
-    ICON_USER_DATA_PATH,
     ICON_VISITED_PATH,
     ICON_SAVED_PATH,
-    FLAGS_DIR,
     VISITED_HASH_FILE_PATH,
     SAVED_HASH_FILE_PATH,
     URL_SAFE_CHARS,
@@ -104,17 +93,10 @@ from constants import (
     DEFAULT_SHOW_FLAG_ICONS,
     DEFAULT_SHOW_ATTRIBUTE_LINKS,
     DEFAULT_AI_PROVIDER,
-    ICON_CROSS_PATH,
-    SOURCE_TYPE_SORT_ORDER,
     URLCompactnessLevel,
     MiddleNameHandling,
-    PersonDataKeys,
-    FamilyDataKeys,
-    PlaceDataKeys,
-    SourceDataKeys,
     SupportedNavTypes,
     AIProviders,
-    SourceTypes,
 )
 
 MODEL_SCHEMA = [
@@ -184,11 +166,7 @@ class WebSearch(Gramplet):
             active_url=None,
             active_tree_path=None,
         )
-        self.system_locale = (
-            glocale.language[0]
-            if isinstance(glocale.language, list)
-            else glocale.language
-        )
+        self.system_locale = get_system_locale()
         self.gui = gui
 
         self.builder = Gtk.Builder()
@@ -269,6 +247,18 @@ class WebSearch(Gramplet):
         Performs additional setup after the GUI is initialized, including optional
         AI site fetching.
         """
+        self.model_row_generator = ModelRowGenerator(
+            SimpleNamespace(
+                website_loader=self.website_loader,
+                url_formatter=self.url_formatter,
+                attribute_loader=self.attribute_loader,
+                config_ini_manager=self.config_ini_manager,
+                websearch_settings=SimpleNamespace(
+                    show_flag_icons=self._show_flag_icons,
+                    show_user_data_icon=self._show_user_data_icon
+                )
+            )
+        )
         self.signal_emitter.connect("sites-fetched", self.on_sites_fetched)
         locales, domains, include_global = self.website_loader.get_domains_data(
             self.config_ini_manager
@@ -340,6 +330,8 @@ class WebSearch(Gramplet):
 
     def db_changed(self):
         """Responds to changes in the database and updates the active context accordingly."""
+        self.entity_data_builder = EntityDataBuilder(self.dbstate, self.config_ini_manager)
+
         self.connect_signal("Person", self.active_person_changed)
         self.connect_signal("Place", self.active_place_changed)
         self.connect_signal("Source", self.active_source_changed)
@@ -371,15 +363,10 @@ class WebSearch(Gramplet):
         elif active_media_handle:
             self.active_media_changed(active_media_handle)
 
-    def is_true(self, value):
-        """Checks whether a given string value represents a boolean 'true'."""
-        return str(value).strip().lower() in {"1", "true", "yes", "y"}
-
     def populate_links(self, core_keys, attribute_keys, nav_type, obj):
         """Populates the list model with formatted website links relevant to the current entity."""
         self.model.clear()
         websites = self.website_loader.load_websites(self.config_ini_manager)
-        obj_handle = obj.get_handle()
 
         if self._show_attribute_links:
             attr_websites = self.attribute_links_loader.get_links_from_attributes(
@@ -387,260 +374,11 @@ class WebSearch(Gramplet):
             )
             websites += attr_websites
 
-        for nav, locale, title, is_enabled, url_pattern, comment, is_custom in websites:
-
-            if self.should_be_hidden_link(url_pattern, nav_type, obj_handle):
-                continue
-
-            if nav == nav_type and self.is_true(is_enabled):
-                try:
-
-                    if locale in [SourceTypes.STATIC.value, SourceTypes.ATTR.value]:
-                        final_url = url_pattern
-                        formatted_url = url_pattern
-                        keys, keys_json, replaced_keys_count, total_keys_count = self.get_empty_keys()
-                    else:
-                        combined_keys, matched_attribute_keys, pattern_keys_info, pattern_keys_json = self.prepare_data_keys(
-                            core_keys, attribute_keys, url_pattern
-                        )
-
-                        final_url, formatted_url = self.prepare_urls(url_pattern, combined_keys, pattern_keys_info)
-
-                        locale, should_skip = self.evaluate_uid_locale(locale, pattern_keys_info, matched_attribute_keys)
-                        if should_skip:
-                            continue
-
-                    icon_name = CATEGORY_ICON.get(nav_type, DEFAULT_CATEGORY_ICON)
-                    hash_value = self.website_loader.generate_hash(f"{final_url}|{obj_handle}")
-                    visited_icon, visited_icon_visible = self.get_visited_icon_data(hash_value)
-                    saved_icon, saved_icon_visible = self.get_saved_icon_data(hash_value)
-                    user_data_icon, user_data_icon_visible = (self.get_user_data_icon_data(is_custom))
-                    locale_icon, locale_icon_visible = self.get_locale_icon_data(locale)
-                    replaced_keys_count = len(pattern_keys_info["replaced_keys"])
-                    total_keys_count = self.get_total_keys_count(pattern_keys_info)
-                    keys_color = self.get_keys_color(replaced_keys_count, total_keys_count)
-                    locale_text = self.get_locale_text(locale)
-                    display_keys_count = self.get_display_keys_count(locale)
-                    source_type_sort = self.get_source_type_sort(locale)
-
-                    data_dict = {
-                        "icon_name": icon_name,
-                        "locale_text": locale_text,
-                        "title": title,
-                        "final_url": final_url,
-                        "comment": comment,
-                        "url_pattern": url_pattern,
-                        "keys_json": pattern_keys_json,
-                        "formatted_url": formatted_url,
-                        "visited_icon": visited_icon,
-                        "saved_icon": saved_icon,
-                        "nav_type": nav_type,
-                        "visited_icon_visible": visited_icon_visible,
-                        "saved_icon_visible": saved_icon_visible,
-                        "obj_handle": obj_handle,
-                        "replaced_keys_count": replaced_keys_count,
-                        "total_keys_count": total_keys_count,
-                        "keys_color": keys_color,
-                        "user_data_icon": user_data_icon,
-                        "user_data_icon_visible": user_data_icon_visible,
-                        "locale_icon": locale_icon,
-                        "locale_icon_visible": locale_icon_visible,
-                        "locale_text_visible": not locale_icon_visible,
-                        "display_keys_count": display_keys_count,
-                        "source_type_sort": source_type_sort,
-                    }
-
-                    self.model.append([data_dict[name] for name, _ in MODEL_SCHEMA])
-                except KeyError:
-                    pass
-
-    def prepare_data_keys(self, core_keys, attribute_keys, url_pattern):
-        """
-        Combines core entity keys with matched attribute keys relevant to the URL pattern.
-        """
-        matched_attribute_keys = self.attribute_loader.add_matching_keys_to_data(
-            attribute_keys, url_pattern
-        )
-        combined_keys = core_keys.copy()
-        combined_keys.update(matched_attribute_keys)
-        pattern_keys_info = self.url_formatter.check_pattern_keys(url_pattern, combined_keys)
-        pattern_keys_json = json.dumps(pattern_keys_info)
-        return combined_keys, matched_attribute_keys, pattern_keys_info, pattern_keys_json
-
-    def prepare_urls(self, url_pattern, combined_keys, keys):
-        """Generate final and formatted URLs using combined keys and pattern keys info."""
-        final_url = self.safe_percent_format(url_pattern, combined_keys)
-        formatted_url = self.url_formatter.format(final_url, keys)
-        return final_url, formatted_url
-
-    def evaluate_uid_locale(self, locale, keys, matched_attribute_keys):
-        """Check if the locale should be changed to UID and whether the link should be skipped."""
-        should_skip = False
-        final_locale = locale
-        try:
-            replaced_vars_set = {
-                list(var.keys())[0] for var in keys["replaced_keys"]
-            }
-            if any(var in replaced_vars_set for var in matched_attribute_keys.keys()):
-                final_locale = SourceTypes.UID.value
-            if final_locale == SourceTypes.UID.value and not replaced_vars_set:
-                should_skip = True
-        except Exception:
-            pass
-
-        return final_locale, should_skip
-
-    def get_empty_keys(self):
-        """Return an empty pattern keys dictionary, its JSON, and zero counts."""
-        keys = {
-            "replaced_keys": [],
-            "not_found_keys": [],
-            "empty_keys": [],
-        }
-        return keys, json.dumps(keys), 0, 0
-
-    def should_be_hidden_link(self, url_pattern, nav_type, obj_handle):
-        """Determine if a link should be skipped based on hidden hash entries."""
-        return (
-            self.website_loader.has_string_in_file(f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH)
-            or self.website_loader.has_string_in_file(f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH)
-        )
-
-    def get_display_keys_count(self, locale):
-        """Return False if key count display is not needed for this locale type."""
-        display_keys_count = True
-        if locale in [SourceTypes.STATIC.value, SourceTypes.ATTR.value]:
-            display_keys_count = False
-        return display_keys_count
-
-    def get_total_keys_count(self, pattern_keys_info):
-        """Calculate total number of keys from pattern keys info."""
-        return (
-            len(pattern_keys_info["not_found_keys"])
-            + len(pattern_keys_info["replaced_keys"])
-            + len(pattern_keys_info["empty_keys"])
-        )
-
-    def get_locale_text(self, locale):
-        """Return locale text unless it is a special source type (like UID or STATIC)."""
-        locale_text = locale
-        if locale_text in [SourceTypes.COMMON.value, SourceTypes.UID.value, SourceTypes.STATIC.value, SourceTypes.CROSS.value, SourceTypes.ATTR.value]:
-            locale_text = ""
-        return locale_text
-
-    def get_keys_color(self, replaced_keys_count, total_keys_count):
-        """Determine color based on how many variables were replaced in the URL."""
-        keys_color = "black"
-        if replaced_keys_count == total_keys_count:
-            keys_color = "green"
-        elif replaced_keys_count not in (total_keys_count, 0):
-            keys_color = "orange"
-        elif replaced_keys_count == 0:
-            keys_color = "red"
-        return keys_color
-
-    def get_source_type_sort(self, locale):
-        """Return sorting key for the locale based on predefined source type order."""
-        return SOURCE_TYPE_SORT_ORDER.get(locale, locale)
-
-    def safe_percent_format(self, template: str, data: dict) -> str:
-        """
-        Safely replaces %(key)s-style placeholders in the template with values from data.
-        Leaves unknown keys untouched and prevents TypeError.
-        """
-        def replacer(match):
-            key = match.group(1)
-            return str(data.get(key, f"%({key})s"))
-
-        try:
-            pattern = re.compile(r"%\((\w+)\)s")
-            return pattern.sub(replacer, template)
-        except Exception as e:
-            print(f"❌ URL formatting error: {e}\nTemplate: {template}\nData: {data}", file=sys.stderr)
-            return template
-
-    def get_locale_icon_data(self, locale):
-        """Returns an appropriate flag or icon based on the locale identifier."""
-        locale_icon = None
-        locale_icon_visible = False
-
-        special_icons = {
-            SourceTypes.COMMON.value: (ICON_EARTH_PATH, ICON_SIZE, ICON_SIZE),
-            SourceTypes.STATIC.value: (ICON_PIN_PATH, ICON_SIZE, ICON_SIZE),
-            SourceTypes.CROSS.value: (ICON_CROSS_PATH, ICON_SIZE, ICON_SIZE),
-            SourceTypes.UID.value: (ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT),
-            SourceTypes.ATTR.value: (ICON_CHAIN_PATH, ICON_SIZE, ICON_SIZE),
-        }
-
-        if locale in special_icons:
-            path, width, height = special_icons[locale]
-            return self.load_icon(path, width, height, label=locale)
-
-        if not locale or not self._show_flag_icons:
-            return None, False
-
-        locale = locale.lower()
-        flag_filename = f"{locale}.png"
-        flag_path = os.path.join(FLAGS_DIR, flag_filename)
-        if os.path.exists(flag_path):
-            return self.load_icon(flag_path, ICON_SIZE, ICON_SIZE, label=locale)
-
-        return None, False
-
-    def load_icon(self, path, width, height, label=""):
-        """Try to load and resize an icon. Returns (pixbuf, visible)."""
-        try:
-            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(path, width, height)
-            return pixbuf, True
-        except Exception as e:
-            print(f"❌ Error loading icon '{path}' {f'for {label}' if label else ''}: {e}", file=sys.stderr)
-            return None, False
-
-    def get_user_data_icon_data(self, is_custom):
-        """Returns the user data icon if the entry is from a user-defined source."""
-        user_data_icon = None
-        user_data_icon_visible = False
-
-        if not self._show_user_data_icon:
-            return user_data_icon, user_data_icon_visible
-
-        if is_custom:
-            try:
-                user_data_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    ICON_USER_DATA_PATH, ICON_SIZE, ICON_SIZE
-                )
-                user_data_icon_visible = True
-            except Exception as e:
-                print(f"❌ Error loading icon: {e}", file=sys.stderr)
-        return user_data_icon, user_data_icon_visible
-
-    def get_visited_icon_data(self, hash_value):
-        """Returns the visited icon if the URL hash exists in the visited list."""
-        visited_icon = None
-        visited_icon_visible = False
-        if self.website_loader.has_hash_in_file(hash_value, VISITED_HASH_FILE_PATH):
-            try:
-                visited_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    ICON_VISITED_PATH, ICON_SIZE, ICON_SIZE
-                )
-                visited_icon_visible = True
-            except Exception as e:
-                print(f"❌ Error loading icon: {e}", file=sys.stderr)
-        return visited_icon, visited_icon_visible
-
-    def get_saved_icon_data(self, hash_value):
-        """Returns the saved icon if the URL hash exists in the saved list."""
-        saved_icon = None
-        saved_icon_visible = False
-        if self.website_loader.has_hash_in_file(hash_value, SAVED_HASH_FILE_PATH):
-            try:
-                saved_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
-                    ICON_SAVED_PATH, ICON_SIZE, ICON_SIZE
-                )
-                saved_icon_visible = True
-            except Exception as e:
-                print(f"❌ Error loading icon: {e}", file=sys.stderr)
-        return saved_icon, saved_icon_visible
+        common_data = (core_keys, attribute_keys, nav_type, obj)
+        for website_data in websites:
+            model_row = self.model_row_generator.generate(common_data, website_data)
+            if model_row:
+                self.model.append([model_row[name] for name, _ in MODEL_SCHEMA])
 
     def on_link_clicked(self, tree_view, path, column):
         """Handles the event when a URL is clicked in the tree view and opens the link."""
@@ -691,7 +429,7 @@ class WebSearch(Gramplet):
         if not person:
             return
 
-        person_data, attribute_keys = self.get_person_data(person)
+        person_data, attribute_keys = self.entity_data_builder.get_person_data(person)
         self.populate_links(
             person_data, attribute_keys, SupportedNavTypes.PEOPLE.value, person
         )
@@ -733,11 +471,6 @@ class WebSearch(Gramplet):
         self.populate_links({}, {}, SupportedNavTypes.MEDIA.value, media)
         self.update()
 
-    def close_context_menu(self):
-        """Closes the context menu if it is currently visible."""
-        if self.ui.context_menu and self.ui.context_menu.get_visible():
-            self.ui.context_menu.hide()
-
     def active_place_changed(self, handle):
         """Handles updates when the active place changes in the GUI."""
         try:
@@ -746,7 +479,7 @@ class WebSearch(Gramplet):
             if not place:
                 return
 
-            place_data = self.get_place_data(place)
+            place_data = self.entity_data_builder.get_place_data(place)
             self.populate_links(place_data, {}, SupportedNavTypes.PLACES.value, place)
             self.update()
         except Exception:
@@ -759,7 +492,7 @@ class WebSearch(Gramplet):
         if not source:
             return
 
-        source_data = self.get_source_data(source)
+        source_data = self.entity_data_builder.get_source_data(source)
         self.populate_links(source_data, {}, SupportedNavTypes.SOURCES.value, source)
         self.update()
 
@@ -770,546 +503,14 @@ class WebSearch(Gramplet):
         if not family:
             return
 
-        family_data = self.get_family_data(family)
+        family_data = self.entity_data_builder.get_family_data(family)
         self.populate_links(family_data, {}, SupportedNavTypes.FAMILIES.value, family)
         self.update()
 
-    def get_person_data(self, person):
-        """Extracts structured personal and date-related data from a Person object."""
-        try:
-            name = person.get_primary_name().get_first_name().strip()
-            middle_name_handling = self.config_ini_manager.get_enum(
-                "websearch.middle_name_handling",
-                MiddleNameHandling,
-                DEFAULT_MIDDLE_NAME_HANDLING,
-            )
-
-            if middle_name_handling == MiddleNameHandling.SEPARATE.value:
-                given, middle = (
-                    (name.split(" ", 1) + [None])[:2] if name else (None, None)
-                )
-            elif middle_name_handling == MiddleNameHandling.REMOVE.value:
-                given, middle = (
-                    (name.split(" ", 1) + [None])[:2] if name else (None, None)
-                )
-                middle = None
-            elif middle_name_handling == MiddleNameHandling.LEAVE_ALONE.value:
-                given, middle = name, None
-            else:
-                given, middle = name, None
-
-            surname = person.get_primary_name().get_primary().strip() or None
-        except Exception:
-            print(traceback.format_exc(), file=sys.stderr)
-            given, middle, surname = None, None, None
-
-        (
-            birth_year,
-            birth_year_from,
-            birth_year_to,
-            birth_year_before,
-            birth_year_after,
-        ) = self.get_birth_years(person)
-        (
-            death_year,
-            death_year_from,
-            death_year_to,
-            death_year_before,
-            death_year_after,
-        ) = self.get_death_years(person)
-
-        person_data = {
-            PersonDataKeys.GIVEN.value: given or "",
-            PersonDataKeys.MIDDLE.value: middle or "",
-            PersonDataKeys.SURNAME.value: surname or "",
-            PersonDataKeys.BIRTH_YEAR.value: birth_year or "",
-            PersonDataKeys.BIRTH_YEAR_FROM.value: birth_year_from or "",
-            PersonDataKeys.BIRTH_YEAR_TO.value: birth_year_to or "",
-            PersonDataKeys.BIRTH_YEAR_BEFORE.value: birth_year_before or "",
-            PersonDataKeys.BIRTH_YEAR_AFTER.value: birth_year_after or "",
-            PersonDataKeys.DEATH_YEAR.value: death_year or "",
-            PersonDataKeys.DEATH_YEAR_FROM.value: death_year_from or "",
-            PersonDataKeys.DEATH_YEAR_TO.value: death_year_to or "",
-            PersonDataKeys.DEATH_YEAR_BEFORE.value: death_year_before or "",
-            PersonDataKeys.DEATH_YEAR_AFTER.value: death_year_after or "",
-            PersonDataKeys.BIRTH_PLACE.value: self.get_birth_place(person) or "",
-            PersonDataKeys.BIRTH_ROOT_PLACE.value: self.get_birth_root_place(person)
-            or "",
-            PersonDataKeys.DEATH_PLACE.value: self.get_death_place(person) or "",
-            PersonDataKeys.DEATH_ROOT_PLACE.value: self.get_death_root_place(person)
-            or "",
-            PersonDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
-        }
-
-        attribute_keys = self.attribute_loader.get_attributes_for_nav_type("Person", person)
-
-        return person_data, attribute_keys
-
-    def get_family_data(self, family):
-        """Extracts structured data related to a family, including parents and events."""
-        father = (
-            self.dbstate.db.get_person_from_handle(family.get_father_handle())
-            if family.get_father_handle()
-            else None
-        )
-        mother = (
-            self.dbstate.db.get_person_from_handle(family.get_mother_handle())
-            if family.get_mother_handle()
-            else None
-        )
-
-        father_data, father_attribute_keys = self.get_person_data(father) if father else {}
-        mother_data, mother_attribute_keys = self.get_person_data(mother) if mother else {}
-
-        marriage_year = marriage_year_from = marriage_year_to = marriage_year_before = (
-            marriage_year_after
-        ) = ""
-        marriage_place = marriage_root_place = None
-
-        divorce_year = divorce_year_from = divorce_year_to = divorce_year_before = (
-            divorce_year_after
-        ) = ""
-        divorce_place = divorce_root_place = None
-
-        event_ref_list = family.get_event_ref_list()
-        for event_ref in event_ref_list:
-            event = self.dbstate.db.get_event_from_handle(
-                event_ref.get_reference_handle()
-            )
-            event_type = event.get_type()
-            event_place = self.get_event_place(event)
-            event_root_place = self.get_root_place_name(event_place)
-            if event_type == EventType.MARRIAGE:
-                (
-                    marriage_year,
-                    marriage_year_from,
-                    marriage_year_to,
-                    marriage_year_before,
-                    marriage_year_after,
-                ) = self.get_event_years(event)
-                marriage_place = self.get_place_name(event_place)
-                marriage_root_place = event_root_place
-            if event_type == EventType.DIVORCE:
-                (
-                    divorce_year,
-                    divorce_year_from,
-                    divorce_year_to,
-                    divorce_year_before,
-                    divorce_year_after,
-                ) = self.get_event_years(event)
-                divorce_place = self.get_place_name(event_place)
-                divorce_root_place = event_root_place
-
-        family_data = {
-            FamilyDataKeys.FATHER_GIVEN.value: father_data.get(
-                PersonDataKeys.GIVEN.value, ""
-            ),
-            FamilyDataKeys.FATHER_MIDDLE.value: father_data.get(
-                PersonDataKeys.MIDDLE.value, ""
-            ),
-            FamilyDataKeys.FATHER_SURNAME.value: father_data.get(
-                PersonDataKeys.SURNAME.value, ""
-            ),
-            FamilyDataKeys.FATHER_BIRTH_YEAR.value: father_data.get(
-                PersonDataKeys.BIRTH_YEAR.value, ""
-            ),
-            FamilyDataKeys.FATHER_BIRTH_YEAR_FROM.value: father_data.get(
-                PersonDataKeys.BIRTH_YEAR_FROM.value, ""
-            ),
-            FamilyDataKeys.FATHER_BIRTH_YEAR_TO.value: father_data.get(
-                PersonDataKeys.BIRTH_YEAR_TO.value, ""
-            ),
-            FamilyDataKeys.FATHER_BIRTH_YEAR_BEFORE.value: father_data.get(
-                PersonDataKeys.BIRTH_YEAR_BEFORE.value, ""
-            ),
-            FamilyDataKeys.FATHER_BIRTH_YEAR_AFTER.value: father_data.get(
-                PersonDataKeys.BIRTH_YEAR_AFTER.value, ""
-            ),
-            FamilyDataKeys.FATHER_DEATH_YEAR.value: father_data.get(
-                PersonDataKeys.DEATH_YEAR.value, ""
-            ),
-            FamilyDataKeys.FATHER_DEATH_YEAR_FROM.value: father_data.get(
-                PersonDataKeys.DEATH_YEAR_FROM.value, ""
-            ),
-            FamilyDataKeys.FATHER_DEATH_YEAR_TO.value: father_data.get(
-                PersonDataKeys.DEATH_YEAR_TO.value, ""
-            ),
-            FamilyDataKeys.FATHER_DEATH_YEAR_BEFORE.value: father_data.get(
-                PersonDataKeys.DEATH_YEAR_BEFORE.value, ""
-            ),
-            FamilyDataKeys.FATHER_DEATH_YEAR_AFTER.value: father_data.get(
-                PersonDataKeys.DEATH_YEAR_AFTER.value, ""
-            ),
-            FamilyDataKeys.FATHER_BIRTH_PLACE.value: father_data.get(
-                PersonDataKeys.BIRTH_PLACE.value, ""
-            ),
-            FamilyDataKeys.FATHER_BIRTH_ROOT_PLACE.value: father_data.get(
-                PersonDataKeys.BIRTH_ROOT_PLACE.value, ""
-            ),
-            FamilyDataKeys.FATHER_DEATH_PLACE.value: father_data.get(
-                PersonDataKeys.DEATH_PLACE.value, ""
-            ),
-            FamilyDataKeys.FATHER_DEATH_ROOT_PLACE.value: father_data.get(
-                PersonDataKeys.DEATH_ROOT_PLACE.value, ""
-            ),
-            FamilyDataKeys.MOTHER_GIVEN.value: mother_data.get(
-                PersonDataKeys.GIVEN.value, ""
-            ),
-            FamilyDataKeys.MOTHER_MIDDLE.value: mother_data.get(
-                PersonDataKeys.MIDDLE.value, ""
-            ),
-            FamilyDataKeys.MOTHER_SURNAME.value: mother_data.get(
-                PersonDataKeys.SURNAME.value, ""
-            ),
-            FamilyDataKeys.MOTHER_BIRTH_YEAR.value: mother_data.get(
-                PersonDataKeys.BIRTH_YEAR.value, ""
-            ),
-            FamilyDataKeys.MOTHER_BIRTH_YEAR_FROM.value: mother_data.get(
-                PersonDataKeys.BIRTH_YEAR_FROM.value, ""
-            ),
-            FamilyDataKeys.MOTHER_BIRTH_YEAR_TO.value: mother_data.get(
-                PersonDataKeys.BIRTH_YEAR_TO.value, ""
-            ),
-            FamilyDataKeys.MOTHER_BIRTH_YEAR_BEFORE.value: mother_data.get(
-                PersonDataKeys.BIRTH_YEAR_BEFORE.value, ""
-            ),
-            FamilyDataKeys.MOTHER_BIRTH_YEAR_AFTER.value: mother_data.get(
-                PersonDataKeys.BIRTH_YEAR_AFTER.value, ""
-            ),
-            FamilyDataKeys.MOTHER_DEATH_YEAR.value: mother_data.get(
-                PersonDataKeys.DEATH_YEAR.value, ""
-            ),
-            FamilyDataKeys.MOTHER_DEATH_YEAR_FROM.value: mother_data.get(
-                PersonDataKeys.DEATH_YEAR_FROM.value, ""
-            ),
-            FamilyDataKeys.MOTHER_DEATH_YEAR_TO.value: mother_data.get(
-                PersonDataKeys.DEATH_YEAR_TO.value, ""
-            ),
-            FamilyDataKeys.MOTHER_DEATH_YEAR_BEFORE.value: mother_data.get(
-                PersonDataKeys.DEATH_YEAR_BEFORE.value, ""
-            ),
-            FamilyDataKeys.MOTHER_DEATH_YEAR_AFTER.value: mother_data.get(
-                PersonDataKeys.DEATH_YEAR_AFTER.value, ""
-            ),
-            FamilyDataKeys.MOTHER_BIRTH_PLACE.value: mother_data.get(
-                PersonDataKeys.BIRTH_PLACE.value, ""
-            ),
-            FamilyDataKeys.MOTHER_BIRTH_ROOT_PLACE.value: mother_data.get(
-                PersonDataKeys.BIRTH_ROOT_PLACE.value, ""
-            ),
-            FamilyDataKeys.MOTHER_DEATH_PLACE.value: mother_data.get(
-                PersonDataKeys.DEATH_PLACE.value, ""
-            ),
-            FamilyDataKeys.MOTHER_DEATH_ROOT_PLACE.value: mother_data.get(
-                PersonDataKeys.DEATH_ROOT_PLACE.value, ""
-            ),
-            FamilyDataKeys.MARRIAGE_YEAR.value: marriage_year or "",
-            FamilyDataKeys.MARRIAGE_YEAR_FROM.value: marriage_year_from or "",
-            FamilyDataKeys.MARRIAGE_YEAR_TO.value: marriage_year_to or "",
-            FamilyDataKeys.MARRIAGE_YEAR_BEFORE.value: marriage_year_before or "",
-            FamilyDataKeys.MARRIAGE_YEAR_AFTER.value: marriage_year_after or "",
-            FamilyDataKeys.MARRIAGE_PLACE.value: marriage_place or "",
-            FamilyDataKeys.MARRIAGE_ROOT_PLACE.value: marriage_root_place or "",
-            FamilyDataKeys.DIVORCE_YEAR.value: divorce_year or "",
-            FamilyDataKeys.DIVORCE_YEAR_FROM.value: divorce_year_from or "",
-            FamilyDataKeys.DIVORCE_YEAR_TO.value: divorce_year_to or "",
-            FamilyDataKeys.DIVORCE_YEAR_BEFORE.value: divorce_year_before or "",
-            FamilyDataKeys.DIVORCE_YEAR_AFTER.value: divorce_year_after or "",
-            FamilyDataKeys.DIVORCE_PLACE.value: divorce_place or "",
-            FamilyDataKeys.DIVORCE_ROOT_PLACE.value: divorce_root_place or "",
-            FamilyDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
-        }
-
-        return family_data
-
-    def get_place_data(self, place):
-        """Extracts structured place data such as name, coordinates, and type."""
-        place_name = root_place_name = latitude = longitude = place_type = None
-        try:
-            place_name = self.get_place_name(place)
-            root_place_name = self.get_root_place_name(place)
-            place_title = self.get_place_title(place)
-            latitude = self.get_place_latitude(place)
-            longitude = self.get_place_longitude(place)
-            place_type = self.get_place_type(place)
-        except Exception:
-            print(traceback.format_exc(), file=sys.stderr)
-
-        place_data = {
-            PlaceDataKeys.PLACE.value: place_name or "",
-            PlaceDataKeys.ROOT_PLACE.value: root_place_name or "",
-            PlaceDataKeys.LATITUDE.value: latitude or "",
-            PlaceDataKeys.LONGITUDE.value: longitude or "",
-            PlaceDataKeys.TYPE.value: place_type or "",
-            PlaceDataKeys.TITLE.value: place_title or "",
-            PlaceDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
-        }
-
-        return place_data
-
-    def get_place_latitude(self, place):
-        """Returns the latitude of the place if available."""
-        try:
-            if place is None:
-                return None
-            latitude = place.get_latitude()
-        except Exception:
-            print(traceback.format_exc(), file=sys.stderr)
-            return None
-        return latitude
-
-    def get_place_longitude(self, place):
-        """Returns the longitude of the place if available."""
-        try:
-            if place is None:
-                return None
-            longitude = place.get_longitude()
-        except Exception:
-            print(traceback.format_exc(), file=sys.stderr)
-            return None
-        return longitude
-
-    def get_place_type(self, place):
-        """Returns the place type as a string or XML identifier."""
-        try:
-            if place is None:
-                return None
-
-            place_type = place.get_type()
-            if isinstance(place_type, str):
-                place_type_value = place_type
-            elif isinstance(place_type, PlaceType):
-                place_type_value = place_type.xml_str()
-            else:
-                place_type_value = None
-
-        except Exception:
-            print(traceback.format_exc(), file=sys.stderr)
-            return None
-        return place_type_value
-
-    def get_source_data(self, source):
-        """Extracts basic information from a source object, including title and locale."""
-        try:
-            title = source.get_title() or None
-        except Exception:
-            print(traceback.format_exc(), file=sys.stderr)
-            title = None
-
-        source_data = {
-            SourceDataKeys.TITLE.value: title or "",
-            SourceDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
-        }
-
-        return source_data
-
-    def get_root_place_name(self, place):
-        """Returns the root place name by traversing place hierarchy upward."""
-        try:
-            if place is None:
-                return None
-            name = place.get_name()
-            if name is None:
-                return None
-            root_place_name = name.get_value()
-            place_ref = (
-                place.get_placeref_list()[0] if place.get_placeref_list() else None
-            )
-            while place_ref:
-                p = self.dbstate.db.get_place_from_handle(
-                    place_ref.get_reference_handle()
-                )
-                if p:
-                    root_place_name = p.get_name().get_value()
-                    place_ref = (
-                        p.get_placeref_list()[0] if p.get_placeref_list() else None
-                    )
-                else:
-                    break
-        except Exception:
-            print(traceback.format_exc(), file=sys.stderr)
-            return None
-
-        return root_place_name
-
-    def get_place_title(self, place):
-        """Returns a full hierarchical title for the place (including parents)."""
-        try:
-            if not place:
-                return ""
-            name = place.get_name()
-            if not name:
-                return ""
-            place_names = [name.get_value()]
-            place_ref = (
-                place.get_placeref_list()[0] if place.get_placeref_list() else None
-            )
-            while place_ref:
-                parent_place = self.dbstate.db.get_place_from_handle(
-                    place_ref.get_reference_handle()
-                )
-                if parent_place:
-                    place_names.append(parent_place.get_name().get_value())
-                    place_ref = (
-                        parent_place.get_placeref_list()[0]
-                        if parent_place.get_placeref_list()
-                        else None
-                    )
-                else:
-                    break
-
-            return ", ".join(place_names) if place_names else ""
-        except Exception:
-            print(traceback.format_exc(), file=sys.stderr)
-            return ""
-
-    def get_birth_year(self, person):
-        """Returns the exact birth year from a person's birth event."""
-        event = self.get_birth_event(person)
-        return self.get_event_exact_year(event)
-
-    def get_birth_years(self, person):
-        """Returns different birth year formats from the person's birth event."""
-        event = self.get_birth_event(person)
-        year, year_from, year_to, year_before, year_after = self.get_event_years(event)
-        return year, year_from, year_to, year_before, year_after
-
-    def get_death_years(self, person):
-        """Returns different death year formats from the person's death event."""
-        event = self.get_death_event(person)
-        year, year_from, year_to, year_before, year_after = self.get_event_years(event)
-        return year, year_from, year_to, year_before, year_after
-
-    def get_event_years(self, event):
-        """Returns a tuple of year values extracted from an event's date object."""
-        year = None
-        year_from = None
-        year_to = None
-        year_before = None
-        year_after = None
-
-        if not event:
-            return year, year_from, year_to, year_before, year_after
-        date = event.get_date_object()
-        if not date or date.is_empty():
-            return year, year_from, year_to, year_before, year_after
-        try:
-            modifier = date.get_modifier()
-            if modifier in [Date.MOD_NONE, Date.MOD_ABOUT]:
-                year = date.get_year() or None
-                year_from = date.get_year() or None
-                year_to = date.get_year() or None
-            if modifier in [Date.MOD_AFTER]:
-                year_after = date.get_year() or None
-            if modifier in [Date.MOD_BEFORE]:
-                year_before = date.get_year() or None
-            if modifier in [Date.MOD_SPAN, Date.MOD_RANGE]:
-                start_date = date.get_start_date()
-                stop_date = date.get_stop_date()
-                year_from = start_date[2] if start_date else None
-                year_to = stop_date[2] if stop_date else None
-            return year, year_from, year_to, year_before, year_after
-        except Exception:
-            print(traceback.format_exc(), file=sys.stderr)
-        return year, year_from, year_to, year_before, year_after
-
-    def get_birth_place(self, person):
-        """Returns the place name associated with the person's birth."""
-        event = self.get_birth_event(person)
-        place = self.get_event_place(event)
-        return self.get_place_name(place)
-
-    def get_birth_root_place(self, person):
-        """Returns the root place name from the person's birth event."""
-        event = self.get_birth_event(person)
-        place = self.get_event_place(event)
-        return self.get_root_place_name(place)
-
-    def get_death_root_place(self, person):
-        """Returns the root place name from the person's death event."""
-        event = self.get_death_event(person)
-        place = self.get_event_place(event)
-        return self.get_root_place_name(place)
-
-    def get_death_place(self, person):
-        """Returns the place name associated with the person's death."""
-        event = self.get_death_event(person)
-        place = self.get_event_place(event)
-        return self.get_place_name(place)
-
-    def get_birth_event(self, person):
-        """Returns the birth event object for the given person."""
-        try:
-            if person is None:
-                return None
-            ref = person.get_birth_ref()
-            if ref is None:
-                return None
-            return (
-                self.dbstate.db.get_event_from_handle(ref.get_reference_handle())
-                or None
-            )
-        except Exception:
-            print(traceback.format_exc(), file=sys.stderr)
-            return None
-
-    def get_death_event(self, person):
-        """Returns the death event object for the given person."""
-        try:
-            ref = person.get_death_ref()
-            if ref is None:
-                return None
-            return (
-                self.dbstate.db.get_event_from_handle(ref.get_reference_handle())
-                or None
-            )
-        except Exception:
-            print(traceback.format_exc(), file=sys.stderr)
-            return None
-
-    def get_death_year(self, person):
-        """Returns the exact year of the person's death."""
-        event = self.get_death_event(person)
-        return self.get_event_exact_year(event)
-
-    def get_event_place(self, event):
-        """Returns the place object associated with the given event."""
-        try:
-            if event is None:
-                return None
-            place_ref = event.get_place_handle()
-            if not place_ref:
-                return None
-            return self.dbstate.db.get_place_from_handle(place_ref) or None
-        except Exception:
-            print(traceback.format_exc(), file=sys.stderr)
-            return None
-
-    def get_event_exact_year(self, event):
-        """Returns the exact year from a non-compound event date."""
-        try:
-            if event is None:
-                return None
-            date = event.get_date_object()
-            if date and not date.is_compound():
-                return date.get_year() or None
-        except Exception:
-            print(traceback.format_exc(), file=sys.stderr)
-        return None
-
-    def get_place_name(self, place):
-        """Returns the primary name value of the given place."""
-        try:
-            if place is None:
-                return None
-            name = place.get_name()
-            if name is None:
-                return None
-            value = name.get_value()
-            return value or None
-        except Exception:
-            print(traceback.format_exc(), file=sys.stderr)
-            return None
+    def close_context_menu(self):
+        """Closes the context menu if it is currently visible."""
+        if self.ui.context_menu and self.ui.context_menu.get_visible():
+            self.ui.context_menu.hide()
 
     def build_gui(self):
         """Constructs and returns the full GTK UI for the WebSearch Gramplet."""
@@ -1431,7 +632,7 @@ class WebSearch(Gramplet):
         self.apply_styles()
         self.translate()
         self.update_url_column_visibility()
-        self.update_vars_column_visibility()
+        self.update_keys_column_visibility()
         self.reorder_columns()
 
         return self.ui.boxes.main
@@ -1468,8 +669,8 @@ class WebSearch(Gramplet):
         )
         self.ui.columns.url.set_visible(self._show_url_column)
 
-    def update_vars_column_visibility(self):
-        """Updates the visibility of the 'Vars' column."""
+    def update_keys_column_visibility(self):
+        """Updates the visibility of the 'Keys' column."""
         self._show_vars_column = self.config_ini_manager.get_boolean_option(
             "websearch.show_vars_column", DEFAULT_SHOW_VARS_COLUMN
         )
@@ -1834,7 +1035,7 @@ class WebSearch(Gramplet):
         self.update()
         self.on_load()
         self.update_url_column_visibility()
-        self.update_vars_column_visibility()
+        self.update_keys_column_visibility()
 
     def on_load(self):
         """Loads all persistent WebSearch configuration settings."""
