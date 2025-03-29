@@ -860,6 +860,7 @@ class WebSearch(Gramplet):
 
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
         nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
+        note_handle = None
 
         with DbTxn(_("Add Web Link Note"), self.dbstate.db) as trans:
             if nav_type == SupportedNavTypes.PEOPLE.value:
@@ -869,7 +870,6 @@ class WebSearch(Gramplet):
                 self.dbstate.db.commit_person(self._context.person, trans)
 
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
-
         self.add_icon_event(
             SimpleNamespace(
                 file_path=SAVED_HASH_FILE_PATH,
@@ -879,6 +879,18 @@ class WebSearch(Gramplet):
                 model_visibility_pos=ModelColumns.SAVED_ICON_VISIBLE.value,
             )
         )
+
+        try:
+            note_obj = self.dbstate.db.get_note_from_handle(note_handle)
+            note_gramps_id = note_obj.get_gramps_id()
+            notification = self.show_notification(
+                _("Note #%(id)s has been successfully added") % {"id": note_gramps_id}
+            )
+            notification.show_all()
+        except Exception:
+            notification = self.show_notification(_("Error creating note"))
+            notification.show_all()
+
 
     def on_show_qr_code(self, widget):
         """Opens a window showing the QR code for the selected URL."""
