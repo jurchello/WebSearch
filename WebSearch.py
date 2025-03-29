@@ -212,6 +212,7 @@ class WebSearch(Gramplet):
             ),
             columns=SimpleNamespace(
                 icons=self.builder.get_object("icons_column"),
+                category=self.builder.get_object("category_column"),
                 locale=self.builder.get_object("locale_column"),
                 vars=self.builder.get_object("vars_column"),
                 title=self.builder.get_object("title_column"),
@@ -224,7 +225,7 @@ class WebSearch(Gramplet):
         self._show_url_column = False
         self._show_vars_column = False
 
-        self.model = Gtk.ListStore(*MODEL_TYPES)
+        self.model = Gtk.TreeStore(*MODEL_TYPES)
 
         self.make_directories()
         self.signal_emitter = WebSearchSignalEmitter()
@@ -379,26 +380,57 @@ class WebSearch(Gramplet):
             websites += attr_websites
 
         common_data = (core_keys, attribute_keys, nav_type, obj)
+
+        group_nodes = {}
+
         for website_data in websites:
             model_row = self.model_row_generator.generate(common_data, website_data)
             if model_row:
-                self.model.append([model_row[name] for name, _ in MODEL_SCHEMA])
+                # Замоканий текст для групи
+                group_name = model_row.get("locale_text", "Категорія")
+
+                # Якщо група ще не створена, створюємо її
+                if group_name not in group_nodes:
+                    # Формуємо правильний набір значень для групового вузла
+                    group_values = []
+                    for name, value_type in MODEL_SCHEMA:
+                        if value_type == str:
+                            group_values.append(group_name if name == "locale_text" else "")
+                        elif value_type == int:
+                            group_values.append(0)
+                        elif value_type == bool:
+                            group_values.append(False)
+                        elif value_type == GdkPixbuf.Pixbuf:
+                            group_values.append(None)
+                        else:
+                            group_values.append(None)
+
+                    # Додаємо групу до моделі
+                    group_iter = self.model.append(None, group_values)
+                    group_nodes[group_name] = group_iter
+                    print(f"Created group: {group_name} -> {group_iter}")
+
+                # Формуємо правильний дочірній елемент
+                child_values = [model_row[name] for name, _ in MODEL_SCHEMA]
+                self.model.append(group_nodes[group_name], child_values)
+                print(f"Added child to group {group_name}")
 
     def on_link_clicked(self, tree_view, path, column):
         """Handles the event when a URL is clicked in the tree view and opens the link."""
         tree_iter = self.model.get_iter(path)
-        url = self.model.get_value(tree_iter, ModelColumns.FINAL_URL.value)
-        encoded_url = urllib.parse.quote(url, safe=URL_SAFE_CHARS)
-        self.add_icon_event(
-            SimpleNamespace(
-                file_path=VISITED_HASH_FILE_PATH,
-                icon_path=ICON_VISITED_PATH,
-                tree_iter=tree_iter,
-                model_icon_pos=ModelColumns.VISITED_ICON.value,
-                model_visibility_pos=ModelColumns.VISITED_ICON_VISIBLE.value,
+        if tree_iter and not self.model.iter_has_child(tree_iter):
+            url = self.model.get_value(tree_iter, ModelColumns.FINAL_URL.value)
+            encoded_url = urllib.parse.quote(url, safe=URL_SAFE_CHARS)
+            self.add_icon_event(
+                SimpleNamespace(
+                    file_path=VISITED_HASH_FILE_PATH,
+                    icon_path=ICON_VISITED_PATH,
+                    tree_iter=tree_iter,
+                    model_icon_pos=ModelColumns.VISITED_ICON.value,
+                    model_visibility_pos=ModelColumns.VISITED_ICON_VISIBLE.value,
+                )
             )
-        )
-        display_url(encoded_url)
+            display_url(encoded_url)
 
     def add_icon_event(self, settings):
         """Adds a visual icon to the model and saves the hash when a link is clicked."""
@@ -555,8 +587,21 @@ class WebSearch(Gramplet):
         self.ui.tree_view.connect("columns-changed", self.on_column_changed)
 
         # Columns reordering
+        self.ui.tree_view.set_enable_tree_lines(True)
+        self.ui.tree_view.set_headers_visible(True)
+        self.ui.tree_view.set_level_indentation(20)
+
         for column in self.ui.tree_view.get_columns():
             column.set_reorderable(True)
+
+        # Add the new category column
+        if not hasattr(self.ui.columns, 'category'):
+            category_column = Gtk.TreeViewColumn("Category")
+            category_renderer = Gtk.CellRendererText()
+            category_column.pack_start(category_renderer, True)
+            category_column.add_attribute(category_renderer, "text", ModelColumns.LOCALE_TEXT.value)
+            self.ui.tree_view.append_column(category_column)
+            self.ui.columns.category = category_column
 
         # Columns sorting
         self.add_sorting(self.ui.columns.locale, ModelColumns.SOURCE_TYPE_SORT.value)
@@ -682,7 +727,11 @@ class WebSearch(Gramplet):
         """Saves the current order of columns when changed by the user."""
         columns = tree_view.get_columns()
         column_map = {v: k for k, v in self.ui.columns.__dict__.items()}
-        columns_order = [column_map[col] for col in columns]
+
+        # Додаємо нову колонку 'category_column'
+        column_map[self.ui.columns.category] = 'category'
+
+        columns_order = [column_map.get(col, "unknown") for col in columns]
         self.config_ini_manager.set_list("websearch.columns_order", columns_order)
 
     def update_url_column_visibility(self):
@@ -971,6 +1020,10 @@ class WebSearch(Gramplet):
         if path_info:
             path, column, cell_x, cell_y = path_info
             tree_iter = self.model.get_iter(path)
+
+            if self.model.iter_has_child(tree_iter):
+                return
+
             title = self.model.get_value(tree_iter, ModelColumns.TITLE.value)
             comment = self.model.get_value(tree_iter, ModelColumns.COMMENT.value) or ""
 

@@ -16,6 +16,21 @@
                         <property name="headers-visible">True</property>
 
                         <child>
+                            <object class="GtkTreeViewColumn" id="category_column">
+                                <property name="title">Category</property>
+                                <property name="clickable">True</property>
+                                <property name="resizable">True</property>
+                                <property name="sizing">autosize</property>
+                                <child>
+                                    <object class="GtkCellRendererText" id="category_text_renderer">
+                                        <property name="xalign">0.0</property>
+                                        <property name="weight">700</property>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+
+                        <child>
                             <object class="GtkTreeViewColumn" id="icons_column">
                                 <property name="title"></property>
                                 <property name="clickable">True</property>
