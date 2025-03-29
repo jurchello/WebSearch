@@ -48,7 +48,7 @@ from gi.repository import Gtk, Gdk, GdkPixbuf, GObject
 # GRAMPS API
 from gramps.gen.plug import Gramplet
 from gramps.gui.display import display_url
-from gramps.gen.lib import Note, Attribute
+from gramps.gen.lib import Note, Attribute, NoteType
 from gramps.gen.db import DbTxn
 
 # Own project imports
@@ -844,8 +844,9 @@ class WebSearch(Gramplet):
         nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
 
         with DbTxn(_("Add Web Link Note"), self.dbstate.db) as trans:
-            note_handle = self.dbstate.db.add_note(note, trans)
             if nav_type == SupportedNavTypes.PEOPLE.value:
+                note.set_type(NoteType.PERSON)
+                note_handle = self.dbstate.db.add_note(note, trans)
                 self._context.person.add_note(note_handle)
                 self.dbstate.db.commit_person(self._context.person, trans)
 
