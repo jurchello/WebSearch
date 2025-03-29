@@ -93,6 +93,7 @@ from constants import (
     DEFAULT_SHOW_FLAG_ICONS,
     DEFAULT_SHOW_ATTRIBUTE_LINKS,
     DEFAULT_AI_PROVIDER,
+    VIEW_IDS_MAPPING,
     URLCompactnessLevel,
     MiddleNameHandling,
     SupportedNavTypes,
@@ -367,6 +368,28 @@ class WebSearch(Gramplet):
         elif active_media_handle:
             self.active_media_changed(active_media_handle)
 
+        notebook = self.gui.uistate.viewmanager.notebook
+        if notebook:
+            notebook.connect("switch-page", self.on_category_changed)
+
+    def on_category_changed(self, notebook, page, page_num, *args):
+        try:
+            page_lookup = self.gui.uistate.viewmanager.page_lookup
+            for (cat_num, view_num), p_num in page_lookup.items():
+                if p_num == page_num:
+                    views = self.gui.uistate.viewmanager.views
+                    view_id = views[cat_num][view_num][0].id
+                    nav_type = VIEW_IDS_MAPPING.get(view_id, None)
+                    if nav_type:
+                        self._context.last_active_entity_type = nav_type
+                        self._context.last_active_entity_handle = self.gui.uistate.get_active(nav_type)
+                        self.call_entity_changed_method()
+                    else:
+                        self.model.clear()
+                    break
+        except Exception:
+            self.model.clear()
+
     def populate_links(self, core_keys, attribute_keys, nav_type, obj):
         """Populates the list model with formatted website links relevant to the current entity."""
         self.model.clear()
@@ -444,7 +467,6 @@ class WebSearch(Gramplet):
     def active_event_changed(self, handle):
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = 'Event'
-        print("active_event_changed")
         """Handles updates when the active event changes in the GUI."""
         self.close_context_menu()
 
@@ -459,7 +481,6 @@ class WebSearch(Gramplet):
     def active_citation_changed(self, handle):
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = 'Citation'
-        print("active_citation_changed")
         """Handles updates when the active citation changes in the GUI."""
         self.close_context_menu()
 
@@ -474,7 +495,6 @@ class WebSearch(Gramplet):
     def active_media_changed(self, handle):
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = 'Media'
-        print("active_media_changed")
         """Handles updates when the active media changes in the GUI."""
         self.close_context_menu()
 
@@ -489,7 +509,6 @@ class WebSearch(Gramplet):
     def active_place_changed(self, handle):
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = 'Place'
-        print("active_place_changed")
         """Handles updates when the active place changes in the GUI."""
         try:
             place = self.dbstate.db.get_place_from_handle(handle)
@@ -506,7 +525,6 @@ class WebSearch(Gramplet):
     def active_source_changed(self, handle):
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = 'Source'
-        print("active_source_changed")
         """Handles updates when the active source changes in the GUI."""
         source = self.dbstate.db.get_source_from_handle(handle)
         self._context.source = source

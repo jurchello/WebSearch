@@ -163,7 +163,7 @@ class EntityDataBuilder:
             )
             event_type = event.get_type()
             event_place = EventDataExtractor.get_event_place(self.db, event)
-            event_root_place = PlaceDataExtractor.get_root_place_name(event_place)
+            event_root_place = PlaceDataExtractor.get_root_place_name(self.db, event_place)
             if event_type == EventType.MARRIAGE:
                 (
                     marriage_year,

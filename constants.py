@@ -212,6 +212,22 @@ SOURCE_TYPE_SORT_ORDER = {
     SourceTypes.CROSS.value: "4",
 }
 
+VIEW_IDS_MAPPING = {
+    "dashboardview": None,
+    "personlistview": "Person",
+    "relview": None,
+    "familyview": "Family",
+    "family_tree_view": None,
+    "eventview": "Event",
+    "placetreeview": "Place",
+    "sourceview": "Source",
+    "citationlistview": "Citation",
+    "repoview": None,
+    "mediaview": "Media",
+    "noteview": None,
+    "geo1": None,
+}
+
 
 # --------------------------
 # CONSTANTS
