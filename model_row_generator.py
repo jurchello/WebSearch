@@ -56,6 +56,8 @@ from constants import (
     SOURCE_TYPE_SORT_ORDER,
     VISITED_HASH_FILE_PATH,
     SAVED_HASH_FILE_PATH,
+    DEFAULT_SHOW_USER_DATA_ICON,
+    DEFAULT_SHOW_FLAG_ICONS,
 )
 
 class ModelRowGenerator:
@@ -71,8 +73,6 @@ class ModelRowGenerator:
         self.url_formatter = deps.url_formatter
         self.attribute_loader = deps.attribute_loader
         self.config_ini_manager = deps.config_ini_manager
-        self._show_flag_icons = deps.websearch_settings.show_flag_icons
-        self._show_user_data_icon = deps.websearch_settings.show_user_data_icon
 
     def generate(self, common_data, website_data):
         """Generates a structured data row for the ListStore model."""
@@ -266,7 +266,7 @@ class ModelRowGenerator:
             path, width, height = special_icons[locale]
             return self.load_icon(path, width, height, label=locale)
 
-        if not locale or not self._show_flag_icons:
+        if not locale or not self.show_flag_icons():
             return None, False
 
         locale = locale.lower()
@@ -291,7 +291,7 @@ class ModelRowGenerator:
         user_data_icon = None
         user_data_icon_visible = False
 
-        if not self._show_user_data_icon:
+        if not self.show_user_data_icons():
             return user_data_icon, user_data_icon_visible
 
         if is_custom:
@@ -331,3 +331,15 @@ class ModelRowGenerator:
             except Exception as e:
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
         return saved_icon, saved_icon_visible
+
+    def show_flag_icons(self):
+        """Returns the current state of the flag icons setting."""
+        return self.config_ini_manager.get_boolean_option(
+            "websearch.show_flag_icons", DEFAULT_SHOW_FLAG_ICONS
+        )
+
+    def show_user_data_icons(self):
+        """Returns the current state of the user data icon setting."""
+        return self.config_ini_manager.get_boolean_option(
+            "websearch.show_user_data_icon", DEFAULT_SHOW_USER_DATA_ICON
+        )

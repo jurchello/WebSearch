@@ -32,6 +32,7 @@ import traceback
 from helpers import get_system_locale
 from person_data_extractor import PersonDataExtractor
 from place_data_extractor import PlaceDataExtractor
+from event_data_extractor import EventDataExtractor
 from attribute_mapping_loader import AttributeMappingLoader
 
 from gramps.gen.lib.eventtype import EventType
@@ -132,12 +133,12 @@ class EntityDataBuilder:
     def get_family_data(self, family):
         """Extracts structured data related to a family, including parents and events."""
         father = (
-            self.dbstate.db.get_person_from_handle(family.get_father_handle())
+            self.db.get_person_from_handle(family.get_father_handle())
             if family.get_father_handle()
             else None
         )
         mother = (
-            self.dbstate.db.get_person_from_handle(family.get_mother_handle())
+            self.db.get_person_from_handle(family.get_mother_handle())
             if family.get_mother_handle()
             else None
         )
@@ -157,12 +158,12 @@ class EntityDataBuilder:
 
         event_ref_list = family.get_event_ref_list()
         for event_ref in event_ref_list:
-            event = self.dbstate.db.get_event_from_handle(
+            event = self.db.get_event_from_handle(
                 event_ref.get_reference_handle()
             )
             event_type = event.get_type()
-            event_place = self.get_event_place(db, event)
-            event_root_place = self.get_root_place_name(event_place)
+            event_place = EventDataExtractor.get_event_place(self.db, event)
+            event_root_place = PlaceDataExtractor.get_root_place_name(event_place)
             if event_type == EventType.MARRIAGE:
                 (
                     marriage_year,
@@ -170,8 +171,8 @@ class EntityDataBuilder:
                     marriage_year_to,
                     marriage_year_before,
                     marriage_year_after,
-                ) = self.get_event_years(event)
-                marriage_place = self.get_place_name(event_place)
+                ) = EventDataExtractor.get_event_years(event)
+                marriage_place = PlaceDataExtractor.get_place_name(event_place)
                 marriage_root_place = event_root_place
             if event_type == EventType.DIVORCE:
                 (
@@ -180,8 +181,8 @@ class EntityDataBuilder:
                     divorce_year_to,
                     divorce_year_before,
                     divorce_year_after,
-                ) = self.get_event_years(event)
-                divorce_place = self.get_place_name(event_place)
+                ) = EventDataExtractor.get_event_years(event)
+                divorce_place = PlaceDataExtractor.get_place_name(event_place)
                 divorce_root_place = event_root_place
 
         family_data = {

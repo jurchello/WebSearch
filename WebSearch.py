@@ -165,6 +165,9 @@ class WebSearch(Gramplet):
             source=None,
             active_url=None,
             active_tree_path=None,
+            last_active_entity_handle=None,
+            last_active_entity_type=None,
+            previous_ai_provider=None,
         )
         self.system_locale = get_system_locale()
         self.gui = gui
@@ -243,35 +246,28 @@ class WebSearch(Gramplet):
         self.gui.WIDGET.show_all()
 
     def post_init(self):
-        """
-        Performs additional setup after the GUI is initialized, including optional
-        AI site fetching.
-        """
-        self.model_row_generator = ModelRowGenerator(
-            SimpleNamespace(
-                website_loader=self.website_loader,
-                url_formatter=self.url_formatter,
-                attribute_loader=self.attribute_loader,
-                config_ini_manager=self.config_ini_manager,
-                websearch_settings=SimpleNamespace(
-                    show_flag_icons=self._show_flag_icons,
-                    show_user_data_icon=self._show_user_data_icon
-                )
-            )
-        )
+        """Initializes GUI signals and refreshes the AI section."""
         self.signal_emitter.connect("sites-fetched", self.on_sites_fetched)
+        self.refresh_ai_section()
+
+    def refresh_ai_section(self):
+        """Updates AI provider settings and fetches AI-recommended sites if necessary."""
         locales, domains, include_global = self.website_loader.get_domains_data(
             self.config_ini_manager
         )
 
+        self.toggle_badges_visibility()
+
         if self._ai_provider == AIProviders.DISABLED.value:
-            self.toggle_badges_visibility()
             return
 
         if not self._ai_api_key:
             print("❌ ERROR: No AI API Key found.", file=sys.stderr)
-            self.toggle_badges_visibility()
             return
+
+        if self._context.previous_ai_provider == self._ai_provider:
+            return
+        self._context.previous_ai_provider = self._ai_provider
 
         if self._ai_provider == AIProviders.OPENAI.value:
             self.finder = OpenaiSiteFinder(self._ai_api_key, self._ai_model)
@@ -279,7 +275,6 @@ class WebSearch(Gramplet):
             self.finder = MistralSiteFinder(self._ai_api_key, self._ai_model)
         else:
             print(f"⚠ Unknown AI provider: {self._ai_provider}", file=sys.stderr)
-            self.toggle_badges_visibility()
             return
 
         threading.Thread(
@@ -329,8 +324,17 @@ class WebSearch(Gramplet):
                 print(f"❌ Error processing sites: {e}", file=sys.stderr)
 
     def db_changed(self):
+
         """Responds to changes in the database and updates the active context accordingly."""
         self.entity_data_builder = EntityDataBuilder(self.dbstate, self.config_ini_manager)
+        self.model_row_generator = ModelRowGenerator(
+            SimpleNamespace(
+                website_loader=self.website_loader,
+                url_formatter=self.url_formatter,
+                attribute_loader=self.attribute_loader,
+                config_ini_manager=self.config_ini_manager,
+            )
+        )
 
         self.connect_signal("Person", self.active_person_changed)
         self.connect_signal("Place", self.active_place_changed)
@@ -422,6 +426,8 @@ class WebSearch(Gramplet):
 
     def active_person_changed(self, handle):
         """Handles updates when the active person changes in the GUI."""
+        self._context.last_active_entity_handle = handle
+        self._context.last_active_entity_type = 'Person'
         self.close_context_menu()
 
         person = self.dbstate.db.get_person_from_handle(handle)
@@ -436,6 +442,9 @@ class WebSearch(Gramplet):
         self.update()
 
     def active_event_changed(self, handle):
+        self._context.last_active_entity_handle = handle
+        self._context.last_active_entity_type = 'Event'
+        print("active_event_changed")
         """Handles updates when the active event changes in the GUI."""
         self.close_context_menu()
 
@@ -448,6 +457,9 @@ class WebSearch(Gramplet):
         self.update()
 
     def active_citation_changed(self, handle):
+        self._context.last_active_entity_handle = handle
+        self._context.last_active_entity_type = 'Citation'
+        print("active_citation_changed")
         """Handles updates when the active citation changes in the GUI."""
         self.close_context_menu()
 
@@ -460,6 +472,9 @@ class WebSearch(Gramplet):
         self.update()
 
     def active_media_changed(self, handle):
+        self._context.last_active_entity_handle = handle
+        self._context.last_active_entity_type = 'Media'
+        print("active_media_changed")
         """Handles updates when the active media changes in the GUI."""
         self.close_context_menu()
 
@@ -472,6 +487,9 @@ class WebSearch(Gramplet):
         self.update()
 
     def active_place_changed(self, handle):
+        self._context.last_active_entity_handle = handle
+        self._context.last_active_entity_type = 'Place'
+        print("active_place_changed")
         """Handles updates when the active place changes in the GUI."""
         try:
             place = self.dbstate.db.get_place_from_handle(handle)
@@ -486,6 +504,9 @@ class WebSearch(Gramplet):
             print(traceback.format_exc(), file=sys.stderr)
 
     def active_source_changed(self, handle):
+        self._context.last_active_entity_handle = handle
+        self._context.last_active_entity_type = 'Source'
+        print("active_source_changed")
         """Handles updates when the active source changes in the GUI."""
         source = self.dbstate.db.get_source_from_handle(handle)
         self._context.source = source
@@ -497,6 +518,8 @@ class WebSearch(Gramplet):
         self.update()
 
     def active_family_changed(self, handle):
+        self._context.last_active_entity_handle = handle
+        self._context.last_active_entity_type = 'Family'
         """Handles updates when the active family changes in the GUI."""
         family = self.dbstate.db.get_family_from_handle(handle)
         self._context.family = family
@@ -1036,17 +1059,23 @@ class WebSearch(Gramplet):
         self.on_load()
         self.update_url_column_visibility()
         self.update_keys_column_visibility()
+        self.call_entity_changed_method()
+        self.refresh_ai_section()
+
+    def call_entity_changed_method(self):
+        """Calls the entity changed method based on the last active entity type."""
+        entity_type = self._context.last_active_entity_type.lower()
+        method_name = f"active_{entity_type}_changed"
+        method = getattr(self, method_name, None)
+        if method:
+            method(self._context.last_active_entity_handle)
 
     def on_load(self):
         """Loads all persistent WebSearch configuration settings."""
         self._enabled_files = self.config_ini_manager.get_list(
             "websearch.enabled_files", DEFAULT_ENABLED_FILES
         )
-        self._ai_provider = self.config_ini_manager.get_enum(
-            "websearch.ai_provider",
-            AIProviders,
-            DEFAULT_AI_PROVIDER,
-        )
+        self._ai_provider = self.load_ai_provider()
 
         self._openai_api_key = self.config_ini_manager.get_string(
             "websearch.openai_api_key", ""
@@ -1105,4 +1134,11 @@ class WebSearch(Gramplet):
         )
         self._columns_order = self.config_ini_manager.get_list(
             "websearch.columns_order", DEFAULT_COLUMNS_ORDER
+        )
+
+    def load_ai_provider(self):
+        return self.config_ini_manager.get_enum(
+            "websearch.ai_provider",
+            AIProviders,
+            DEFAULT_AI_PROVIDER,
         )
