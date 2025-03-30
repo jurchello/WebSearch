@@ -34,6 +34,7 @@ import traceback
 from event_data_extractor import EventDataExtractor
 from place_data_extractor import PlaceDataExtractor
 
+
 class PersonDataExtractor:
     """
     Extracts birth and death event data for a person, including
@@ -41,6 +42,7 @@ class PersonDataExtractor:
 
     Uses EventDataExtractor and PlaceDataExtractor for deeper logic.
     """
+
     @staticmethod
     def get_birth_event(db, person):
         """Returns the birth event object for the given person."""
@@ -50,10 +52,7 @@ class PersonDataExtractor:
             ref = person.get_birth_ref()
             if ref is None:
                 return None
-            return (
-                db.get_event_from_handle(ref.get_reference_handle())
-                or None
-            )
+            return db.get_event_from_handle(ref.get_reference_handle()) or None
         except Exception:
             print(traceback.format_exc(), file=sys.stderr)
             return None
@@ -65,10 +64,7 @@ class PersonDataExtractor:
             ref = person.get_death_ref()
             if ref is None:
                 return None
-            return (
-                db.get_event_from_handle(ref.get_reference_handle())
-                or None
-            )
+            return db.get_event_from_handle(ref.get_reference_handle()) or None
         except Exception:
             print(traceback.format_exc(), file=sys.stderr)
             return None
@@ -89,14 +85,18 @@ class PersonDataExtractor:
     def get_birth_years(db, person):
         """Returns different birth year formats from the person's birth event."""
         event = PersonDataExtractor.get_birth_event(db, person)
-        year, year_from, year_to, year_before, year_after = EventDataExtractor.get_event_years(event)
+        year, year_from, year_to, year_before, year_after = (
+            EventDataExtractor.get_event_years(event)
+        )
         return year, year_from, year_to, year_before, year_after
 
     @staticmethod
     def get_death_years(db, person):
         """Returns different death year formats from the person's death event."""
         event = PersonDataExtractor.get_death_event(db, person)
-        year, year_from, year_to, year_before, year_after = EventDataExtractor.get_event_years(event)
+        year, year_from, year_to, year_before, year_after = (
+            EventDataExtractor.get_event_years(event)
+        )
         return year, year_from, year_to, year_before, year_after
 
     @staticmethod

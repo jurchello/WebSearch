@@ -194,7 +194,6 @@ class SettingsUIManager:
 
         return self.opts
 
-
     def add_csv_files_option(self):
         """
         Add an option to enable or disable available CSV files for use in WebSearch.

@@ -26,7 +26,7 @@ import re
 from gramps.gen.lib.srcattrtype import SrcAttributeType
 from gramps.gen.lib import AttributeType
 
-from constants import (SourceTypes)
+from constants import SourceTypes
 
 
 class AttributeLinksLoader:
@@ -80,7 +80,15 @@ class AttributeLinksLoader:
                 is_enabled = True
                 is_custom = True
                 links.append(
-                    (nav_type, SourceTypes.ATTR.value, title, is_enabled, url, comment, is_custom)
+                    (
+                        nav_type,
+                        SourceTypes.ATTR.value,
+                        title,
+                        is_enabled,
+                        url,
+                        comment,
+                        is_custom,
+                    )
                 )
 
         return links

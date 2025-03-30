@@ -8,6 +8,7 @@ Includes:
 
 from gramps.gen.const import GRAMPS_LOCALE as glocale
 
+
 def is_true(value: str) -> bool:
     """
     Checks whether a given string value represents a boolean 'true'.
@@ -21,4 +22,6 @@ def get_system_locale() -> str:
     """
     Extracts the system locale string from the GRAMPS_LOCALE object.
     """
-    return glocale.language[0] if isinstance(glocale.language, list) else glocale.language
+    return (
+        glocale.language[0] if isinstance(glocale.language, list) else glocale.language
+    )

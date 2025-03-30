@@ -59,6 +59,7 @@ from constants import (
     DEFAULT_DISPLAY_ICONS,
 )
 
+
 class ModelRowGenerator:
     """
     A utility class to generate formatted rows for the WebSearch Gramplet's ListStore model.
@@ -66,6 +67,7 @@ class ModelRowGenerator:
     This class processes website and entity data to generate structured rows,
     including formatted URLs, icons, and metadata for proper display.
     """
+
     def __init__(self, deps):
         """Initializes the ModelRowGenerator with required dependencies."""
         self.website_loader = deps.website_loader
@@ -77,7 +79,9 @@ class ModelRowGenerator:
         """Generates a structured data row for the ListStore model."""
         try:
             core_keys, attribute_keys, nav_type, obj = common_data
-            nav, locale, title, is_enabled, url_pattern, comment, is_custom = website_data
+            nav, locale, title, is_enabled, url_pattern, comment, is_custom = (
+                website_data
+            )
 
             if nav != nav_type or not is_true(is_enabled):
                 return None
@@ -88,15 +92,27 @@ class ModelRowGenerator:
 
             if locale in [SourceTypes.STATIC.value, SourceTypes.ATTR.value]:
                 final_url = formatted_url = url_pattern
-                pattern_keys_info, pattern_keys_json, replaced_keys_count, total_keys_count = self.get_empty_keys()
+                (
+                    pattern_keys_info,
+                    pattern_keys_json,
+                    replaced_keys_count,
+                    total_keys_count,
+                ) = self.get_empty_keys()
             else:
-                combined_keys, matched_attribute_keys, pattern_keys_info, pattern_keys_json = self.prepare_data_keys(
-                    core_keys, attribute_keys, url_pattern
+                (
+                    combined_keys,
+                    matched_attribute_keys,
+                    pattern_keys_info,
+                    pattern_keys_json,
+                ) = self.prepare_data_keys(core_keys, attribute_keys, url_pattern)
+
+                final_url, formatted_url = self.prepare_urls(
+                    url_pattern, combined_keys, pattern_keys_info
                 )
 
-                final_url, formatted_url = self.prepare_urls(url_pattern, combined_keys, pattern_keys_info)
-
-                locale, should_skip = self.evaluate_uid_locale(locale, pattern_keys_info, matched_attribute_keys)
+                locale, should_skip = self.evaluate_uid_locale(
+                    locale, pattern_keys_info, matched_attribute_keys
+                )
                 if should_skip:
                     return None
 
@@ -104,7 +120,9 @@ class ModelRowGenerator:
             hash_value = self.website_loader.generate_hash(f"{final_url}|{obj_handle}")
             visited_icon, visited_icon_visible = self.get_visited_icon_data(hash_value)
             saved_icon, saved_icon_visible = self.get_saved_icon_data(hash_value)
-            user_data_icon, user_data_icon_visible = (self.get_user_data_icon_data(is_custom))
+            user_data_icon, user_data_icon_visible = self.get_user_data_icon_data(
+                is_custom
+            )
             locale_icon, locale_icon_visible = self.get_locale_icon_data(locale)
             replaced_keys_count = len(pattern_keys_info["replaced_keys"])
             total_keys_count = self.get_total_keys_count(pattern_keys_info)
@@ -145,9 +163,10 @@ class ModelRowGenerator:
 
     def should_be_hidden_link(self, url_pattern, nav_type, obj_handle):
         """Determine if a link should be skipped based on hidden hash entries."""
-        return (
-            self.website_loader.has_string_in_file(f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH)
-            or self.website_loader.has_string_in_file(f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH)
+        return self.website_loader.has_string_in_file(
+            f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH
+        ) or self.website_loader.has_string_in_file(
+            f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH
         )
 
     def prepare_data_keys(self, core_keys, attribute_keys, url_pattern):
@@ -159,9 +178,16 @@ class ModelRowGenerator:
         )
         combined_keys = core_keys.copy()
         combined_keys.update(matched_attribute_keys)
-        pattern_keys_info = self.url_formatter.check_pattern_keys(url_pattern, combined_keys)
+        pattern_keys_info = self.url_formatter.check_pattern_keys(
+            url_pattern, combined_keys
+        )
         pattern_keys_json = json.dumps(pattern_keys_info)
-        return combined_keys, matched_attribute_keys, pattern_keys_info, pattern_keys_json
+        return (
+            combined_keys,
+            matched_attribute_keys,
+            pattern_keys_info,
+            pattern_keys_json,
+        )
 
     def prepare_urls(self, url_pattern, combined_keys, keys):
         """Generate final and formatted URLs using combined keys and pattern keys info."""
@@ -174,9 +200,7 @@ class ModelRowGenerator:
         should_skip = False
         final_locale = locale
         try:
-            replaced_keys_set = {
-                list(var.keys())[0] for var in keys["replaced_keys"]
-            }
+            replaced_keys_set = {list(var.keys())[0] for var in keys["replaced_keys"]}
             if any(var in replaced_keys_set for var in matched_attribute_keys.keys()):
                 final_locale = SourceTypes.UID.value
             if final_locale == SourceTypes.UID.value and not replaced_keys_set:
@@ -213,7 +237,13 @@ class ModelRowGenerator:
     def get_locale_text(self, locale):
         """Return locale text unless it is a special source type (like UID or STATIC)."""
         locale_text = locale
-        if locale_text in [SourceTypes.COMMON.value, SourceTypes.UID.value, SourceTypes.STATIC.value, SourceTypes.CROSS.value, SourceTypes.ATTR.value]:
+        if locale_text in [
+            SourceTypes.COMMON.value,
+            SourceTypes.UID.value,
+            SourceTypes.STATIC.value,
+            SourceTypes.CROSS.value,
+            SourceTypes.ATTR.value,
+        ]:
             locale_text = ""
         return locale_text
 
@@ -237,6 +267,7 @@ class ModelRowGenerator:
         Safely replaces %(key)s-style placeholders in the template with values from data.
         Leaves unknown keys untouched and prevents TypeError.
         """
+
         def replacer(match):
             key = match.group(1)
             return str(data.get(key, f"%({key})s"))
@@ -245,7 +276,10 @@ class ModelRowGenerator:
             pattern = re.compile(r"%\((\w+)\)s")
             return pattern.sub(replacer, template)
         except Exception as e:
-            print(f"❌ URL formatting error: {e}\nTemplate: {template}\nData: {data}", file=sys.stderr)
+            print(
+                f"❌ URL formatting error: {e}\nTemplate: {template}\nData: {data}",
+                file=sys.stderr,
+            )
             return template
 
     def get_locale_icon_data(self, locale):
@@ -257,7 +291,12 @@ class ModelRowGenerator:
             SourceTypes.COMMON.value: ("earth", ICON_EARTH_PATH, ICON_SIZE, ICON_SIZE),
             SourceTypes.STATIC.value: ("pin", ICON_PIN_PATH, ICON_SIZE, ICON_SIZE),
             SourceTypes.CROSS.value: ("cross", ICON_CROSS_PATH, ICON_SIZE, ICON_SIZE),
-            SourceTypes.UID.value: ("uid", ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT),
+            SourceTypes.UID.value: (
+                "uid",
+                ICON_UID_PATH,
+                UID_ICON_WIDTH,
+                UID_ICON_HEIGHT,
+            ),
             SourceTypes.ATTR.value: ("chain", ICON_CHAIN_PATH, ICON_SIZE, ICON_SIZE),
         }
 
@@ -284,7 +323,10 @@ class ModelRowGenerator:
             pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(path, width, height)
             return pixbuf, True
         except Exception as e:
-            print(f"❌ Error loading icon '{path}' {f'for {label}' if label else ''}: {e}", file=sys.stderr)
+            print(
+                f"❌ Error loading icon '{path}' {f'for {label}' if label else ''}: {e}",
+                file=sys.stderr,
+            )
             return None, False
 
     def get_user_data_icon_data(self, is_custom):

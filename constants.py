@@ -199,12 +199,14 @@ class AIProviders(Enum):
     OPENAI = "openai"
     MISTRAL = "mistral"
 
+
 class SourceTypes(Enum):
     COMMON = "COMMON"
     UID = "UID"
     STATIC = "STATIC"
     CROSS = "CROSS"
     ATTR = "ATTR"
+
 
 SOURCE_TYPE_SORT_ORDER = {
     SourceTypes.COMMON.value: "0",
@@ -248,8 +250,8 @@ COMMON_CSV_FILE_NAME = "common-links.csv"
 UID_CSV_FILE_NAME = "uid-links.csv"
 STATIC_CSV_FILE_NAME = "static-links.csv"
 CROSS_CSV_FILE_NAME = "cross-links.csv"
-ALL_COLUMNS = ['icons', 'locale', 'keys', 'title', 'url', 'comment']
-DEFAULT_DISPLAY_COLUMNS = ['icons', 'locale', 'keys', 'title', 'url', 'comment']
+ALL_COLUMNS = ["icons", "locale", "keys", "title", "url", "comment"]
+DEFAULT_DISPLAY_COLUMNS = ["icons", "locale", "keys", "title", "url", "comment"]
 ALL_COLUMNS_LOCALIZED = {
     "icons": _("Column - Icons"),
     "locale": _("Column - Source Types (flags)"),
@@ -258,8 +260,28 @@ ALL_COLUMNS_LOCALIZED = {
     "url": _("Column - Website Url"),
     "comment": _("Column - Comment"),
 }
-ALL_ICONS = ['visited', 'saved', 'uid', 'flag', 'pin', 'earth', 'chain', 'cross', 'user_data']
-DEFAULT_DISPLAY_ICONS = ['visited', 'saved', 'uid', 'flag', 'pin', 'earth', 'chain', 'cross', 'user_data']
+ALL_ICONS = [
+    "visited",
+    "saved",
+    "uid",
+    "flag",
+    "pin",
+    "earth",
+    "chain",
+    "cross",
+    "user_data",
+]
+DEFAULT_DISPLAY_ICONS = [
+    "visited",
+    "saved",
+    "uid",
+    "flag",
+    "pin",
+    "earth",
+    "chain",
+    "cross",
+    "user_data",
+]
 ALL_ICONS_LOCALIZED = {
     "visited": _("Icon - Visited URLs (checkmark)"),
     "saved": _("Icon - Saved URLs (floppy disk)"),

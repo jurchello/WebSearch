@@ -31,11 +31,13 @@ import traceback
 
 from gramps.gen.lib import Date
 
+
 class EventDataExtractor:
     """
     Extracts and interprets date information from Gramps Event objects,
     including exact year, year ranges, and modifiers like 'before' or 'after'.
     """
+
     @staticmethod
     def get_event_place(db, event):
         """Returns the place object associated with the given event."""

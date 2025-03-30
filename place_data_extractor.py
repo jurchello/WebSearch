@@ -31,11 +31,13 @@ import traceback
 
 from gramps.gen.lib.placetype import PlaceType
 
+
 class PlaceDataExtractor:
     """
     A collection of static methods to extract place-related information,
     such as latitude, longitude, type, hierarchical names, and titles.
     """
+
     @staticmethod
     def get_place_latitude(place):
         """Returns the latitude of the place if available."""
@@ -109,9 +111,7 @@ class PlaceDataExtractor:
                 place.get_placeref_list()[0] if place.get_placeref_list() else None
             )
             while place_ref:
-                p = db.get_place_from_handle(
-                    place_ref.get_reference_handle()
-                )
+                p = db.get_place_from_handle(place_ref.get_reference_handle())
                 if p:
                     root_place_name = p.get_name().get_value()
                     place_ref = (

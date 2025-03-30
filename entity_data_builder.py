@@ -45,6 +45,7 @@ from constants import (
     SourceDataKeys,
 )
 
+
 class EntityDataBuilder:
     """
     Builds structured data dictionaries for different entity types in Gramps.
@@ -53,6 +54,7 @@ class EntityDataBuilder:
     families, places, and sources. Designed to support search URL generation
     in the WebSearch Gramplet.
     """
+
     def __init__(self, dbstate, config_ini_manager):
         self.db = dbstate.db
         self.config_ini_manager = config_ini_manager
@@ -117,16 +119,28 @@ class EntityDataBuilder:
             PersonDataKeys.DEATH_YEAR_TO.value: death_year_to or "",
             PersonDataKeys.DEATH_YEAR_BEFORE.value: death_year_before or "",
             PersonDataKeys.DEATH_YEAR_AFTER.value: death_year_after or "",
-            PersonDataKeys.BIRTH_PLACE.value: PersonDataExtractor.get_birth_place(self.db, person) or "",
-            PersonDataKeys.BIRTH_ROOT_PLACE.value: PersonDataExtractor.get_birth_root_place(self.db, person)
+            PersonDataKeys.BIRTH_PLACE.value: PersonDataExtractor.get_birth_place(
+                self.db, person
+            )
             or "",
-            PersonDataKeys.DEATH_PLACE.value: PersonDataExtractor.get_death_place(self.db, person) or "",
-            PersonDataKeys.DEATH_ROOT_PLACE.value: PersonDataExtractor.get_death_root_place(self.db, person)
+            PersonDataKeys.BIRTH_ROOT_PLACE.value: PersonDataExtractor.get_birth_root_place(
+                self.db, person
+            )
+            or "",
+            PersonDataKeys.DEATH_PLACE.value: PersonDataExtractor.get_death_place(
+                self.db, person
+            )
+            or "",
+            PersonDataKeys.DEATH_ROOT_PLACE.value: PersonDataExtractor.get_death_root_place(
+                self.db, person
+            )
             or "",
             PersonDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
         }
 
-        attribute_keys = self.attribute_loader.get_attributes_for_nav_type("Person", person)
+        attribute_keys = self.attribute_loader.get_attributes_for_nav_type(
+            "Person", person
+        )
 
         return person_data, attribute_keys
 
@@ -143,8 +157,12 @@ class EntityDataBuilder:
             else None
         )
 
-        father_data, father_attribute_keys = self.get_person_data(father) if father else {}
-        mother_data, mother_attribute_keys = self.get_person_data(mother) if mother else {}
+        father_data, father_attribute_keys = (
+            self.get_person_data(father) if father else {}
+        )
+        mother_data, mother_attribute_keys = (
+            self.get_person_data(mother) if mother else {}
+        )
 
         marriage_year = marriage_year_from = marriage_year_to = marriage_year_before = (
             marriage_year_after
@@ -158,12 +176,12 @@ class EntityDataBuilder:
 
         event_ref_list = family.get_event_ref_list()
         for event_ref in event_ref_list:
-            event = self.db.get_event_from_handle(
-                event_ref.get_reference_handle()
-            )
+            event = self.db.get_event_from_handle(event_ref.get_reference_handle())
             event_type = event.get_type()
             event_place = EventDataExtractor.get_event_place(self.db, event)
-            event_root_place = PlaceDataExtractor.get_root_place_name(self.db, event_place)
+            event_root_place = PlaceDataExtractor.get_root_place_name(
+                self.db, event_place
+            )
             if event_type == EventType.MARRIAGE:
                 (
                     marriage_year,
@@ -311,12 +329,12 @@ class EntityDataBuilder:
         """Extracts structured place data such as name, coordinates, and type."""
         place_name = root_place_name = latitude = longitude = place_type = None
         try:
-            place_name      = PlaceDataExtractor.get_place_name(place)
+            place_name = PlaceDataExtractor.get_place_name(place)
             root_place_name = PlaceDataExtractor.get_root_place_name(self.db, place)
-            place_title     = PlaceDataExtractor.get_place_title(self.db, place)
-            latitude        = PlaceDataExtractor.get_place_latitude(place)
-            longitude       = PlaceDataExtractor.get_place_longitude(place)
-            place_type      = PlaceDataExtractor.get_place_type(place)
+            place_title = PlaceDataExtractor.get_place_title(self.db, place)
+            latitude = PlaceDataExtractor.get_place_latitude(place)
+            longitude = PlaceDataExtractor.get_place_longitude(place)
+            place_type = PlaceDataExtractor.get_place_type(place)
         except Exception:
             print(traceback.format_exc(), file=sys.stderr)
 

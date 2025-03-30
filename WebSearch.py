@@ -322,9 +322,10 @@ class WebSearch(Gramplet):
                 print(f"❌ Error processing sites: {e}", file=sys.stderr)
 
     def db_changed(self):
-
         """Responds to changes in the database and updates the active context accordingly."""
-        self.entity_data_builder = EntityDataBuilder(self.dbstate, self.config_ini_manager)
+        self.entity_data_builder = EntityDataBuilder(
+            self.dbstate, self.config_ini_manager
+        )
         self.model_row_generator = ModelRowGenerator(
             SimpleNamespace(
                 website_loader=self.website_loader,
@@ -379,7 +380,9 @@ class WebSearch(Gramplet):
                     nav_type = VIEW_IDS_MAPPING.get(view_id, None)
                     if nav_type:
                         self._context.last_active_entity_type = nav_type
-                        self._context.last_active_entity_handle = self.gui.uistate.get_active(nav_type)
+                        self._context.last_active_entity_handle = (
+                            self.gui.uistate.get_active(nav_type)
+                        )
                         self.call_entity_changed_method()
                     else:
                         self.model.clear()
@@ -447,7 +450,7 @@ class WebSearch(Gramplet):
     def active_person_changed(self, handle):
         """Handles updates when the active person changes in the GUI."""
         self._context.last_active_entity_handle = handle
-        self._context.last_active_entity_type = 'Person'
+        self._context.last_active_entity_type = "Person"
         self.close_context_menu()
 
         person = self.dbstate.db.get_person_from_handle(handle)
@@ -463,7 +466,7 @@ class WebSearch(Gramplet):
 
     def active_event_changed(self, handle):
         self._context.last_active_entity_handle = handle
-        self._context.last_active_entity_type = 'Event'
+        self._context.last_active_entity_type = "Event"
         """Handles updates when the active event changes in the GUI."""
         self.close_context_menu()
 
@@ -477,7 +480,7 @@ class WebSearch(Gramplet):
 
     def active_citation_changed(self, handle):
         self._context.last_active_entity_handle = handle
-        self._context.last_active_entity_type = 'Citation'
+        self._context.last_active_entity_type = "Citation"
         """Handles updates when the active citation changes in the GUI."""
         self.close_context_menu()
 
@@ -491,7 +494,7 @@ class WebSearch(Gramplet):
 
     def active_media_changed(self, handle):
         self._context.last_active_entity_handle = handle
-        self._context.last_active_entity_type = 'Media'
+        self._context.last_active_entity_type = "Media"
         """Handles updates when the active media changes in the GUI."""
         self.close_context_menu()
 
@@ -505,7 +508,7 @@ class WebSearch(Gramplet):
 
     def active_place_changed(self, handle):
         self._context.last_active_entity_handle = handle
-        self._context.last_active_entity_type = 'Place'
+        self._context.last_active_entity_type = "Place"
         """Handles updates when the active place changes in the GUI."""
         try:
             place = self.dbstate.db.get_place_from_handle(handle)
@@ -521,7 +524,7 @@ class WebSearch(Gramplet):
 
     def active_source_changed(self, handle):
         self._context.last_active_entity_handle = handle
-        self._context.last_active_entity_type = 'Source'
+        self._context.last_active_entity_type = "Source"
         """Handles updates when the active source changes in the GUI."""
         source = self.dbstate.db.get_source_from_handle(handle)
         self._context.source = source
@@ -534,7 +537,7 @@ class WebSearch(Gramplet):
 
     def active_family_changed(self, handle):
         self._context.last_active_entity_handle = handle
-        self._context.last_active_entity_type = 'Family'
+        self._context.last_active_entity_type = "Family"
         """Handles updates when the active family changes in the GUI."""
         family = self.dbstate.db.get_family_from_handle(handle)
         self._context.family = family
@@ -704,12 +707,12 @@ class WebSearch(Gramplet):
         self._display_columns = self.config_ini_manager.get_list(
             "websearch.display_columns", DEFAULT_DISPLAY_COLUMNS
         )
-        self.ui.columns.icons.set_visible('icons' in self._display_columns)
-        self.ui.columns.locale.set_visible('locale' in self._display_columns)
-        self.ui.columns.keys.set_visible('keys' in self._display_columns)
-        self.ui.columns.title.set_visible('title' in self._display_columns)
-        self.ui.columns.url.set_visible('url' in self._display_columns)
-        self.ui.columns.comment.set_visible('comment' in self._display_columns)
+        self.ui.columns.icons.set_visible("icons" in self._display_columns)
+        self.ui.columns.locale.set_visible("locale" in self._display_columns)
+        self.ui.columns.keys.set_visible("keys" in self._display_columns)
+        self.ui.columns.title.set_visible("title" in self._display_columns)
+        self.ui.columns.url.set_visible("url" in self._display_columns)
+        self.ui.columns.comment.set_visible("comment" in self._display_columns)
 
     def translate(self):
         """Sets translated text for UI elements and context menu."""
@@ -884,7 +887,6 @@ class WebSearch(Gramplet):
         except Exception:
             notification = self.show_notification(_("Error creating note"))
             notification.show_all()
-
 
     def on_show_qr_code(self, widget):
         """Opens a window showing the QR code for the selected URL."""
@@ -1065,7 +1067,9 @@ class WebSearch(Gramplet):
 
         selected_labels = self.opts[11].get_selected()
         selected_columns = [
-            key for key, label in ALL_COLUMNS_LOCALIZED.items() if label in selected_labels
+            key
+            for key, label in ALL_COLUMNS_LOCALIZED.items()
+            if label in selected_labels
         ]
         self.config_ini_manager.set_boolean_list(
             "websearch.display_columns", selected_columns
@@ -1073,7 +1077,9 @@ class WebSearch(Gramplet):
 
         selected_labels = self.opts[12].get_selected()
         selected_icons = [
-            key for key, label in ALL_ICONS_LOCALIZED.items() if label in selected_labels
+            key
+            for key, label in ALL_ICONS_LOCALIZED.items()
+            if label in selected_labels
         ]
         self.config_ini_manager.set_boolean_list(
             "websearch.display_icons", selected_icons
