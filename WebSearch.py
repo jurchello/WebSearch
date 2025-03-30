@@ -342,15 +342,6 @@ class WebSearch(Gramplet):
         self.connect_signal("Citation", self.active_citation_changed)
         self.connect_signal("Media", self.active_media_changed)
 
-        self.dbstate.db.connect("person-update", self.on_person_update)
-        self.dbstate.db.connect("place-update", self.on_place_update)
-        self.dbstate.db.connect("source-update", self.on_source_update)
-        self.dbstate.db.connect("family-update", self.on_family_update)
-        self.dbstate.db.connect("event-update", self.on_event_update)
-        self.dbstate.db.connect("citation-update", self.on_citation_update)
-        self.dbstate.db.connect("media-update", self.on_media_update)
-
-
         active_person_handle = self.gui.uistate.get_active("Person")
         active_place_handle = self.gui.uistate.get_active("Place")
         active_source_handle = self.gui.uistate.get_active("Source")
@@ -377,38 +368,6 @@ class WebSearch(Gramplet):
         notebook = self.gui.uistate.viewmanager.notebook
         if notebook:
             notebook.connect("switch-page", self.on_category_changed)
-
-    def on_person_update(self, handle, *args):
-        print("Person updated, handle:", handle)
-        # Завантажте об’єкт або виконайте іншу логіку
-        #person_obj = self.dbstate.db.get_person_from_handle(handle)
-        # Викликаємо ваш метод оновлення, якщо потрібно
-        #self.active_person_changed(handle)
-
-    def on_place_update(self, handle, *args):
-        print("Place updated, handle:", handle)
-        #self.active_place_changed(handle)
-
-    def on_source_update(self, handle, *args):
-        print("Source updated, handle:", handle)
-        #self.active_source_changed(handle)
-
-    def on_family_update(self, handle, *args):
-        print("Family updated, handle:", handle)
-        #self.active_family_changed(handle)
-
-    def on_event_update(self, handle, *args):
-        print("Event updated, handle:", handle)
-        #self.active_event_changed(handle)
-
-    def on_citation_update(self, handle, *args):
-        print("Citation updated, handle:", handle)
-        #self.active_citation_changed(handle)
-
-    def on_media_update(self, handle, *args):
-        print("Media updated, handle:", handle)
-        #self.active_media_changed(handle)
-
 
     def on_category_changed(self, notebook, page, page_num, *args):
         try:
