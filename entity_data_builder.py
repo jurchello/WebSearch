@@ -29,13 +29,14 @@ used in WebSearch Gramplet.
 import sys
 import traceback
 
+from gramps.gen.lib.eventtype import EventType
+
 from helpers import get_system_locale
 from person_data_extractor import PersonDataExtractor
 from place_data_extractor import PlaceDataExtractor
 from event_data_extractor import EventDataExtractor
 from attribute_mapping_loader import AttributeMappingLoader
 
-from gramps.gen.lib.eventtype import EventType
 from constants import (
     DEFAULT_MIDDLE_NAME_HANDLING,
     MiddleNameHandling,

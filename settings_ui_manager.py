@@ -223,7 +223,7 @@ class SettingsUIManager:
         self.opts.append(opt)
 
     def add_display_columns_option(self):
-
+        """Add a list of checkbox options for displaying columns."""
         opt = BooleanListOption(_("Display Columns:"))
 
         selected_columns = self.config_ini_manager.get_list(
@@ -237,7 +237,7 @@ class SettingsUIManager:
         self.opts.append(opt)
 
     def add_display_icons_option(self):
-
+        """Add a list of checkbox options for displaying icons."""
         opt = BooleanListOption(_("Display Icons:"))
 
         selected_icons = self.config_ini_manager.get_list(
@@ -251,35 +251,13 @@ class SettingsUIManager:
         self.opts.append(opt)
 
     def add_boolean_option(self, config_key, label, default):
-        """
-        Add a boolean toggle option to the settings.
-
-        Args:
-            config_key (str): The configuration key.
-            label (str): The display label for the option.
-            default (bool): The default value.
-        """
+        """Add a boolean toggle option to the settings."""
         value = self.config_ini_manager.get_boolean_option(config_key, default)
         opt = BooleanOption(label, value)
         self.opts.append(opt)
 
     def add_enum_option(self, config_key, label, options):
-        """
-        Adds an enumerated list option to the settings.
-
-        This method creates a list of enumerated options and adds them to the settings UI.
-        The options are defined by the provided `enum_class`, with an optional description
-        for each value.
-
-        Args:
-            config_key (str): The configuration key used to store the selected value.
-            label (str): The label to display for the option in the UI.
-            options (SimpleNamespace): An object containing the following attributes:
-                - enum_class (Enum): The enumeration class defining the available options.
-                - default: The default value to be selected from the enumeration.
-                - descriptions (dict, optional): A dictionary with localized display labels for
-                  each enum value. If not provided, the enum values are used as labels.
-        """
+        """Adds an enumerated list option to the settings."""
         enum_class = options.enum_class
         default = options.default
         descriptions = options.descriptions
@@ -294,14 +272,7 @@ class SettingsUIManager:
         self.opts.append(opt)
 
     def add_string_option(self, config_key, label, default=""):
-        """
-        Add a string input option to the settings.
-
-        Args:
-            config_key (str): The configuration key.
-            label (str): The display label for the option.
-            default (str, optional): The default string value.
-        """
+        """Add a string input option to the settings."""
         value = self.config_ini_manager.get_string(config_key, default)
         opt = StringOption(label, value)
         self.opts.append(opt)

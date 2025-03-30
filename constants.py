@@ -195,12 +195,16 @@ class SourceDataKeys(Enum):
 
 
 class AIProviders(Enum):
+    """Enumeration of supported AI providers."""
+
     DISABLED = ""
     OPENAI = "openai"
     MISTRAL = "mistral"
 
 
 class SourceTypes(Enum):
+    """Enumeration of source types for links."""
+
     COMMON = "COMMON"
     UID = "UID"
     STATIC = "STATIC"

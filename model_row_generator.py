@@ -284,8 +284,6 @@ class ModelRowGenerator:
 
     def get_locale_icon_data(self, locale):
         """Returns an appropriate flag or icon based on the locale identifier."""
-        locale_icon = None
-        locale_icon_visible = False
 
         special_icons = {
             SourceTypes.COMMON.value: ("earth", ICON_EARTH_PATH, ICON_SIZE, ICON_SIZE),
@@ -384,6 +382,7 @@ class ModelRowGenerator:
         return saved_icon, saved_icon_visible
 
     def display_icon(self, icon_name):
+        """Check if the given icon is in the list of display icons."""
         self.update_display_icons()
         return icon_name in self._display_icons
 

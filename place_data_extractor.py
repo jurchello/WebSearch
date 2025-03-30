@@ -125,6 +125,7 @@ class PlaceDataExtractor:
 
         return root_place_name
 
+    @staticmethod
     def get_place_title(db, place):
         """Returns a full hierarchical title for the place (including parents)."""
         try:

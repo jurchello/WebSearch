@@ -38,7 +38,6 @@ import webbrowser
 import urllib.parse
 from enum import IntEnum
 from types import SimpleNamespace
-from functools import partial
 
 # Third-party libraries
 import gi
@@ -371,6 +370,7 @@ class WebSearch(Gramplet):
             notebook.connect("switch-page", self.on_category_changed)
 
     def on_category_changed(self, notebook, page, page_num, *args):
+        """Handle changes in the selected category and update the context."""
         try:
             page_lookup = self.gui.uistate.viewmanager.page_lookup
             for (cat_num, view_num), p_num in page_lookup.items():
@@ -465,11 +465,10 @@ class WebSearch(Gramplet):
         self.update()
 
     def active_event_changed(self, handle):
+        """Handles updates when the active event changes in the GUI."""
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Event"
-        """Handles updates when the active event changes in the GUI."""
         self.close_context_menu()
-
         event = self.dbstate.db.get_event_from_handle(handle)
         self._context.event = event
         if not event:
@@ -479,11 +478,10 @@ class WebSearch(Gramplet):
         self.update()
 
     def active_citation_changed(self, handle):
+        """Handles updates when the active citation changes in the GUI."""
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Citation"
-        """Handles updates when the active citation changes in the GUI."""
         self.close_context_menu()
-
         citation = self.dbstate.db.get_citation_from_handle(handle)
         self._context.citation = citation
         if not citation:
@@ -493,9 +491,9 @@ class WebSearch(Gramplet):
         self.update()
 
     def active_media_changed(self, handle):
+        """Handles updates when the active media changes in the GUI."""
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Media"
-        """Handles updates when the active media changes in the GUI."""
         self.close_context_menu()
 
         media = self.dbstate.db.get_media_from_handle(handle)
@@ -507,9 +505,9 @@ class WebSearch(Gramplet):
         self.update()
 
     def active_place_changed(self, handle):
+        """Handles updates when the active place changes in the GUI."""
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Place"
-        """Handles updates when the active place changes in the GUI."""
         try:
             place = self.dbstate.db.get_place_from_handle(handle)
             self._context.place = place
@@ -523,9 +521,9 @@ class WebSearch(Gramplet):
             print(traceback.format_exc(), file=sys.stderr)
 
     def active_source_changed(self, handle):
+        """Handles updates when the active source changes in the GUI."""
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Source"
-        """Handles updates when the active source changes in the GUI."""
         source = self.dbstate.db.get_source_from_handle(handle)
         self._context.source = source
         if not source:
@@ -536,9 +534,9 @@ class WebSearch(Gramplet):
         self.update()
 
     def active_family_changed(self, handle):
+        """Handles updates when the active family changes in the GUI."""
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Family"
-        """Handles updates when the active family changes in the GUI."""
         family = self.dbstate.db.get_family_from_handle(handle)
         self._context.family = family
         if not family:
@@ -971,7 +969,7 @@ class WebSearch(Gramplet):
         attribute.set_privacy(True)
 
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
-        nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
+        # nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
 
         # with DbTxn(_("Add Web Link Attribute"), self.dbstate.db) as trans:
         #    if nav_type == SupportedNavTypes.PEOPLE.value:
@@ -1101,8 +1099,10 @@ class WebSearch(Gramplet):
         entity_type = self._context.last_active_entity_type.lower()
         method_name = f"active_{entity_type}_changed"
         method = getattr(self, method_name, None)
-        if method:
-            method(self._context.last_active_entity_handle)
+        if method is not None and callable(method):
+            method(self._context.last_active_entity_handle)  # pylint: disable=E1102
+        else:
+            print(f"❌ Method '{method_name}' not found or not callable")
 
     def on_load(self):
         """Loads all persistent WebSearch configuration settings."""
@@ -1165,6 +1165,7 @@ class WebSearch(Gramplet):
         )
 
     def load_ai_provider(self):
+        """Load the configured AI provider from the settings."""
         return self.config_ini_manager.get_enum(
             "websearch.ai_provider",
             AIProviders,
