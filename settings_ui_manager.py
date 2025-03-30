@@ -39,16 +39,18 @@ from constants import (
     DEFAULT_SHOW_SHORT_URL,
     DEFAULT_URL_COMPACTNESS_LEVEL,
     DEFAULT_URL_PREFIX_REPLACEMENT,
-    DEFAULT_SHOW_URL_COLUMN,
-    DEFAULT_SHOW_VARS_COLUMN,
-    DEFAULT_SHOW_USER_DATA_ICON,
-    DEFAULT_SHOW_FLAG_ICONS,
     DEFAULT_SHOW_ATTRIBUTE_LINKS,
     DEFAULT_AI_PROVIDER,
     COMMON_CSV_FILE_NAME,
     UID_CSV_FILE_NAME,
     STATIC_CSV_FILE_NAME,
     CROSS_CSV_FILE_NAME,
+    ALL_COLUMNS,
+    DEFAULT_DISPLAY_COLUMNS,
+    ALL_COLUMNS_LOCALIZED,
+    ALL_ICONS,
+    DEFAULT_DISPLAY_ICONS,
+    ALL_ICONS_LOCALIZED,
     MiddleNameHandling,
     URLCompactnessLevel,
     AIProviders,
@@ -182,32 +184,16 @@ class SettingsUIManager:
             _("Mistral Model"),
             "",
         )
-
-        self.add_boolean_option(
-            "websearch.show_url_column",
-            _("Display 'Website URL' Column"),
-            DEFAULT_SHOW_URL_COLUMN,
-        )
-        self.add_boolean_option(
-            "websearch.show_vars_column",
-            _("Display 'Vars' Column"),
-            DEFAULT_SHOW_VARS_COLUMN,
-        )
-        self.add_boolean_option(
-            "websearch.show_user_data_icon",
-            _("Show User Data Icon"),
-            DEFAULT_SHOW_USER_DATA_ICON,
-        )
-        self.add_boolean_option(
-            "websearch.show_flag_icons", _("Show Flag Icons"), DEFAULT_SHOW_FLAG_ICONS
-        )
         self.add_boolean_option(
             "websearch.show_attribute_links",
             _("Show Links From Attributes"),
             DEFAULT_SHOW_ATTRIBUTE_LINKS,
         )
+        self.add_display_columns_option()
+        self.add_display_icons_option()
 
         return self.opts
+
 
     def add_csv_files_option(self):
         """
@@ -235,6 +221,34 @@ class SettingsUIManager:
         opt = BooleanListOption(_("Enable CSV Files"))
         for file in all_files:
             opt.add_button(file, file in selected_files)
+        self.opts.append(opt)
+
+    def add_display_columns_option(self):
+
+        opt = BooleanListOption(_("Display Columns:"))
+
+        selected_columns = self.config_ini_manager.get_list(
+            "websearch.display_columns",
+            DEFAULT_DISPLAY_COLUMNS,
+        )
+        for column in ALL_COLUMNS:
+            label = ALL_COLUMNS_LOCALIZED.get(column, column)
+            opt.add_button(label, column in selected_columns)
+
+        self.opts.append(opt)
+
+    def add_display_icons_option(self):
+
+        opt = BooleanListOption(_("Display Icons:"))
+
+        selected_icons = self.config_ini_manager.get_list(
+            "websearch.display_icons",
+            DEFAULT_DISPLAY_ICONS,
+        )
+        for icon in ALL_ICONS:
+            label = ALL_ICONS_LOCALIZED.get(icon, icon)
+            opt.add_button(label, icon in selected_icons)
+
         self.opts.append(opt)
 
     def add_boolean_option(self, config_key, label, default):

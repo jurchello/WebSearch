@@ -230,16 +230,16 @@ class UrlFormatter:
         """
         replaced_keys = keys.get("replaced_keys", [])
         if replaced_keys:
-            formatted_vars = []
+            formatted_keys = []
             for var in replaced_keys:
                 for key, value in var.items():
-                    formatted_vars.append(
+                    formatted_keys.append(
                         f"{key}={value}" if show_attribute else f"{value}"
                     )
             return (
                 url
                 + DEFAULT_QUERY_PARAMETERS_REPLACEMENT
-                + DEFAULT_QUERY_PARAMETERS_REPLACEMENT.join(formatted_vars)
+                + DEFAULT_QUERY_PARAMETERS_REPLACEMENT.join(formatted_keys)
             )
         return url + DEFAULT_QUERY_PARAMETERS_REPLACEMENT
 

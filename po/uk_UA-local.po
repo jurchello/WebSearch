@@ -72,12 +72,8 @@ msgstr "Показувати колонку 'URL вебсайту'"
 
 #: settings_ui_manager.py:155
 #, fuzzy
-msgid "Display 'Vars' Column"
+msgid "Display 'Keys' Column"
 msgstr "Показувати колонку 'Змінні'"
-
-#: settings_ui_manager.py:160
-msgid "Show User Data Icon"
-msgstr "Показувати іконку користувацьких даних"
 
 #: settings_ui_manager.py:164
 #, fuzzy
@@ -117,7 +113,7 @@ msgstr ""
 "Оригінальна помилка: «{}»"
 
 #: WebSearch.py:1419
-msgid "Vars"
+msgid "Keys"
 msgstr "Змінні"
 
 #: WebSearch.py:1420

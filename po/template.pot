@@ -70,11 +70,7 @@ msgid "Display 'Website URL' Column"
 msgstr ""
 
 #: settings_ui_manager.py:155
-msgid "Display 'Vars' Column"
-msgstr ""
-
-#: settings_ui_manager.py:160
-msgid "Show User Data Icon"
+msgid "Display 'Keys' Column"
 msgstr ""
 
 #: settings_ui_manager.py:164
@@ -110,7 +106,7 @@ msgid ""
 msgstr ""
 
 #: WebSearch.py:1419
-msgid "Vars"
+msgid "Keys"
 msgstr ""
 
 #: WebSearch.py:1420

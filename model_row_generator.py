@@ -56,8 +56,7 @@ from constants import (
     SOURCE_TYPE_SORT_ORDER,
     VISITED_HASH_FILE_PATH,
     SAVED_HASH_FILE_PATH,
-    DEFAULT_SHOW_USER_DATA_ICON,
-    DEFAULT_SHOW_FLAG_ICONS,
+    DEFAULT_DISPLAY_ICONS,
 )
 
 class ModelRowGenerator:
@@ -175,12 +174,12 @@ class ModelRowGenerator:
         should_skip = False
         final_locale = locale
         try:
-            replaced_vars_set = {
+            replaced_keys_set = {
                 list(var.keys())[0] for var in keys["replaced_keys"]
             }
-            if any(var in replaced_vars_set for var in matched_attribute_keys.keys()):
+            if any(var in replaced_keys_set for var in matched_attribute_keys.keys()):
                 final_locale = SourceTypes.UID.value
-            if final_locale == SourceTypes.UID.value and not replaced_vars_set:
+            if final_locale == SourceTypes.UID.value and not replaced_keys_set:
                 should_skip = True
         except Exception:
             pass
@@ -219,7 +218,7 @@ class ModelRowGenerator:
         return locale_text
 
     def get_keys_color(self, replaced_keys_count, total_keys_count):
-        """Determine color based on how many variables were replaced in the URL."""
+        """Determine color based on how many keys were replaced in the URL."""
         keys_color = "black"
         if replaced_keys_count == total_keys_count:
             keys_color = "green"
@@ -255,18 +254,20 @@ class ModelRowGenerator:
         locale_icon_visible = False
 
         special_icons = {
-            SourceTypes.COMMON.value: (ICON_EARTH_PATH, ICON_SIZE, ICON_SIZE),
-            SourceTypes.STATIC.value: (ICON_PIN_PATH, ICON_SIZE, ICON_SIZE),
-            SourceTypes.CROSS.value: (ICON_CROSS_PATH, ICON_SIZE, ICON_SIZE),
-            SourceTypes.UID.value: (ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT),
-            SourceTypes.ATTR.value: (ICON_CHAIN_PATH, ICON_SIZE, ICON_SIZE),
+            SourceTypes.COMMON.value: ("earth", ICON_EARTH_PATH, ICON_SIZE, ICON_SIZE),
+            SourceTypes.STATIC.value: ("pin", ICON_PIN_PATH, ICON_SIZE, ICON_SIZE),
+            SourceTypes.CROSS.value: ("cross", ICON_CROSS_PATH, ICON_SIZE, ICON_SIZE),
+            SourceTypes.UID.value: ("uid", ICON_UID_PATH, UID_ICON_WIDTH, UID_ICON_HEIGHT),
+            SourceTypes.ATTR.value: ("chain", ICON_CHAIN_PATH, ICON_SIZE, ICON_SIZE),
         }
 
         if locale in special_icons:
-            path, width, height = special_icons[locale]
+            icon_name, path, width, height = special_icons[locale]
+            if not self.display_icon(icon_name):
+                return None, False
             return self.load_icon(path, width, height, label=locale)
 
-        if not locale or not self.show_flag_icons():
+        if not locale or not self.display_icon("flag"):
             return None, False
 
         locale = locale.lower()
@@ -291,7 +292,7 @@ class ModelRowGenerator:
         user_data_icon = None
         user_data_icon_visible = False
 
-        if not self.show_user_data_icons():
+        if not self.display_icon("user_data"):
             return user_data_icon, user_data_icon_visible
 
         if is_custom:
@@ -308,6 +309,10 @@ class ModelRowGenerator:
         """Returns the visited icon if the URL hash exists in the visited list."""
         visited_icon = None
         visited_icon_visible = False
+
+        if not self.display_icon("visited"):
+            return visited_icon, visited_icon_visible
+
         if self.website_loader.has_hash_in_file(hash_value, VISITED_HASH_FILE_PATH):
             try:
                 visited_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
@@ -322,6 +327,10 @@ class ModelRowGenerator:
         """Returns the saved icon if the URL hash exists in the saved list."""
         saved_icon = None
         saved_icon_visible = False
+
+        if not self.display_icon("saved"):
+            return saved_icon, saved_icon_visible
+
         if self.website_loader.has_hash_in_file(hash_value, SAVED_HASH_FILE_PATH):
             try:
                 saved_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
@@ -332,14 +341,12 @@ class ModelRowGenerator:
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
         return saved_icon, saved_icon_visible
 
-    def show_flag_icons(self):
-        """Returns the current state of the flag icons setting."""
-        return self.config_ini_manager.get_boolean_option(
-            "websearch.show_flag_icons", DEFAULT_SHOW_FLAG_ICONS
-        )
+    def display_icon(self, icon_name):
+        self.update_display_icons()
+        return icon_name in self._display_icons
 
-    def show_user_data_icons(self):
-        """Returns the current state of the user data icon setting."""
-        return self.config_ini_manager.get_boolean_option(
-            "websearch.show_user_data_icon", DEFAULT_SHOW_USER_DATA_ICON
+    def update_display_icons(self):
+        """Returns the current state of the flag icons setting."""
+        self._display_icons = self.config_ini_manager.get_list(
+            "websearch.display_icons", DEFAULT_DISPLAY_ICONS
         )

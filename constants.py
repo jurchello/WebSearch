@@ -47,6 +47,8 @@ import os
 from enum import Enum
 from gramps.gen.const import USER_DATA
 
+from translation_helper import _
+
 # --------------------------
 # ENUMS
 # --------------------------
@@ -246,6 +248,29 @@ COMMON_CSV_FILE_NAME = "common-links.csv"
 UID_CSV_FILE_NAME = "uid-links.csv"
 STATIC_CSV_FILE_NAME = "static-links.csv"
 CROSS_CSV_FILE_NAME = "cross-links.csv"
+ALL_COLUMNS = ['icons', 'locale', 'keys', 'title', 'url', 'comment']
+DEFAULT_DISPLAY_COLUMNS = ['icons', 'locale', 'keys', 'title', 'url', 'comment']
+ALL_COLUMNS_LOCALIZED = {
+    "icons": _("Column - Icons"),
+    "locale": _("Column - Source Types (flags)"),
+    "keys": _("Column - Keys"),
+    "title": _("Column - Title"),
+    "url": _("Column - Website Url"),
+    "comment": _("Column - Comment"),
+}
+ALL_ICONS = ['visited', 'saved', 'uid', 'flag', 'pin', 'earth', 'chain', 'cross', 'user_data']
+DEFAULT_DISPLAY_ICONS = ['visited', 'saved', 'uid', 'flag', 'pin', 'earth', 'chain', 'cross', 'user_data']
+ALL_ICONS_LOCALIZED = {
+    "visited": _("Icon - Visited URLs (checkmark)"),
+    "saved": _("Icon - Saved URLs (floppy disk)"),
+    "uid": _("Icon - URLs linked to UID attributes (UID badge)"),
+    "flag": _("Icon - URLs from regional CSV files (globe)"),
+    "pin": _("Icon - URLs from static CSV files (red pin)"),
+    "earth": _("Icon - URLs from common CSV files (earth)"),
+    "chain": _("Icon - Direct URLs from attributes (link chain)"),
+    "cross": _("Icon - URLs from cross CSV files (shuffle arrows)"),
+    "user_data": _("Icon - URLs from custom user directory (spreadsheet icon)"),
+}
 
 CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -291,14 +316,10 @@ DEFAULT_QUERY_PARAMETERS_REPLACEMENT = "..."
 DEFAULT_URL_COMPACTNESS_LEVEL = URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value
 DEFAULT_MIDDLE_NAME_HANDLING = MiddleNameHandling.SEPARATE.value
 DEFAULT_ENABLED_FILES = [COMMON_CSV_FILE_NAME, UID_CSV_FILE_NAME, STATIC_CSV_FILE_NAME]
-DEFAULT_SHOW_URL_COLUMN = False
-DEFAULT_SHOW_VARS_COLUMN = False
-DEFAULT_SHOW_USER_DATA_ICON = False
-DEFAULT_SHOW_FLAG_ICONS = True
 DEFAULT_SHOW_ATTRIBUTE_LINKS = False
 DEFAULT_AI_PROVIDER = AIProviders.DISABLED.value
 
-DEFAULT_COLUMNS_ORDER = ["icons", "locale", "vars", "title", "url", "comment"]
+DEFAULT_COLUMNS_ORDER = ["icons", "locale", "keys", "title", "url", "comment"]
 
 CATEGORY_ICON = {
     "Dashboard": "gramps-gramplet",
