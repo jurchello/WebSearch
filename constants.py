@@ -290,7 +290,7 @@ ALL_ICONS_LOCALIZED = {
     "visited": _("Icon - Visited URLs (checkmark)"),
     "saved": _("Icon - Saved URLs (floppy disk)"),
     "uid": _("Icon - URLs linked to UID attributes (UID badge)"),
-    "flag": _("Icon - URLs from regional CSV files (globe)"),
+    "flag": _("Icon - URLs from regional CSV files (flag)"),
     "pin": _("Icon - URLs from static CSV files (red pin)"),
     "earth": _("Icon - URLs from common CSV files (earth)"),
     "chain": _("Icon - Direct URLs from attributes (link chain)"),

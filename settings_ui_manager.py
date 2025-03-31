@@ -224,7 +224,7 @@ class SettingsUIManager:
 
     def add_display_columns_option(self):
         """Add a list of checkbox options for displaying columns."""
-        opt = BooleanListOption(_("Display Columns:"))
+        opt = BooleanListOption(_("Display Columns"))
 
         selected_columns = self.config_ini_manager.get_list(
             "websearch.display_columns",
@@ -238,7 +238,7 @@ class SettingsUIManager:
 
     def add_display_icons_option(self):
         """Add a list of checkbox options for displaying icons."""
-        opt = BooleanListOption(_("Display Icons:"))
+        opt = BooleanListOption(_("Display Icons"))
 
         selected_icons = self.config_ini_manager.get_list(
             "websearch.display_icons",
