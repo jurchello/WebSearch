@@ -37,7 +37,7 @@ register(
         "Person, Place, Family, or Source record"
     ),
     status=STABLE,
-    version="0.58.39",
+    version="0.58.40",
     fname="WebSearch.py",
     height=20,
     detached_width=400,
@@ -45,7 +45,7 @@ register(
     expand=True,
     gramplet="WebSearch",
     gramplet_title=_("WebSearch"),
-    gramps_target_version="6.0",
+    gramps_target_version="5.2",
     navtypes=["Person", "Place", "Source", "Family", "Event", "Citation", "Media"],
     include_in_listing=True,
     help_url="Addon:WebSearch",
