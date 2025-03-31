@@ -510,9 +510,10 @@ You can disable this icon in the settings via the “Show User Data Icon” opti
 ### 6.3. Enabling Files
 You can select which CSV files to use by enabling or disabling them in the Gramplet's settings.
 
-## 7. OpenAI Usage
+## 7. AI Usage
 ![Settings](assets/img/ai.png)
 
+###7.1 OpenAI Usage
 This section provides an overview of how OpenAI is integrated into the WebSearch Gramplet. It covers:
 - **Usage of OpenAI**: The Gramplet interacts with OpenAI’s API to retrieve relevant genealogy websites based on user queries. The integration makes a **single API call** per request. OpenAI suggests **only those genealogy resources that are not already included** in the activated CSV files configured by the user.
 - **Data Transmission**: OpenAI receives **only** the following information:
@@ -524,6 +525,13 @@ This section provides an overview of how OpenAI is integrated into the WebSearch
 - **Data Transmission**: When a request is made to OpenAI, the Gramplet sends a structured prompt describing the required genealogy resources.
 - **Disabling OpenAI Integration:** Users can **disable** the use of OpenAI in the settings at any time. Additionally, they can remove the AI API key from the configuration. When OpenAI is disabled, the **AI-generated suggestions section will no longer appear** in the lower part of the Gramplet.
 - **Disclaimer:** The author assumes **no responsibility** for the use of OpenAI within this Gramplet. The user **accepts all risks** associated with its usage, whatever they may be. By enabling OpenAI integration, the user acknowledges and agrees that all interactions with OpenAI are subject to OpenAI’s terms of service and privacy policies.
+
+###7.2 Mistral Usage
+Mistral is another AI service integrated into the WebSearch Gramplet. It provides similar functionality to OpenAI in generating suggestions for genealogy resources based on user queries.
+- **Usage of Mistral**: Like OpenAI, Mistral makes a single API call per request and suggests genealogy websites not already included in the activated CSV files.
+- **Data Transmission**: Mistral receives the same data as OpenAI, including the list of domains from the activated CSV files and irrelevant domains marked by the user. No Gramps database data is transmitted.
+- **Disabling Mistral Integration**: Users can disable Mistral in the settings at any time, and if it’s disabled, the AI suggestions section for Mistral will not appear in the Gramplet.
+- **Disclaimer**: The author does not take responsibility for the use of Mistral within this Gramplet. The user accepts all risks associated with Mistral usage. By enabling Mistral, the user acknowledges and agrees to Mistral’s terms of service.
 
 ## 8. Community Contributions and Support
 
