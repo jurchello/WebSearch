@@ -56,7 +56,7 @@ class InternetLinksLoader:
                 title = title.strip()
                 comment = description
                 is_enabled = True
-                is_custom = True
+                is_custom = False
                 links.append(
                     (
                         nav_type,

@@ -78,7 +78,7 @@ class AttributeLinksLoader:
                 title = attr_name.strip()
                 comment = None
                 is_enabled = True
-                is_custom = True
+                is_custom = False
                 links.append(
                     (
                         nav_type,
