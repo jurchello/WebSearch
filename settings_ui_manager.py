@@ -40,6 +40,7 @@ from constants import (
     DEFAULT_URL_COMPACTNESS_LEVEL,
     DEFAULT_URL_PREFIX_REPLACEMENT,
     DEFAULT_SHOW_ATTRIBUTE_LINKS,
+    DEFAULT_SHOW_INTERNET_LINKS,
     DEFAULT_AI_PROVIDER,
     COMMON_CSV_FILE_NAME,
     UID_CSV_FILE_NAME,
@@ -186,8 +187,13 @@ class SettingsUIManager:
         )
         self.add_boolean_option(
             "websearch.show_attribute_links",
-            _("Show Links From Attributes"),
+            _("Show Links From the 'Attributes' tab"),
             DEFAULT_SHOW_ATTRIBUTE_LINKS,
+        )
+        self.add_boolean_option(
+            "websearch.show_internet_links",
+            _("Show Links From the 'Internet' tab"),
+            DEFAULT_SHOW_INTERNET_LINKS,
         )
         self.add_display_columns_option()
         self.add_display_icons_option()

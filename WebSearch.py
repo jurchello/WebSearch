@@ -66,6 +66,7 @@ from signals import WebSearchSignalEmitter
 from url_formatter import UrlFormatter
 from attribute_mapping_loader import AttributeMappingLoader
 from attribute_links_loader import AttributeLinksLoader
+from internet_links_loader import InternetLinksLoader
 from constants import (
     DEFAULT_SHOW_SHORT_URL,
     DEFAULT_URL_COMPACTNESS_LEVEL,
@@ -88,6 +89,7 @@ from constants import (
     STYLE_CSS_PATH,
     DEFAULT_COLUMNS_ORDER,
     DEFAULT_SHOW_ATTRIBUTE_LINKS,
+    DEFAULT_SHOW_INTERNET_LINKS,
     DEFAULT_AI_PROVIDER,
     VIEW_IDS_MAPPING,
     DEFAULT_DISPLAY_COLUMNS,
@@ -227,6 +229,7 @@ class WebSearch(Gramplet):
         self.signal_emitter = WebSearchSignalEmitter()
         self.attribute_loader = AttributeMappingLoader()
         self.attribute_links_loader = AttributeLinksLoader()
+        self.internet_links_loader = InternetLinksLoader()
         self.config_ini_manager = ConfigINIManager()
         self.settings_ui_manager = SettingsUIManager(self.config_ini_manager)
         self.website_loader = WebsiteLoader()
@@ -400,6 +403,12 @@ class WebSearch(Gramplet):
                 obj, nav_type
             )
             websites += attr_websites
+
+        if self._show_internet_links and nav_type == SupportedNavTypes.PEOPLE.value:
+            internet_websites = self.internet_links_loader.get_links_from_internet_objects(
+                obj, nav_type
+            )
+            websites += internet_websites
 
         common_data = (core_keys, attribute_keys, nav_type, obj)
         for website_data in websites:
@@ -1062,8 +1071,11 @@ class WebSearch(Gramplet):
         self.config_ini_manager.set_boolean_option(
             "websearch.show_attribute_links", self.opts[10].get_value()
         )
+        self.config_ini_manager.set_boolean_option(
+            "websearch.show_internet_links", self.opts[11].get_value()
+        )
 
-        selected_labels = self.opts[11].get_selected()
+        selected_labels = self.opts[12].get_selected()
         selected_columns = [
             key
             for key, label in ALL_COLUMNS_LOCALIZED.items()
@@ -1073,7 +1085,7 @@ class WebSearch(Gramplet):
             "websearch.display_columns", selected_columns
         )
 
-        selected_labels = self.opts[12].get_selected()
+        selected_labels = self.opts[13].get_selected()
         selected_icons = [
             key
             for key, label in ALL_ICONS_LOCALIZED.items()
@@ -1153,6 +1165,9 @@ class WebSearch(Gramplet):
         )
         self._show_attribute_links = self.config_ini_manager.get_boolean_option(
             "websearch.show_attribute_links", DEFAULT_SHOW_ATTRIBUTE_LINKS
+        )
+        self._show_internet_links = self.config_ini_manager.get_boolean_option(
+            "websearch.show_internet_links", DEFAULT_SHOW_INTERNET_LINKS
         )
         self._columns_order = self.config_ini_manager.get_list(
             "websearch.columns_order", DEFAULT_COLUMNS_ORDER

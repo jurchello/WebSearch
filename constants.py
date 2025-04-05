@@ -210,6 +210,7 @@ class SourceTypes(Enum):
     STATIC = "STATIC"
     CROSS = "CROSS"
     ATTR = "ATTR"
+    INTERNET = "INTERNET"
 
 
 SOURCE_TYPE_SORT_ORDER = {
@@ -218,6 +219,7 @@ SOURCE_TYPE_SORT_ORDER = {
     SourceTypes.STATIC.value: "2",
     SourceTypes.ATTR.value: "3",
     SourceTypes.CROSS.value: "4",
+    SourceTypes.INTERNET.value: "5",
 }
 
 VIEW_IDS_MAPPING = {
@@ -274,6 +276,7 @@ ALL_ICONS = [
     "chain",
     "cross",
     "user_data",
+    "internet",
 ]
 DEFAULT_DISPLAY_ICONS = [
     "visited",
@@ -285,6 +288,7 @@ DEFAULT_DISPLAY_ICONS = [
     "chain",
     "cross",
     "user_data",
+    "internet",
 ]
 ALL_ICONS_LOCALIZED = {
     "visited": _("Icon - Visited URLs (checkmark)"),
@@ -296,6 +300,7 @@ ALL_ICONS_LOCALIZED = {
     "chain": _("Icon - Direct URLs from attributes (link chain)"),
     "cross": _("Icon - URLs from cross CSV files (shuffle arrows)"),
     "user_data": _("Icon - URLs from custom user directory (spreadsheet icon)"),
+    "internet": _("Icon - URLs from the 'Internet' tab (web icon)"),
 }
 
 CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")
@@ -325,6 +330,7 @@ ICON_PIN_PATH = os.path.join(ICONS_DIR, "pin.png")
 ICON_EARTH_PATH = os.path.join(ICONS_DIR, "earth.png")
 ICON_CHAIN_PATH = os.path.join(ICONS_DIR, "chain.png")
 ICON_CROSS_PATH = os.path.join(ICONS_DIR, "cross.png")
+ICON_INTERNET_PATH = os.path.join(ICONS_DIR, "internet.png")
 
 STYLE_CSS_PATH = os.path.join(ASSETS_DIR, "style.css")
 DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(
@@ -342,7 +348,8 @@ DEFAULT_QUERY_PARAMETERS_REPLACEMENT = "..."
 DEFAULT_URL_COMPACTNESS_LEVEL = URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value
 DEFAULT_MIDDLE_NAME_HANDLING = MiddleNameHandling.SEPARATE.value
 DEFAULT_ENABLED_FILES = [COMMON_CSV_FILE_NAME, UID_CSV_FILE_NAME, STATIC_CSV_FILE_NAME]
-DEFAULT_SHOW_ATTRIBUTE_LINKS = False
+DEFAULT_SHOW_ATTRIBUTE_LINKS = True
+DEFAULT_SHOW_INTERNET_LINKS = True
 DEFAULT_AI_PROVIDER = AIProviders.DISABLED.value
 
 DEFAULT_COLUMNS_ORDER = ["icons", "locale", "keys", "title", "url", "comment"]

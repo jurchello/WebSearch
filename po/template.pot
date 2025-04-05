@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-03-31 10:01+0300\n"
+"POT-Creation-Date: 2025-04-05 20:09+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <jurchello@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,91 +17,95 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: settings_ui_manager.py:110
+#: settings_ui_manager.py:111
 msgid "Middle Name Handling"
 msgstr ""
 
-#: settings_ui_manager.py:115
+#: settings_ui_manager.py:116
 msgid "Leave alone"
 msgstr ""
 
-#: settings_ui_manager.py:116
+#: settings_ui_manager.py:117
 msgid "Separate"
 msgstr ""
 
-#: settings_ui_manager.py:117
+#: settings_ui_manager.py:118
 msgid "Remove"
 msgstr ""
 
-#: settings_ui_manager.py:126
+#: settings_ui_manager.py:127
 msgid "URL Compactness Level"
 msgstr ""
 
-#: settings_ui_manager.py:132
+#: settings_ui_manager.py:133
 msgid "Shortest - No Prefix, No Keys"
 msgstr ""
 
-#: settings_ui_manager.py:135
+#: settings_ui_manager.py:136
 msgid "Compact - No Prefix, Keys Without Attributes"
 msgstr ""
 
-#: settings_ui_manager.py:138
+#: settings_ui_manager.py:139
 msgid "Compact - No Prefix, Keys With Attributes"
 msgstr ""
 
-#: settings_ui_manager.py:141
+#: settings_ui_manager.py:142
 msgid "Long - Without Prefix on the Left"
 msgstr ""
 
-#: settings_ui_manager.py:148
+#: settings_ui_manager.py:149
 msgid "URL Prefix Replacement"
 msgstr ""
 
-#: settings_ui_manager.py:155
+#: settings_ui_manager.py:156
 msgid "AI Provider"
 msgstr ""
 
-#: settings_ui_manager.py:160
+#: settings_ui_manager.py:161
 msgid "(Disabled)"
 msgstr ""
 
-#: settings_ui_manager.py:161
+#: settings_ui_manager.py:162
 msgid "OpenAI"
 msgstr ""
 
-#: settings_ui_manager.py:162
+#: settings_ui_manager.py:163
 msgid "Mistral AI"
 msgstr ""
 
-#: settings_ui_manager.py:169
+#: settings_ui_manager.py:170
 msgid "OpenAI API Key"
 msgstr ""
 
-#: settings_ui_manager.py:174
+#: settings_ui_manager.py:175
 msgid "OpenAI Model"
 msgstr ""
 
-#: settings_ui_manager.py:179
+#: settings_ui_manager.py:180
 msgid "Mistral API Key"
 msgstr ""
 
-#: settings_ui_manager.py:184
+#: settings_ui_manager.py:185
 msgid "Mistral Model"
 msgstr ""
 
-#: settings_ui_manager.py:189
-msgid "Show Links From Attributes"
+#: settings_ui_manager.py:190
+msgid "Show Links From the 'Attributes' tab"
 msgstr ""
 
-#: settings_ui_manager.py:220
+#: settings_ui_manager.py:195
+msgid "Show Links From the 'Internet' tab"
+msgstr ""
+
+#: settings_ui_manager.py:226
 msgid "Enable CSV Files"
 msgstr ""
 
-#: settings_ui_manager.py:227
+#: settings_ui_manager.py:233
 msgid "Display Columns"
 msgstr ""
 
-#: settings_ui_manager.py:241
+#: settings_ui_manager.py:247
 msgid "Display Icons"
 msgstr ""
 
@@ -115,64 +119,68 @@ msgid ""
 "Family, or Source record"
 msgstr ""
 
-#: constants.py:260
+#: constants.py:262
 msgid "Column - Icons"
 msgstr ""
 
-#: constants.py:261
+#: constants.py:263
 msgid "Column - Source Types (flags)"
 msgstr ""
 
-#: constants.py:262
+#: constants.py:264
 msgid "Column - Keys"
 msgstr ""
 
-#: constants.py:263
+#: constants.py:265
 msgid "Column - Title"
 msgstr ""
 
-#: constants.py:264
+#: constants.py:266
 msgid "Column - Website Url"
 msgstr ""
 
-#: constants.py:265
+#: constants.py:267
 msgid "Column - Comment"
 msgstr ""
 
-#: constants.py:290
+#: constants.py:293
 msgid "Icon - Visited URLs (checkmark)"
 msgstr ""
 
-#: constants.py:291
+#: constants.py:294
 msgid "Icon - Saved URLs (floppy disk)"
 msgstr ""
 
-#: constants.py:292
+#: constants.py:295
 msgid "Icon - URLs linked to UID attributes (UID badge)"
 msgstr ""
 
-#: constants.py:293
+#: constants.py:296
 msgid "Icon - URLs from regional CSV files (flag)"
 msgstr ""
 
-#: constants.py:294
+#: constants.py:297
 msgid "Icon - URLs from static CSV files (red pin)"
 msgstr ""
 
-#: constants.py:295
+#: constants.py:298
 msgid "Icon - URLs from common CSV files (earth)"
 msgstr ""
 
-#: constants.py:296
+#: constants.py:299
 msgid "Icon - Direct URLs from attributes (link chain)"
 msgstr ""
 
-#: constants.py:297
+#: constants.py:300
 msgid "Icon - URLs from cross CSV files (shuffle arrows)"
 msgstr ""
 
-#: constants.py:298
+#: constants.py:301
 msgid "Icon - URLs from custom user directory (spreadsheet icon)"
+msgstr ""
+
+#: constants.py:302
+msgid "Icon - URLs from the 'Internet' tab (web icon)"
 msgstr ""
 
 #: qr_window.py:76
@@ -185,47 +193,47 @@ msgid ""
 "Original error: “{}”"
 msgstr ""
 
-#: WebSearch.py:718
+#: WebSearch.py:727
 msgid "Keys"
 msgstr ""
 
-#: WebSearch.py:719
+#: WebSearch.py:728
 msgid "Title"
 msgstr ""
 
-#: WebSearch.py:720
+#: WebSearch.py:729
 msgid "Website URL"
 msgstr ""
 
-#: WebSearch.py:721
+#: WebSearch.py:730
 msgid "Comment"
 msgstr ""
 
-#: WebSearch.py:723
+#: WebSearch.py:732
 msgid "Add link to note"
 msgstr ""
 
-#: WebSearch.py:724
+#: WebSearch.py:733
 msgid "Show QR-code"
 msgstr ""
 
-#: WebSearch.py:725
+#: WebSearch.py:734
 msgid "Copy link to clipboard"
 msgstr ""
 
-#: WebSearch.py:727
+#: WebSearch.py:736
 msgid "Hide link for selected item"
 msgstr ""
 
-#: WebSearch.py:729
+#: WebSearch.py:738
 msgid "Hide link for all items"
 msgstr ""
 
-#: WebSearch.py:731
+#: WebSearch.py:740
 msgid "🔍 AI Suggestions"
 msgstr ""
 
-#: WebSearch.py:848
+#: WebSearch.py:857
 #, python-brace-format
 msgid ""
 "📌 This web link was added using the WebSearch gramplet for future "
@@ -237,43 +245,43 @@ msgid ""
 "related to this person."
 msgstr ""
 
-#: WebSearch.py:860
+#: WebSearch.py:869
 msgid "Add Web Link Note"
 msgstr ""
 
-#: WebSearch.py:882
+#: WebSearch.py:891
 #, python-format
 msgid "Note #%(id)s has been successfully added"
 msgstr ""
 
-#: WebSearch.py:886
+#: WebSearch.py:895
 msgid "Error creating note"
 msgstr ""
 
-#: WebSearch.py:907
+#: WebSearch.py:916
 msgid "URL is copied to the Clipboard"
 msgstr ""
 
-#: WebSearch.py:967
+#: WebSearch.py:976
 msgid "WebSearch Link"
 msgstr ""
 
-#: WebSearch.py:1010
+#: WebSearch.py:1019
 #, python-brace-format
 msgid "Title: {title}\n"
 msgstr ""
 
-#: WebSearch.py:1012
+#: WebSearch.py:1021
 #, python-brace-format
 msgid "Replaced: {keys}\n"
 msgstr ""
 
-#: WebSearch.py:1016
+#: WebSearch.py:1025
 #, python-brace-format
 msgid "Empty: {keys}\n"
 msgstr ""
 
-#: WebSearch.py:1018
+#: WebSearch.py:1027
 #, python-brace-format
 msgid "Comment: {comment}\n"
 msgstr ""

@@ -39,6 +39,7 @@ from constants import (
     DEFAULT_URL_COMPACTNESS_LEVEL,
     DEFAULT_COLUMNS_ORDER,
     DEFAULT_SHOW_ATTRIBUTE_LINKS,
+    DEFAULT_SHOW_INTERNET_LINKS,
     DEFAULT_AI_PROVIDER,
     DEFAULT_DISPLAY_COLUMNS,
     DEFAULT_DISPLAY_ICONS,
@@ -80,6 +81,9 @@ class ConfigINIManager:
         self.config.register("websearch.columns_order", DEFAULT_COLUMNS_ORDER)
         self.config.register(
             "websearch.show_attribute_links", DEFAULT_SHOW_ATTRIBUTE_LINKS
+        )
+        self.config.register(
+            "websearch.show_internet_links", DEFAULT_SHOW_INTERNET_LINKS
         )
         self.config.register("websearch.display_columns", DEFAULT_DISPLAY_COLUMNS)
         self.config.register("websearch.display_icons", DEFAULT_DISPLAY_ICONS)
