@@ -195,6 +195,11 @@ class SettingsUIManager:
             _("Show Links From the 'Internet' tab"),
             DEFAULT_SHOW_INTERNET_LINKS,
         )
+        self.add_boolean_option(
+            "websearch.show_note_links",
+            _("Show Links From the Notes"),
+            DEFAULT_SHOW_INTERNET_LINKS,
+        )
         self.add_display_columns_option()
         self.add_display_icons_option()
 

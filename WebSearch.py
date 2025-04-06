@@ -50,6 +50,7 @@ from gramps.gen.plug import Gramplet
 from gramps.gui.display import display_url
 from gramps.gen.lib import Note, Attribute, NoteType
 from gramps.gen.db import DbTxn
+from gramps.gui.editors import EditObject
 
 # Own project imports
 from entity_data_builder import EntityDataBuilder
@@ -67,6 +68,7 @@ from url_formatter import UrlFormatter
 from attribute_mapping_loader import AttributeMappingLoader
 from attribute_links_loader import AttributeLinksLoader
 from internet_links_loader import InternetLinksLoader
+from note_links_loader import NoteLinksLoader
 from constants import (
     DEFAULT_SHOW_SHORT_URL,
     DEFAULT_URL_COMPACTNESS_LEVEL,
@@ -90,6 +92,7 @@ from constants import (
     DEFAULT_COLUMNS_ORDER,
     DEFAULT_SHOW_ATTRIBUTE_LINKS,
     DEFAULT_SHOW_INTERNET_LINKS,
+    DEFAULT_SHOW_NOTE_LINKS,
     DEFAULT_AI_PROVIDER,
     VIEW_IDS_MAPPING,
     DEFAULT_DISPLAY_COLUMNS,
@@ -336,6 +339,7 @@ class WebSearch(Gramplet):
                 config_ini_manager=self.config_ini_manager,
             )
         )
+        self.note_links_loader = NoteLinksLoader(self.dbstate.db)
 
         self.connect_signal("Person", self.active_person_changed)
         self.connect_signal("Place", self.active_place_changed)
@@ -410,6 +414,12 @@ class WebSearch(Gramplet):
             )
             websites += internet_websites
 
+        if self._show_note_links:
+            note_websites = self.note_links_loader.get_links_from_notes(
+                obj, nav_type
+            )
+            websites += note_websites
+
         common_data = (core_keys, attribute_keys, nav_type, obj)
         for website_data in websites:
             model_row = self.model_row_generator.generate(common_data, website_data)
@@ -420,17 +430,31 @@ class WebSearch(Gramplet):
         """Handles the event when a URL is clicked in the tree view and opens the link."""
         tree_iter = self.model.get_iter(path)
         url = self.model.get_value(tree_iter, ModelColumns.FINAL_URL.value)
-        encoded_url = urllib.parse.quote(url, safe=URL_SAFE_CHARS)
-        self.add_icon_event(
-            SimpleNamespace(
-                file_path=VISITED_HASH_FILE_PATH,
-                icon_path=ICON_VISITED_PATH,
-                tree_iter=tree_iter,
-                model_icon_pos=ModelColumns.VISITED_ICON.value,
-                model_visibility_pos=ModelColumns.VISITED_ICON_VISIBLE.value,
+
+        if url.startswith("gramps://"):
+            self.open_internal_link(url)
+        else:
+            encoded_url = urllib.parse.quote(url, safe=URL_SAFE_CHARS)
+            self.add_icon_event(
+                SimpleNamespace(
+                    file_path=VISITED_HASH_FILE_PATH,
+                    icon_path=ICON_VISITED_PATH,
+                    tree_iter=tree_iter,
+                    model_icon_pos=ModelColumns.VISITED_ICON.value,
+                    model_visibility_pos=ModelColumns.VISITED_ICON_VISIBLE.value,
+                )
             )
-        )
-        display_url(encoded_url)
+            display_url(encoded_url)
+
+    def open_internal_link(self, url):
+        """Opens internal Gramps link using EditObject."""
+        try:
+            if url.startswith("gramps://"):
+                obj_class, prop, value = url[9:].split("/")
+                EditObject(self.dbstate, self.gui.uistate, [], obj_class, prop, value)
+                print(f"✔ Відкрито внутрішнє посилання: {url}")
+        except Exception as e:
+            print(f"❌ Помилка відкриття внутрішнього посилання: {url} - {e}")
 
     def add_icon_event(self, settings):
         """Adds a visual icon to the model and saves the hash when a link is clicked."""
@@ -1074,8 +1098,10 @@ class WebSearch(Gramplet):
         self.config_ini_manager.set_boolean_option(
             "websearch.show_internet_links", self.opts[11].get_value()
         )
-
-        selected_labels = self.opts[12].get_selected()
+        self.config_ini_manager.set_boolean_option(
+            "websearch.show_note_links", self.opts[12].get_value()
+        )
+        selected_labels = self.opts[13].get_selected()
         selected_columns = [
             key
             for key, label in ALL_COLUMNS_LOCALIZED.items()
@@ -1085,7 +1111,7 @@ class WebSearch(Gramplet):
             "websearch.display_columns", selected_columns
         )
 
-        selected_labels = self.opts[13].get_selected()
+        selected_labels = self.opts[14].get_selected()
         selected_icons = [
             key
             for key, label in ALL_ICONS_LOCALIZED.items()
@@ -1168,6 +1194,9 @@ class WebSearch(Gramplet):
         )
         self._show_internet_links = self.config_ini_manager.get_boolean_option(
             "websearch.show_internet_links", DEFAULT_SHOW_INTERNET_LINKS
+        )
+        self._show_note_links = self.config_ini_manager.get_boolean_option(
+            "websearch.show_note_links", DEFAULT_SHOW_NOTE_LINKS
         )
         self._columns_order = self.config_ini_manager.get_list(
             "websearch.columns_order", DEFAULT_COLUMNS_ORDER

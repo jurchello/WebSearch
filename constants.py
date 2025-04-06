@@ -211,6 +211,7 @@ class SourceTypes(Enum):
     CROSS = "CROSS"
     ATTR = "ATTR"
     INTERNET = "INTERNET"
+    NOTE = "NOTE"
 
 
 SOURCE_TYPE_SORT_ORDER = {
@@ -220,6 +221,7 @@ SOURCE_TYPE_SORT_ORDER = {
     SourceTypes.ATTR.value: "3",
     SourceTypes.CROSS.value: "4",
     SourceTypes.INTERNET.value: "5",
+    SourceTypes.NOTE.value: "6",
 }
 
 VIEW_IDS_MAPPING = {
@@ -330,7 +332,10 @@ ICON_PIN_PATH = os.path.join(ICONS_DIR, "pin.png")
 ICON_EARTH_PATH = os.path.join(ICONS_DIR, "earth.png")
 ICON_CHAIN_PATH = os.path.join(ICONS_DIR, "chain.png")
 ICON_CROSS_PATH = os.path.join(ICONS_DIR, "cross.png")
+ICON_WEB_PATH = os.path.join(ICONS_DIR, "web.png")
 ICON_INTERNET_PATH = os.path.join(ICONS_DIR, "internet.png")
+ICON_NOTE_PATH = os.path.join(ICONS_DIR, "note.png")
+ICON_ATTRIBUTE_PATH = os.path.join(ICONS_DIR, "attribute.png")
 
 STYLE_CSS_PATH = os.path.join(ASSETS_DIR, "style.css")
 DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(
@@ -350,6 +355,7 @@ DEFAULT_MIDDLE_NAME_HANDLING = MiddleNameHandling.SEPARATE.value
 DEFAULT_ENABLED_FILES = [COMMON_CSV_FILE_NAME, UID_CSV_FILE_NAME, STATIC_CSV_FILE_NAME]
 DEFAULT_SHOW_ATTRIBUTE_LINKS = True
 DEFAULT_SHOW_INTERNET_LINKS = True
+DEFAULT_SHOW_NOTE_LINKS = True
 DEFAULT_AI_PROVIDER = AIProviders.DISABLED.value
 
 DEFAULT_COLUMNS_ORDER = ["icons", "locale", "keys", "title", "url", "comment"]
@@ -369,3 +375,6 @@ CATEGORY_ICON = {
     "Notes": "gramps-notes",
     "Citations": "gramps-citation",
 }
+
+URL_REGEX = "https?://[^\s]+"
+URL_RSTRIP = ".,!?);]"

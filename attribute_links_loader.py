@@ -26,7 +26,11 @@ import re
 from gramps.gen.lib.srcattrtype import SrcAttributeType
 from gramps.gen.lib import AttributeType
 
-from constants import SourceTypes
+from constants import (
+    SourceTypes,
+    URL_REGEX,
+    URL_RSTRIP,
+)
 
 
 class AttributeLinksLoader:
@@ -40,7 +44,7 @@ class AttributeLinksLoader:
 
     def __init__(self):
         """Initialize the regular expression for detecting URLs in attribute values."""
-        self.url_regex = re.compile(r"https?://[^\s]+")
+        self.url_regex = re.compile(URL_REGEX)
 
     def get_links_from_attributes(self, obj, nav_type):
         """
@@ -75,6 +79,7 @@ class AttributeLinksLoader:
 
             url = self._extract_url(attr_value)
             if url:
+                url = url.rstrip(URL_RSTRIP)
                 title = attr_name.strip()
                 comment = None
                 is_enabled = True
