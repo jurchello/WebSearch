@@ -193,6 +193,7 @@ class WebSearch(Gramplet):
             context_menu=self.builder.get_object("context_menu"),
             context_menu_items=SimpleNamespace(
                 add_note=self.builder.get_object("add_note"),
+                add_attribute=self.builder.get_object("add_attribute"),
                 show_qr=self.builder.get_object("show_qr"),
                 copy_link=self.builder.get_object("copy_link"),
                 hide_selected=self.builder.get_object("hide_selected"),
@@ -790,6 +791,7 @@ class WebSearch(Gramplet):
         self.ui.columns.comment.set_title(_("Comment"))
 
         self.ui.context_menu_items.add_note.set_label(_("Add link to note"))
+        self.ui.context_menu_items.add_attribute.set_label(_("Add link to attribute"))
         self.ui.context_menu_items.show_qr.set_label(_("Show QR-code"))
         self.ui.context_menu_items.copy_link.set_label(_("Copy link to clipboard"))
         self.ui.context_menu_items.hide_selected.set_label(
@@ -894,14 +896,16 @@ class WebSearch(Gramplet):
                 self._context.active_tree_path = path
                 self._context.active_url = url
                 self.ui.context_menu.show_all()
-                # add_attribute_item = self.builder.get_object("AddAttribute")
 
                 if nav_type == SupportedNavTypes.PEOPLE.value:
-                    # add_attribute_item.show()
                     self.ui.context_menu_items.add_note.show()
                 else:
-                    # add_attribute_item.hide()
                     self.ui.context_menu_items.add_note.hide()
+
+                if nav_type in [SupportedNavTypes.PEOPLE.value, SupportedNavTypes.FAMILIES.value, SupportedNavTypes.EVENTS.value, SupportedNavTypes.MEDIA.value, SupportedNavTypes.SOURCES.value, SupportedNavTypes.CITATIONS.value]:
+                    self.ui.context_menu_items.add_attribute.show()
+                else:
+                    self.ui.context_menu_items.add_attribute.hide()
 
                 self.ui.context_menu.popup_at_pointer(event)
 
@@ -1038,12 +1042,29 @@ class WebSearch(Gramplet):
         attribute.set_privacy(True)
 
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
-        # nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
+        nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
 
-        # with DbTxn(_("Add Web Link Attribute"), self.dbstate.db) as trans:
-        #    if nav_type == SupportedNavTypes.PEOPLE.value:
-        #        self._context.person.add_attribute(attribute)
-        #        self.dbstate.db.commit_person(self._context.person, trans)
+        with DbTxn(_("Add Web Link Attribute"), self.dbstate.db) as trans:
+            if nav_type == SupportedNavTypes.PEOPLE.value:
+                self._context.person.add_attribute(attribute)
+                self.dbstate.db.commit_person(self._context.person, trans)
+            elif nav_type == SupportedNavTypes.FAMILIES.value:
+                self._context.family.add_attribute(attribute)
+                self.dbstate.db.commit_family(self._context.family, trans)
+            elif nav_type == SupportedNavTypes.EVENTS.value:
+                self._context.event.add_attribute(attribute)
+                self.dbstate.db.commit_event(self._context.event, trans)
+            elif nav_type == SupportedNavTypes.MEDIA.value:
+                self._context.media.add_attribute(attribute)
+                self.dbstate.db.commit_media(self._context.media, trans)
+            elif nav_type == SupportedNavTypes.SOURCES.value:
+                self._context.source.add_attribute(attribute)
+                self.dbstate.db.commit_source(self._context.source, trans)
+            elif nav_type == SupportedNavTypes.CITATIONS.value:
+                self._context.citation.add_attribute(attribute)
+                self.dbstate.db.commit_citation(self._context.citation, trans)
+            else:
+                return
 
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
         self.add_icon_event(
