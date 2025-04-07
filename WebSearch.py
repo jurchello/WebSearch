@@ -435,16 +435,17 @@ class WebSearch(Gramplet):
             self.open_internal_link(url)
         else:
             encoded_url = urllib.parse.quote(url, safe=URL_SAFE_CHARS)
-            self.add_icon_event(
-                SimpleNamespace(
-                    file_path=VISITED_HASH_FILE_PATH,
-                    icon_path=ICON_VISITED_PATH,
-                    tree_iter=tree_iter,
-                    model_icon_pos=ModelColumns.VISITED_ICON.value,
-                    model_visibility_pos=ModelColumns.VISITED_ICON_VISIBLE.value,
-                )
-            )
             display_url(encoded_url)
+
+        self.add_icon_event(
+            SimpleNamespace(
+                file_path=VISITED_HASH_FILE_PATH,
+                icon_path=ICON_VISITED_PATH,
+                tree_iter=tree_iter,
+                model_icon_pos=ModelColumns.VISITED_ICON.value,
+                model_visibility_pos=ModelColumns.VISITED_ICON_VISIBLE.value,
+            )
+        )
 
     def open_internal_link(self, url):
         """Opens internal Gramps link using EditObject."""
