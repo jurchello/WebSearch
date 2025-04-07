@@ -16,3 +16,6 @@ People,Facebook,1,https://www.facebook.com/%(Facebook.ID)s,
 People,XING,1,https://www.xing.com/profile/%(XING.ID)s/cv,
 People,LinkedIn,1,https://www.linkedin.com/in/%(LinkedIn.ID)s,
 People,Instagram,1,https://www.instagram.com/%(Instagram.ID)s,
+People,Gedbas,1,https://gedbas.de/uid/%(Gedbas.ID)s,
+
+

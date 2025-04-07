@@ -100,5 +100,11 @@
     "attribute_name": "InstagramID",
     "url_regex": ".*instagram\\.com/.*",
     "key_name": "Instagram.ID"
+  },
+  {
+    "nav_type": "Person",
+    "attribute_name": "GedbasID",
+    "url_regex": ".*gedbas\\.de/uid/.*",
+    "key_name": "Gedbas.ID"
   }
 ]
