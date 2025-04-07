@@ -211,7 +211,7 @@ class SourceTypes(Enum):
     UID = "UID"
     STATIC = "STATIC"
     CROSS = "CROSS"
-    ATTR = "ATTR"
+    ATTRIBUTE = "ATTRIBUTE"
     INTERNET = "INTERNET"
     NOTE = "NOTE"
 
@@ -220,8 +220,8 @@ SOURCE_TYPE_SORT_ORDER = {
     SourceTypes.COMMON.value: "0",
     SourceTypes.UID.value: "1",
     SourceTypes.STATIC.value: "2",
-    SourceTypes.ATTR.value: "3",
-    SourceTypes.CROSS.value: "4",
+    SourceTypes.CROSS.value: "3",
+    SourceTypes.ATTRIBUTE.value: "4",
     SourceTypes.INTERNET.value: "5",
     SourceTypes.NOTE.value: "6",
 }
@@ -277,10 +277,11 @@ ALL_ICONS = [
     "flag",
     "pin",
     "earth",
-    "chain",
     "cross",
     "user_data",
+    "attribute",
     "internet",
+    "note",
 ]
 DEFAULT_DISPLAY_ICONS = [
     "visited",
@@ -289,10 +290,11 @@ DEFAULT_DISPLAY_ICONS = [
     "flag",
     "pin",
     "earth",
-    "chain",
     "cross",
     "user_data",
+    "attribute",
     "internet",
+    "note",
 ]
 ALL_ICONS_LOCALIZED = {
     "visited": _("Icon - Visited URLs (checkmark)"),
@@ -301,10 +303,11 @@ ALL_ICONS_LOCALIZED = {
     "flag": _("Icon - URLs from regional CSV files (flag)"),
     "pin": _("Icon - URLs from static CSV files (red pin)"),
     "earth": _("Icon - URLs from common CSV files (earth)"),
-    "chain": _("Icon - Direct URLs from attributes (link chain)"),
     "cross": _("Icon - URLs from cross CSV files (shuffle arrows)"),
     "user_data": _("Icon - URLs from custom user directory (spreadsheet icon)"),
-    "internet": _("Icon - URLs from the 'Internet' tab (web icon)"),
+    "attribute": _("Icon - URLs from the 'Attributes' tab ('A' icon)"),
+    "internet": _("Icon - URLs from the 'Internet' tab ('I' icon)"),
+    "note": _("Icon - URLs from the 'Notes' tab ('N' icon)"),
 }
 
 CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")
@@ -332,12 +335,10 @@ ICON_UID_PATH = os.path.join(ICONS_DIR, "uid.png")
 ICON_USER_DATA_PATH = os.path.join(ICONS_DIR, "user-file.png")
 ICON_PIN_PATH = os.path.join(ICONS_DIR, "pin.png")
 ICON_EARTH_PATH = os.path.join(ICONS_DIR, "earth.png")
-ICON_CHAIN_PATH = os.path.join(ICONS_DIR, "chain.png")
 ICON_CROSS_PATH = os.path.join(ICONS_DIR, "cross.png")
-ICON_WEB_PATH = os.path.join(ICONS_DIR, "web.png")
+ICON_ATTRIBUTE_PATH = os.path.join(ICONS_DIR, "attribute.png")
 ICON_INTERNET_PATH = os.path.join(ICONS_DIR, "internet.png")
 ICON_NOTE_PATH = os.path.join(ICONS_DIR, "note.png")
-ICON_ATTRIBUTE_PATH = os.path.join(ICONS_DIR, "attribute.png")
 
 STYLE_CSS_PATH = os.path.join(ASSETS_DIR, "style.css")
 DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(

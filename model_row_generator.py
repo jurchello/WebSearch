@@ -45,11 +45,9 @@ from constants import (
     ICON_PIN_PATH,
     ICON_CROSS_PATH,
     ICON_UID_PATH,
-    ICON_CHAIN_PATH,
     ICON_USER_DATA_PATH,
     ICON_VISITED_PATH,
     ICON_SAVED_PATH,
-    ICON_WEB_PATH,
     ICON_INTERNET_PATH,
     ICON_ATTRIBUTE_PATH,
     ICON_NOTE_PATH,
@@ -94,7 +92,7 @@ class ModelRowGenerator:
             if self.should_be_hidden_link(url_pattern, nav_type, obj_handle):
                 return None
 
-            if locale in [SourceTypes.STATIC.value, SourceTypes.ATTR.value, SourceTypes.INTERNET.value, SourceTypes.NOTE.value]:
+            if locale in [SourceTypes.STATIC.value, SourceTypes.ATTRIBUTE.value, SourceTypes.INTERNET.value, SourceTypes.NOTE.value]:
                 final_url = formatted_url = url_pattern
                 (
                     pattern_keys_info,
@@ -226,7 +224,7 @@ class ModelRowGenerator:
     def get_display_keys_count(self, locale):
         """Return False if key count display is not needed for this locale type."""
         display_keys_count = True
-        if locale in [SourceTypes.STATIC.value, SourceTypes.ATTR.value, SourceTypes.INTERNET.value, SourceTypes.NOTE.value]:
+        if locale in [SourceTypes.STATIC.value, SourceTypes.ATTRIBUTE.value, SourceTypes.INTERNET.value, SourceTypes.NOTE.value]:
             display_keys_count = False
         return display_keys_count
 
@@ -246,7 +244,7 @@ class ModelRowGenerator:
             SourceTypes.UID.value,
             SourceTypes.STATIC.value,
             SourceTypes.CROSS.value,
-            SourceTypes.ATTR.value,
+            SourceTypes.ATTRIBUTE.value,
             SourceTypes.INTERNET.value,
             SourceTypes.NOTE.value,
         ]:
@@ -301,9 +299,9 @@ class ModelRowGenerator:
                 UID_ICON_WIDTH,
                 UID_ICON_HEIGHT,
             ),
-            SourceTypes.ATTR.value: ("chain", ICON_ATTRIBUTE_PATH, ICON_SIZE, ICON_SIZE),
+            SourceTypes.ATTRIBUTE.value: ("attribute", ICON_ATTRIBUTE_PATH, ICON_SIZE, ICON_SIZE),
             SourceTypes.INTERNET.value: ("internet", ICON_INTERNET_PATH, ICON_SIZE, ICON_SIZE),
-            SourceTypes.NOTE.value: ("internet", ICON_NOTE_PATH, ICON_SIZE, ICON_SIZE),
+            SourceTypes.NOTE.value: ("note", ICON_NOTE_PATH, ICON_SIZE, ICON_SIZE),
         }
 
         if locale in special_icons:

@@ -47,17 +47,7 @@ class AttributeLinksLoader:
         self.url_regex = re.compile(URL_REGEX)
 
     def get_links_from_attributes(self, obj, nav_type):
-        """
-        Extract links from attributes of a given Gramps object.
-
-        Args:
-            obj: The Gramps object (e.g., Person, Source, etc.) to scan.
-            nav_type (str): The navigation type of the object (e.g., "People").
-
-        Returns:
-            list: A list of 7-element tuples representing found URLs. Each tuple contains:
-                (nav_type, "ATTR", title, is_enabled, url, comment, is_custom)
-        """
+        """Extract links from attributes of a given Gramps object."""
         links = []
 
         if not hasattr(obj, "get_attribute_list"):
@@ -87,7 +77,7 @@ class AttributeLinksLoader:
                 links.append(
                     (
                         nav_type,
-                        SourceTypes.ATTR.value,
+                        SourceTypes.ATTRIBUTE.value,
                         title,
                         is_enabled,
                         url,
@@ -99,14 +89,6 @@ class AttributeLinksLoader:
         return links
 
     def _extract_url(self, text):
-        """
-        Extract the first URL found in the given text.
-
-        Args:
-            text (str): The string to search for a URL.
-
-        Returns:
-            str or None: The extracted URL if found, otherwise None.
-        """
+        """Extract the first URL found in the given text."""
         match = self.url_regex.search(text)
         return match.group(0) if match else None
