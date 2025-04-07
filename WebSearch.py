@@ -349,6 +349,7 @@ class WebSearch(Gramplet):
         self.connect_signal("Citation", self.active_citation_changed)
         self.connect_signal("Media", self.active_media_changed)
         self.connect_signal("Note", self.active_note_changed)
+        self.connect_signal("Repository", self.active_repository_changed)
 
         active_person_handle = self.gui.uistate.get_active("Person")
         active_place_handle = self.gui.uistate.get_active("Place")
@@ -357,6 +358,8 @@ class WebSearch(Gramplet):
         active_event_handle = self.gui.uistate.get_active("Event")
         active_citation_handle = self.gui.uistate.get_active("Citation")
         active_media_handle = self.gui.uistate.get_active("Media")
+        active_note_handle = self.gui.uistate.get_active("Note")
+        active_repository_handle = self.gui.uistate.get_active("Repository")
 
         if active_person_handle:
             self.active_person_changed(active_person_handle)
@@ -374,6 +377,8 @@ class WebSearch(Gramplet):
             self.active_media_changed(active_media_handle)
         elif active_note_handle:
             self.active_note_changed(active_note_handle)
+        elif active_repository_handle:
+            self.active_repository_changed(active_repository_handle)
 
         notebook = self.gui.uistate.viewmanager.notebook
         if notebook:
@@ -456,9 +461,8 @@ class WebSearch(Gramplet):
             if url.startswith("gramps://"):
                 obj_class, prop, value = url[9:].split("/")
                 EditObject(self.dbstate, self.gui.uistate, [], obj_class, prop, value)
-                print(f"✔ Відкрито внутрішнє посилання: {url}")
         except Exception as e:
-            print(f"❌ Помилка відкриття внутрішнього посилання: {url} - {e}")
+            print(f"❌ Error when open the internal link: {url} - {e}")
 
     def add_icon_event(self, settings):
         """Adds a visual icon to the model and saves the hash when a link is clicked."""
@@ -553,6 +557,20 @@ class WebSearch(Gramplet):
             return
 
         self.populate_links({}, {}, SupportedNavTypes.NOTES.value, note)
+        self.update()
+
+    def active_repository_changed(self, handle):
+        """Handles updates when the active repository changes in the GUI."""
+        self._context.last_active_entity_handle = handle
+        self._context.last_active_entity_type = "Repository"
+        self.close_context_menu()
+
+        repository = self.dbstate.db.get_repository_from_handle(handle)
+        self._context.repository = repository
+        if not repository:
+            return
+
+        self.populate_links({}, {}, SupportedNavTypes.REPOSITORIES.value, repository)
         self.update()
 
     def active_place_changed(self, handle):

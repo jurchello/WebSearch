@@ -73,6 +73,7 @@ class SupportedNavTypes(Enum):
     CITATIONS = "Citations"
     MEDIA = "Media"
     NOTES = "Notes"
+    REPOSITORIES = "Repositories"
 
 
 class PersonDataKeys(Enum):
