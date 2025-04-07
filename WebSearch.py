@@ -348,6 +348,7 @@ class WebSearch(Gramplet):
         self.connect_signal("Event", self.active_event_changed)
         self.connect_signal("Citation", self.active_citation_changed)
         self.connect_signal("Media", self.active_media_changed)
+        self.connect_signal("Note", self.active_note_changed)
 
         active_person_handle = self.gui.uistate.get_active("Person")
         active_place_handle = self.gui.uistate.get_active("Place")
@@ -371,6 +372,8 @@ class WebSearch(Gramplet):
             self.active_citation_changed(active_citation_handle)
         elif active_media_handle:
             self.active_media_changed(active_media_handle)
+        elif active_note_handle:
+            self.active_note_changed(active_note_handle)
 
         notebook = self.gui.uistate.viewmanager.notebook
         if notebook:
@@ -536,6 +539,20 @@ class WebSearch(Gramplet):
             return
 
         self.populate_links({}, {}, SupportedNavTypes.MEDIA.value, media)
+        self.update()
+
+    def active_note_changed(self, handle):
+        """Handles updates when the active note changes in the GUI."""
+        self._context.last_active_entity_handle = handle
+        self._context.last_active_entity_type = "Note"
+        self.close_context_menu()
+
+        note = self.dbstate.db.get_note_from_handle(handle)
+        self._context.note = note
+        if not note:
+            return
+
+        self.populate_links({}, {}, SupportedNavTypes.NOTES.value, note)
         self.update()
 
     def active_place_changed(self, handle):

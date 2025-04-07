@@ -22,7 +22,7 @@
 
 import re
 from gramps.gen.lib.srcattrtype import SrcAttributeType
-from gramps.gen.lib import AttributeType
+from gramps.gen.lib import AttributeType, Note
 from gramps.gui.editors import EditObject
 
 from constants import (
@@ -41,30 +41,35 @@ class NoteLinksLoader:
     def get_links_from_notes(self, obj, nav_type):
         """Main method to get links from notes."""
         links = []
-        if not hasattr(obj, "get_note_list"):
-            return links
+        if hasattr(obj, "get_note_list"):
+            note_handles = obj.get_note_list()
+            for note_handle in note_handles:
+                note_obj = self.get_note_object(note_handle)
+                if note_obj:
+                    links.extend(self.get_links_from_note_obj(note_obj, nav_type))
+        elif isinstance(obj, Note):
+            links.extend(self.get_links_from_note_obj(obj, nav_type))
 
-        note_handles = obj.get_note_list()
-        for note_handle in note_handles:
-            note_obj = self.get_note_object(note_handle)
-            if not note_obj:
-                continue
+        return links
 
-            parsed_links = self.parse_links_from_text(note_obj.get())
-            existing_links = self.get_existing_links(note_obj)
+    def get_links_from_note_obj(self, note_obj, nav_type):
+        """Extract links from a single note object."""
+        links = []
+        parsed_links = self.parse_links_from_text(note_obj.get())
+        existing_links = self.get_existing_links(note_obj)
 
-            # Add parsed links if not in existing links
-            for url in parsed_links:
-                if url not in existing_links:
-                    links.append(self.format_parsed_link(nav_type, url))
-                    existing_links.add(url)
+        # Add parsed links if not in existing links
+        for url in parsed_links:
+            if url not in existing_links:
+                links.append(self.format_parsed_link(nav_type, url))
+                existing_links.add(url)
 
-            # Add existing note links
-            note_links = note_obj.get_links()
-            for link in note_links:
-                formatted_link = self.format_existing_link(nav_type, link)
-                if formatted_link:
-                    links.append(formatted_link)
+        # Add existing note links
+        note_links = note_obj.get_links()
+        for link in note_links:
+            formatted_link = self.format_existing_link(nav_type, link)
+            if formatted_link:
+                links.append(formatted_link)
 
         return links
 
