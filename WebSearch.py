@@ -106,6 +106,7 @@ from settings_ui_manager import SettingsUIManager
 from signals import WebSearchSignalEmitter
 from url_formatter import UrlFormatter
 from website_loader import WebsiteLoader
+from gramplet_version_extractor import GrampletVersionExtractor
 
 MODEL_SCHEMA = [
     ("icon_name", str),
@@ -165,6 +166,7 @@ class WebSearch(Gramplet):
         Sets up all required components, directories, signal emitters, and configuration managers.
         Also initializes the Gramplet GUI and internal context for tracking active Gramps objects.
         """
+        self.version = GrampletVersionExtractor().get()
         self._context = SimpleNamespace(
             person=None,
             family=None,
@@ -927,34 +929,46 @@ class WebSearch(Gramplet):
                 url = self.model.get_value(tree_iter, ModelColumns.FINAL_URL.value)
                 nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
                 source_type = self.model.get_value(tree_iter, ModelColumns.SOURCE_TYPE.value)
-                saved_icon_visible = self.model.get_value(tree_iter, ModelColumns.SAVED_ICON_VISIBLE.value)
-                
+                saved_icon_visible = self.model.get_value(
+                    tree_iter, ModelColumns.SAVED_ICON_VISIBLE.value
+                )
+
                 self._context.active_tree_path = path
                 self._context.active_url = url
                 self.ui.context_menu.show_all()
 
-                if nav_type in [
-                    SupportedNavTypes.PEOPLE.value,
-                    SupportedNavTypes.FAMILIES.value,
-                    SupportedNavTypes.EVENTS.value,
-                    SupportedNavTypes.MEDIA.value,
-                    SupportedNavTypes.SOURCES.value,
-                    SupportedNavTypes.CITATIONS.value,
-                    SupportedNavTypes.REPOSITORIES.value,
-                    SupportedNavTypes.PLACES.value,
-                ] and source_type != 'NOTE' and not saved_icon_visible:
+                if (
+                    nav_type
+                    in [
+                        SupportedNavTypes.PEOPLE.value,
+                        SupportedNavTypes.FAMILIES.value,
+                        SupportedNavTypes.EVENTS.value,
+                        SupportedNavTypes.MEDIA.value,
+                        SupportedNavTypes.SOURCES.value,
+                        SupportedNavTypes.CITATIONS.value,
+                        SupportedNavTypes.REPOSITORIES.value,
+                        SupportedNavTypes.PLACES.value,
+                    ]
+                    and source_type != "NOTE"
+                    and not saved_icon_visible
+                ):
                     self.ui.context_menu_items.add_note.show()
                 else:
                     self.ui.context_menu_items.add_note.hide()
 
-                if nav_type in [
-                    SupportedNavTypes.PEOPLE.value,
-                    SupportedNavTypes.FAMILIES.value,
-                    SupportedNavTypes.EVENTS.value,
-                    SupportedNavTypes.MEDIA.value,
-                    SupportedNavTypes.SOURCES.value,
-                    SupportedNavTypes.CITATIONS.value,
-                ] and source_type != 'ATTRIBUTE' and not saved_icon_visible:
+                if (
+                    nav_type
+                    in [
+                        SupportedNavTypes.PEOPLE.value,
+                        SupportedNavTypes.FAMILIES.value,
+                        SupportedNavTypes.EVENTS.value,
+                        SupportedNavTypes.MEDIA.value,
+                        SupportedNavTypes.SOURCES.value,
+                        SupportedNavTypes.CITATIONS.value,
+                    ]
+                    and source_type != "ATTRIBUTE"
+                    and not saved_icon_visible
+                ):
                     self.ui.context_menu_items.add_attribute.show()
                 else:
                     self.ui.context_menu_items.add_attribute.hide()
@@ -968,17 +982,21 @@ class WebSearch(Gramplet):
             return
 
         note = Note()
+        tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
         note.set(
             _(
-                "📌 This web link was added using the WebSearch gramplet for future reference:\n\n"
-                "🔗 {url}\n\nYou can use this link to revisit the source and verify the "
-                "information related to this person."
-            ).format(url=self._context.active_url)
+                "📌 This '{title}' web link was archived for future reference by the WebSearch gramplet "
+                "(v. {version}):\n\n"
+                "🔗 {url}\n\n"
+                "You can use this link to revisit the source and verify the information related to this entity."
+            ).format(
+                title=self.model.get_value(tree_iter, ModelColumns.TITLE.value),
+                version=self.version,
+                url=self._context.active_url,
+            )
         )
 
         note.set_privacy(True)
-
-        tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
         nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
         note_handle = None
 
