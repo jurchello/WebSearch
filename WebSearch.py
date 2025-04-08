@@ -485,9 +485,14 @@ class WebSearch(Gramplet):
         self._context.last_active_entity_type = "Person"
         self.close_context_menu()
 
+        if handle is None:
+            self.model.clear()
+            return
+        
         person = self.dbstate.db.get_person_from_handle(handle)
         self._context.person = person
         if not person:
+            self.model.clear()
             return
 
         person_data, attribute_keys = self.entity_data_builder.get_person_data(person)
@@ -499,9 +504,15 @@ class WebSearch(Gramplet):
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Event"
         self.close_context_menu()
+
+        if handle is None:
+            self.model.clear()
+            return
+
         event = self.dbstate.db.get_event_from_handle(handle)
         self._context.event = event
         if not event:
+            self.model.clear()
             return
 
         self.populate_links({}, {}, SupportedNavTypes.EVENTS.value, event)
@@ -512,9 +523,15 @@ class WebSearch(Gramplet):
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Citation"
         self.close_context_menu()
+
+        if handle is None:
+            self.model.clear()
+            return
+
         citation = self.dbstate.db.get_citation_from_handle(handle)
         self._context.citation = citation
         if not citation:
+            self.model.clear()
             return
 
         self.populate_links({}, {}, SupportedNavTypes.CITATIONS.value, citation)
@@ -526,9 +543,14 @@ class WebSearch(Gramplet):
         self._context.last_active_entity_type = "Media"
         self.close_context_menu()
 
+        if handle is None:
+            self.model.clear()
+            return
+
         media = self.dbstate.db.get_media_from_handle(handle)
         self._context.media = media
         if not media:
+            self.model.clear()
             return
 
         self.populate_links({}, {}, SupportedNavTypes.MEDIA.value, media)
@@ -540,9 +562,14 @@ class WebSearch(Gramplet):
         self._context.last_active_entity_type = "Note"
         self.close_context_menu()
 
+        if handle is None:
+            self.model.clear()
+            return
+
         note = self.dbstate.db.get_note_from_handle(handle)
         self._context.note = note
         if not note:
+            self.model.clear()
             return
 
         self.populate_links({}, {}, SupportedNavTypes.NOTES.value, note)
@@ -554,9 +581,14 @@ class WebSearch(Gramplet):
         self._context.last_active_entity_type = "Repository"
         self.close_context_menu()
 
+        if handle is None:
+            self.model.clear()
+            return
+
         repository = self.dbstate.db.get_repository_from_handle(handle)
         self._context.repository = repository
         if not repository:
+            self.model.clear()
             return
 
         self.populate_links({}, {}, SupportedNavTypes.REPOSITORIES.value, repository)
@@ -566,25 +598,34 @@ class WebSearch(Gramplet):
         """Handles updates when the active place changes in the GUI."""
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Place"
-        try:
-            place = self.dbstate.db.get_place_from_handle(handle)
-            self._context.place = place
-            if not place:
-                return
 
-            place_data = self.entity_data_builder.get_place_data(place)
-            self.populate_links(place_data, {}, SupportedNavTypes.PLACES.value, place)
-            self.update()
-        except Exception:
-            print(traceback.format_exc(), file=sys.stderr)
+        if handle is None:
+            self.model.clear()
+            return
+
+        place = self.dbstate.db.get_place_from_handle(handle)
+        self._context.place = place
+        if not place:
+            self.model.clear()
+            return
+
+        place_data = self.entity_data_builder.get_place_data(place)
+        self.populate_links(place_data, {}, SupportedNavTypes.PLACES.value, place)
+        self.update()
 
     def active_source_changed(self, handle):
         """Handles updates when the active source changes in the GUI."""
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Source"
+
+        if handle is None:
+            self.model.clear()
+            return
+
         source = self.dbstate.db.get_source_from_handle(handle)
         self._context.source = source
         if not source:
+            self.model.clear()
             return
 
         source_data = self.entity_data_builder.get_source_data(source)
@@ -595,9 +636,15 @@ class WebSearch(Gramplet):
         """Handles updates when the active family changes in the GUI."""
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Family"
+
+        if handle is None:
+            self.model.clear()
+            return
+
         family = self.dbstate.db.get_family_from_handle(handle)
         self._context.family = family
         if not family:
+            self.model.clear()
             return
 
         family_data = self.entity_data_builder.get_family_data(family)
