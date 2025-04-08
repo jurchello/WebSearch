@@ -90,6 +90,7 @@ from constants import (
     MiddleNameHandling,
     SupportedNavTypes,
     URLCompactnessLevel,
+    SourceTypes,
 )
 
 # Own project imports
@@ -949,7 +950,7 @@ class WebSearch(Gramplet):
                         SupportedNavTypes.REPOSITORIES.value,
                         SupportedNavTypes.PLACES.value,
                     ]
-                    and source_type != "NOTE"
+                    and source_type != SourceTypes.NOTE.value
                     and not saved_icon_visible
                 ):
                     self.ui.context_menu_items.add_note.show()
@@ -966,7 +967,7 @@ class WebSearch(Gramplet):
                         SupportedNavTypes.SOURCES.value,
                         SupportedNavTypes.CITATIONS.value,
                     ]
-                    and source_type != "ATTRIBUTE"
+                    and source_type != SourceTypes.ATTRIBUTE.value
                     and not saved_icon_visible
                 ):
                     self.ui.context_menu_items.add_attribute.show()

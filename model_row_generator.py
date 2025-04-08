@@ -59,6 +59,7 @@ from constants import (
     UID_ICON_WIDTH,
     VISITED_HASH_FILE_PATH,
     SourceTypes,
+    LinkSources,
 )
 from helpers import is_true
 

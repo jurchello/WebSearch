@@ -462,6 +462,8 @@ This option allows the user to add the selected link directly to a note in Gramp
 After saving a link to a note, a **floppy disk icon** appears in the icons column, indicating that the link has been stored.  
 ![Saved Link](assets/icons/media-floppy.png)
 
+Generated notes contain plain text only.
+
 ### **5.2 Show QR-code**
 Selecting this option generates and displays a **QR code** for the selected link. This enables users to quickly scan the QR code with a mobile device and open the link on a phone or tablet without manually copying and pasting it.
 
