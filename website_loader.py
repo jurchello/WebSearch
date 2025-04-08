@@ -29,18 +29,18 @@ CSV files, handles state tracking via hash files, and extracts locale/domain
 information for site suggestions and filtering.
 """
 
-import os
 import csv
-import sys
 import hashlib
+import os
+import sys
 
 from constants import (
     CSV_DIR,
-    USER_DATA_CSV_DIR,
     DEFAULT_ENABLED_FILES,
     SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH,
-    SourceTypes,
+    USER_DATA_CSV_DIR,
     CsvColumnNames,
+    SourceTypes,
 )
 
 
@@ -169,9 +169,7 @@ class WebsiteLoader:
 
             with open(selected_file_path, "r", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
-                reader.fieldnames = [
-                    name.strip() if name else name for name in reader.fieldnames
-                ]
+                reader.fieldnames = [name.strip() if name else name for name in reader.fieldnames]
 
                 for row in reader:
                     if not row:
@@ -234,9 +232,7 @@ class WebsiteLoader:
 
             with open(selected_file_path, "r", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
-                reader.fieldnames = [
-                    name.strip() if name else name for name in reader.fieldnames
-                ]
+                reader.fieldnames = [name.strip() if name else name for name in reader.fieldnames]
 
                 for row in reader:
                     if not row:

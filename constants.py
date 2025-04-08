@@ -45,6 +45,7 @@ ensure consistency in website data processing.
 
 import os
 from enum import Enum
+
 from gramps.gen.const import USER_DATA
 
 from translation_helper import _
@@ -326,9 +327,7 @@ ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(CONFIGS_DIR, "attribute_mapping.json"
 VISITED_HASH_FILE_PATH = os.path.join(DATA_DIR, "visited_links.txt")
 SAVED_HASH_FILE_PATH = os.path.join(DATA_DIR, "saved_links.txt")
 HIDDEN_HASH_FILE_PATH = os.path.join(DATA_DIR, "hidden_links.txt")
-SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(
-    DATA_DIR, "skipped_domain_suggestions.txt"
-)
+SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(DATA_DIR, "skipped_domain_suggestions.txt")
 ICON_VISITED_PATH = os.path.join(ICONS_DIR, "emblem-default.png")
 ICON_SAVED_PATH = os.path.join(ICONS_DIR, "media-floppy.png")
 ICON_UID_PATH = os.path.join(ICONS_DIR, "uid.png")
@@ -341,12 +340,8 @@ ICON_INTERNET_PATH = os.path.join(ICONS_DIR, "internet.png")
 ICON_NOTE_PATH = os.path.join(ICONS_DIR, "note.png")
 
 STYLE_CSS_PATH = os.path.join(ASSETS_DIR, "style.css")
-DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(
-    CONFIGS_DIR, "attribute_mapping.json"
-)
-USER_DATA_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(
-    USER_DATA_JSON_DIR, "attribute_mapping.json"
-)
+DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(CONFIGS_DIR, "attribute_mapping.json")
+USER_DATA_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(USER_DATA_JSON_DIR, "attribute_mapping.json")
 
 
 DEFAULT_CATEGORY_ICON = "gramps-gramplet"

@@ -21,14 +21,11 @@
 # ----------------------------------------------------------------------------
 
 import re
-from gramps.gen.lib.srcattrtype import SrcAttributeType
-from gramps.gen.lib import AttributeType
 
-from constants import (
-    SourceTypes,
-    URL_REGEX,
-    URL_RSTRIP,
-)
+from gramps.gen.lib import AttributeType
+from gramps.gen.lib.srcattrtype import SrcAttributeType
+
+from constants import URL_REGEX, URL_RSTRIP, SourceTypes
 
 
 class InternetLinksLoader:

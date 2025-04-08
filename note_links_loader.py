@@ -21,15 +21,12 @@
 # ----------------------------------------------------------------------------
 
 import re
-from gramps.gen.lib.srcattrtype import SrcAttributeType
+
 from gramps.gen.lib import AttributeType, Note
+from gramps.gen.lib.srcattrtype import SrcAttributeType
 from gramps.gui.editors import EditObject
 
-from constants import (
-    SourceTypes,
-    URL_REGEX,
-    URL_RSTRIP,
-)
+from constants import URL_REGEX, URL_RSTRIP, SourceTypes
 
 
 class NoteLinksLoader:
@@ -96,21 +93,13 @@ class NoteLinksLoader:
         for link in note_links:
             if len(link) == 4:
                 source, obj_type, sub_type, handle = link
-                if source != 'gramps':
+                if source != "gramps":
                     existing_links.add(handle.rstrip(URL_RSTRIP))
         return existing_links
 
     def format_parsed_link(self, nav_type, url):
         """Format a parsed link into the required structure."""
-        return (
-            nav_type,
-            "NOTE",
-            "None Link (parsed)",
-            True,
-            url,
-            "",
-            False
-        )
+        return (nav_type, "NOTE", "None Link (parsed)", True, url, "", False)
 
     def format_existing_link(self, nav_type, link):
         """Format an existing note link into the required structure."""
@@ -122,19 +111,11 @@ class NoteLinksLoader:
         if not (source and obj_type and sub_type and handle):
             return None
 
-        if source == 'gramps':
+        if source == "gramps":
             final_url = f"{source}://{obj_type}/{sub_type}/{handle}"
-            title = 'Note Link (internal)'
+            title = "Note Link (internal)"
         else:
             final_url = handle
-            title = 'Note Link (external)'
+            title = "Note Link (external)"
 
-        return (
-            nav_type,
-            "NOTE",
-            title,
-            True,
-            final_url,
-            "",
-            False
-        )
+        return (nav_type, "NOTE", title, True, final_url, "", False)

@@ -84,14 +84,10 @@ class MistralSiteFinder:
             locale_text = "only globally used"
             locales_str = "none"
         else:
-            locale_text = (
-                "both regional and globally used" if include_global else "regional"
-            )
+            locale_text = "both regional and globally used" if include_global else "regional"
             locales_str = ", ".join(locales)
 
-        excluded_domains_str = (
-            ", ".join(excluded_domains) if excluded_domains else "none"
-        )
+        excluded_domains_str = ", ".join(excluded_domains) if excluded_domains else "none"
 
         user_message = (
             f"I am looking for additional genealogical research websites for {locale_text} "
@@ -117,9 +113,7 @@ class MistralSiteFinder:
         }
 
         try:
-            response = requests.post(
-                self.api_url, json=payload, headers=headers, timeout=30
-            )
+            response = requests.post(self.api_url, json=payload, headers=headers, timeout=30)
             response.raise_for_status()
             data = response.json()
 
@@ -173,7 +167,5 @@ class MistralSiteFinder:
         try:
             return data["choices"][0]["message"]["content"]
         except Exception as e:
-            print(
-                f"❌ Error parsing Mistral response: {e}. data: {data}", file=sys.stderr
-            )
+            print(f"❌ Error parsing Mistral response: {e}. data: {data}", file=sys.stderr)
             return "[]"

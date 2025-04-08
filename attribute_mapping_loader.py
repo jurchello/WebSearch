@@ -30,10 +30,8 @@ import json
 import os
 import re
 import sys
-from constants import (
-    USER_DATA_ATTRIBUTE_MAPPING_FILE_PATH,
-    DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH,
-)
+
+from constants import DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH, USER_DATA_ATTRIBUTE_MAPPING_FILE_PATH
 
 
 class AttributeMappingLoader:

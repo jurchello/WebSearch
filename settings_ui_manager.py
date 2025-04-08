@@ -28,36 +28,35 @@ from types import SimpleNamespace
 
 from gramps.gen.plug.menu import (
     BooleanListOption,
+    BooleanOption,
     EnumeratedListOption,
     StringOption,
-    BooleanOption,
 )
 
-from website_loader import WebsiteLoader
 from constants import (
+    ALL_COLUMNS,
+    ALL_COLUMNS_LOCALIZED,
+    ALL_ICONS,
+    ALL_ICONS_LOCALIZED,
+    COMMON_CSV_FILE_NAME,
+    CROSS_CSV_FILE_NAME,
+    DEFAULT_AI_PROVIDER,
+    DEFAULT_DISPLAY_COLUMNS,
+    DEFAULT_DISPLAY_ICONS,
     DEFAULT_MIDDLE_NAME_HANDLING,
+    DEFAULT_SHOW_ATTRIBUTE_LINKS,
+    DEFAULT_SHOW_INTERNET_LINKS,
     DEFAULT_SHOW_SHORT_URL,
     DEFAULT_URL_COMPACTNESS_LEVEL,
     DEFAULT_URL_PREFIX_REPLACEMENT,
-    DEFAULT_SHOW_ATTRIBUTE_LINKS,
-    DEFAULT_SHOW_INTERNET_LINKS,
-    DEFAULT_AI_PROVIDER,
-    COMMON_CSV_FILE_NAME,
-    UID_CSV_FILE_NAME,
     STATIC_CSV_FILE_NAME,
-    CROSS_CSV_FILE_NAME,
-    ALL_COLUMNS,
-    DEFAULT_DISPLAY_COLUMNS,
-    ALL_COLUMNS_LOCALIZED,
-    ALL_ICONS,
-    DEFAULT_DISPLAY_ICONS,
-    ALL_ICONS_LOCALIZED,
+    UID_CSV_FILE_NAME,
+    AIProviders,
     MiddleNameHandling,
     URLCompactnessLevel,
-    AIProviders,
 )
-
 from translation_helper import _
+from website_loader import WebsiteLoader
 
 
 class SettingsUIManager:
@@ -129,18 +128,14 @@ class SettingsUIManager:
                 enum_class=URLCompactnessLevel,
                 default=DEFAULT_URL_COMPACTNESS_LEVEL,
                 descriptions={
-                    URLCompactnessLevel.SHORTEST.value: _(
-                        "Shortest - No Prefix, No Keys"
-                    ),
+                    URLCompactnessLevel.SHORTEST.value: _("Shortest - No Prefix, No Keys"),
                     URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value: _(
                         "Compact - No Prefix, Keys Without Attributes"
                     ),
                     URLCompactnessLevel.COMPACT_WITH_ATTRIBUTES.value: _(
                         "Compact - No Prefix, Keys With Attributes"
                     ),
-                    URLCompactnessLevel.LONG.value: _(
-                        "Long - Without Prefix on the Left"
-                    ),
+                    URLCompactnessLevel.LONG.value: _("Long - Without Prefix on the Left"),
                 },
             ),
         )
@@ -275,9 +270,7 @@ class SettingsUIManager:
 
         opt = EnumeratedListOption(label, default)
         for item in enum_class:
-            display_text = (
-                descriptions.get(item.value, item.value) if descriptions else item.value
-            )
+            display_text = descriptions.get(item.value, item.value) if descriptions else item.value
             opt.add_item(item.value, _(display_text))
         opt.set_value(self.config_ini_manager.get_enum(config_key, enum_class, default))
         self.opts.append(opt)

@@ -28,38 +28,39 @@ The class utilizes website data and common entity data to produce structured
 rows that include icons, formatted URLs, and metadata necessary for display.
 """
 
-import os
 import json
+import os
 import re
 import sys
 import traceback
+
 from gi.repository import GdkPixbuf
 
-from helpers import is_true
 from constants import (
-    DEFAULT_CATEGORY_ICON,
     CATEGORY_ICON,
+    DEFAULT_CATEGORY_ICON,
+    DEFAULT_DISPLAY_ICONS,
+    FLAGS_DIR,
     HIDDEN_HASH_FILE_PATH,
-    SourceTypes,
-    ICON_EARTH_PATH,
-    ICON_PIN_PATH,
+    ICON_ATTRIBUTE_PATH,
     ICON_CROSS_PATH,
+    ICON_EARTH_PATH,
+    ICON_INTERNET_PATH,
+    ICON_NOTE_PATH,
+    ICON_PIN_PATH,
+    ICON_SAVED_PATH,
+    ICON_SIZE,
     ICON_UID_PATH,
     ICON_USER_DATA_PATH,
     ICON_VISITED_PATH,
-    ICON_SAVED_PATH,
-    ICON_INTERNET_PATH,
-    ICON_ATTRIBUTE_PATH,
-    ICON_NOTE_PATH,
-    FLAGS_DIR,
-    UID_ICON_WIDTH,
-    UID_ICON_HEIGHT,
-    ICON_SIZE,
-    SOURCE_TYPE_SORT_ORDER,
-    VISITED_HASH_FILE_PATH,
     SAVED_HASH_FILE_PATH,
-    DEFAULT_DISPLAY_ICONS,
+    SOURCE_TYPE_SORT_ORDER,
+    UID_ICON_HEIGHT,
+    UID_ICON_WIDTH,
+    VISITED_HASH_FILE_PATH,
+    SourceTypes,
 )
+from helpers import is_true
 
 
 class ModelRowGenerator:
@@ -81,9 +82,7 @@ class ModelRowGenerator:
         """Generates a structured data row for the ListStore model."""
         try:
             core_keys, attribute_keys, nav_type, obj = common_data
-            nav, locale, title, is_enabled, url_pattern, comment, is_custom = (
-                website_data
-            )
+            nav, locale, title, is_enabled, url_pattern, comment, is_custom = website_data
 
             if nav != nav_type or not is_true(is_enabled):
                 return None
@@ -92,7 +91,12 @@ class ModelRowGenerator:
             if self.should_be_hidden_link(url_pattern, nav_type, obj_handle):
                 return None
 
-            if locale in [SourceTypes.STATIC.value, SourceTypes.ATTRIBUTE.value, SourceTypes.INTERNET.value, SourceTypes.NOTE.value]:
+            if locale in [
+                SourceTypes.STATIC.value,
+                SourceTypes.ATTRIBUTE.value,
+                SourceTypes.INTERNET.value,
+                SourceTypes.NOTE.value,
+            ]:
                 final_url = formatted_url = url_pattern
                 (
                     pattern_keys_info,
@@ -122,9 +126,7 @@ class ModelRowGenerator:
             hash_value = self.website_loader.generate_hash(f"{final_url}|{obj_handle}")
             visited_icon, visited_icon_visible = self.get_visited_icon_data(hash_value)
             saved_icon, saved_icon_visible = self.get_saved_icon_data(hash_value)
-            user_data_icon, user_data_icon_visible = self.get_user_data_icon_data(
-                is_custom
-            )
+            user_data_icon, user_data_icon_visible = self.get_user_data_icon_data(is_custom)
             locale_icon, locale_icon_visible = self.get_locale_icon_data(locale)
             replaced_keys_count = len(pattern_keys_info["replaced_keys"])
             total_keys_count = self.get_total_keys_count(pattern_keys_info)
@@ -180,9 +182,7 @@ class ModelRowGenerator:
         )
         combined_keys = core_keys.copy()
         combined_keys.update(matched_attribute_keys)
-        pattern_keys_info = self.url_formatter.check_pattern_keys(
-            url_pattern, combined_keys
-        )
+        pattern_keys_info = self.url_formatter.check_pattern_keys(url_pattern, combined_keys)
         pattern_keys_json = json.dumps(pattern_keys_info)
         return (
             combined_keys,
@@ -224,7 +224,12 @@ class ModelRowGenerator:
     def get_display_keys_count(self, locale):
         """Return False if key count display is not needed for this locale type."""
         display_keys_count = True
-        if locale in [SourceTypes.STATIC.value, SourceTypes.ATTRIBUTE.value, SourceTypes.INTERNET.value, SourceTypes.NOTE.value]:
+        if locale in [
+            SourceTypes.STATIC.value,
+            SourceTypes.ATTRIBUTE.value,
+            SourceTypes.INTERNET.value,
+            SourceTypes.NOTE.value,
+        ]:
             display_keys_count = False
         return display_keys_count
 
@@ -299,8 +304,18 @@ class ModelRowGenerator:
                 UID_ICON_WIDTH,
                 UID_ICON_HEIGHT,
             ),
-            SourceTypes.ATTRIBUTE.value: ("attribute", ICON_ATTRIBUTE_PATH, ICON_SIZE, ICON_SIZE),
-            SourceTypes.INTERNET.value: ("internet", ICON_INTERNET_PATH, ICON_SIZE, ICON_SIZE),
+            SourceTypes.ATTRIBUTE.value: (
+                "attribute",
+                ICON_ATTRIBUTE_PATH,
+                ICON_SIZE,
+                ICON_SIZE,
+            ),
+            SourceTypes.INTERNET.value: (
+                "internet",
+                ICON_INTERNET_PATH,
+                ICON_SIZE,
+                ICON_SIZE,
+            ),
             SourceTypes.NOTE.value: ("note", ICON_NOTE_PATH, ICON_SIZE, ICON_SIZE),
         }
 

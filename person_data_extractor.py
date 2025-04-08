@@ -85,8 +85,8 @@ class PersonDataExtractor:
     def get_birth_years(db, person):
         """Returns different birth year formats from the person's birth event."""
         event = PersonDataExtractor.get_birth_event(db, person)
-        year, year_from, year_to, year_before, year_after = (
-            EventDataExtractor.get_event_years(event)
+        year, year_from, year_to, year_before, year_after = EventDataExtractor.get_event_years(
+            event
         )
         return year, year_from, year_to, year_before, year_after
 
@@ -94,8 +94,8 @@ class PersonDataExtractor:
     def get_death_years(db, person):
         """Returns different death year formats from the person's death event."""
         event = PersonDataExtractor.get_death_event(db, person)
-        year, year_from, year_to, year_before, year_after = (
-            EventDataExtractor.get_event_years(event)
+        year, year_from, year_to, year_before, year_after = EventDataExtractor.get_event_years(
+            event
         )
         return year, year_from, year_to, year_before, year_after
 

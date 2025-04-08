@@ -25,11 +25,12 @@ Provides a GTK window to display a QR code for a given URL in the WebSearch Gram
 """
 
 import sys
+
 import gi
 
 gi.require_version("Gtk", "3.0")
 gi.require_version("GdkPixbuf", "2.0")
-from gi.repository import Gtk, GdkPixbuf
+from gi.repository import GdkPixbuf, Gtk
 
 try:
     import qrcode
@@ -110,8 +111,6 @@ class QRCodeWindow(Gtk.Window):
                 None,
             )
         except Exception as e:
-            error_message = _(
-                "⚠ Error generating QR code:\nOriginal error: “{}”"
-            ).format(e)
+            error_message = _("⚠ Error generating QR code:\nOriginal error: “{}”").format(e)
             print(error_message, file=sys.stderr)
             return None, error_message

@@ -28,22 +28,24 @@ a configuration file using Gramps' config system.
 """
 
 import os
+
 from gramps.gen.config import config as configman
+
 from constants import (
     CONFIG_FILE_PATH,
     CONFIGS_DIR,
+    DEFAULT_AI_PROVIDER,
+    DEFAULT_COLUMNS_ORDER,
+    DEFAULT_DISPLAY_COLUMNS,
+    DEFAULT_DISPLAY_ICONS,
     DEFAULT_ENABLED_FILES,
     DEFAULT_MIDDLE_NAME_HANDLING,
-    DEFAULT_URL_PREFIX_REPLACEMENT,
-    DEFAULT_SHOW_SHORT_URL,
-    DEFAULT_URL_COMPACTNESS_LEVEL,
-    DEFAULT_COLUMNS_ORDER,
     DEFAULT_SHOW_ATTRIBUTE_LINKS,
     DEFAULT_SHOW_INTERNET_LINKS,
     DEFAULT_SHOW_NOTE_LINKS,
-    DEFAULT_AI_PROVIDER,
-    DEFAULT_DISPLAY_COLUMNS,
-    DEFAULT_DISPLAY_ICONS,
+    DEFAULT_SHOW_SHORT_URL,
+    DEFAULT_URL_COMPACTNESS_LEVEL,
+    DEFAULT_URL_PREFIX_REPLACEMENT,
 )
 
 
@@ -64,31 +66,19 @@ class ConfigINIManager:
 
         self.config = configman.register_manager(os.path.join(CONFIGS_DIR, "config"))
         self.config.register("websearch.enabled_files", DEFAULT_ENABLED_FILES)
-        self.config.register(
-            "websearch.middle_name_handling", DEFAULT_MIDDLE_NAME_HANDLING
-        )
-        self.config.register(
-            "websearch.url_prefix_replacement", DEFAULT_URL_PREFIX_REPLACEMENT
-        )
+        self.config.register("websearch.middle_name_handling", DEFAULT_MIDDLE_NAME_HANDLING)
+        self.config.register("websearch.url_prefix_replacement", DEFAULT_URL_PREFIX_REPLACEMENT)
         self.config.register("websearch.show_short_url", DEFAULT_SHOW_SHORT_URL)
-        self.config.register(
-            "websearch.url_compactness_level", DEFAULT_URL_COMPACTNESS_LEVEL
-        )
+        self.config.register("websearch.url_compactness_level", DEFAULT_URL_COMPACTNESS_LEVEL)
         self.config.register("websearch.ai_provider", DEFAULT_AI_PROVIDER)
         self.config.register("websearch.openai_api_key", "")
         self.config.register("websearch.openai_model", "")
         self.config.register("websearch.mistral_api_key", "")
         self.config.register("websearch.mistral_model", "")
         self.config.register("websearch.columns_order", DEFAULT_COLUMNS_ORDER)
-        self.config.register(
-            "websearch.show_attribute_links", DEFAULT_SHOW_ATTRIBUTE_LINKS
-        )
-        self.config.register(
-            "websearch.show_internet_links", DEFAULT_SHOW_INTERNET_LINKS
-        )
-        self.config.register(
-            "websearch.show_note_links", DEFAULT_SHOW_NOTE_LINKS
-        )
+        self.config.register("websearch.show_attribute_links", DEFAULT_SHOW_ATTRIBUTE_LINKS)
+        self.config.register("websearch.show_internet_links", DEFAULT_SHOW_INTERNET_LINKS)
+        self.config.register("websearch.show_note_links", DEFAULT_SHOW_NOTE_LINKS)
         self.config.register("websearch.display_columns", DEFAULT_DISPLAY_COLUMNS)
         self.config.register("websearch.display_icons", DEFAULT_DISPLAY_ICONS)
 
