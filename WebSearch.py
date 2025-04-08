@@ -488,7 +488,7 @@ class WebSearch(Gramplet):
         if handle is None:
             self.model.clear()
             return
-        
+
         person = self.dbstate.db.get_person_from_handle(handle)
         self._context.person = person
         if not person:
@@ -930,7 +930,16 @@ class WebSearch(Gramplet):
                 self._context.active_url = url
                 self.ui.context_menu.show_all()
 
-                if nav_type == SupportedNavTypes.PEOPLE.value:
+                if nav_type in [
+                    SupportedNavTypes.PEOPLE.value,
+                    SupportedNavTypes.FAMILIES.value,
+                    SupportedNavTypes.EVENTS.value,
+                    SupportedNavTypes.MEDIA.value,
+                    SupportedNavTypes.SOURCES.value,
+                    SupportedNavTypes.CITATIONS.value,
+                    SupportedNavTypes.REPOSITORIES.value,
+                    SupportedNavTypes.PLACES.value,
+                ]:
                     self.ui.context_menu_items.add_note.show()
                 else:
                     self.ui.context_menu_items.add_note.hide()
@@ -970,12 +979,59 @@ class WebSearch(Gramplet):
         nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
         note_handle = None
 
+        print("Доступні типи нотаток у Gramps:")
+        for note_type in dir(NoteType):
+            if not note_type.startswith("__"):
+                print(note_type)
+
         with DbTxn(_("Add Web Link Note"), self.dbstate.db) as trans:
             if nav_type == SupportedNavTypes.PEOPLE.value:
                 note.set_type(NoteType.PERSON)
                 note_handle = self.dbstate.db.add_note(note, trans)
                 self._context.person.add_note(note_handle)
                 self.dbstate.db.commit_person(self._context.person, trans)
+
+            elif nav_type == SupportedNavTypes.FAMILIES.value:
+                note.set_type(NoteType.FAMILY)
+                note_handle = self.dbstate.db.add_note(note, trans)
+                self._context.family.add_note(note_handle)
+                self.dbstate.db.commit_family(self._context.family, trans)
+
+            elif nav_type == SupportedNavTypes.EVENTS.value:
+                note.set_type(NoteType.EVENT)
+                note_handle = self.dbstate.db.add_note(note, trans)
+                self._context.event.add_note(note_handle)
+                self.dbstate.db.commit_event(self._context.event, trans)
+
+            elif nav_type == SupportedNavTypes.PLACES.value:
+                note.set_type(NoteType.PLACE)
+                note_handle = self.dbstate.db.add_note(note, trans)
+                self._context.place.add_note(note_handle)
+                self.dbstate.db.commit_place(self._context.place, trans)
+
+            elif nav_type == SupportedNavTypes.SOURCES.value:
+                note.set_type(NoteType.SOURCE)
+                note_handle = self.dbstate.db.add_note(note, trans)
+                self._context.source.add_note(note_handle)
+                self.dbstate.db.commit_source(self._context.source, trans)
+
+            elif nav_type == SupportedNavTypes.CITATIONS.value:
+                note.set_type(NoteType.CITATION)
+                note_handle = self.dbstate.db.add_note(note, trans)
+                self._context.citation.add_note(note_handle)
+                self.dbstate.db.commit_citation(self._context.citation, trans)
+
+            elif nav_type == SupportedNavTypes.REPOSITORIES.value:
+                note.set_type(NoteType.REPO)
+                note_handle = self.dbstate.db.add_note(note, trans)
+                self._context.repository.add_note(note_handle)
+                self.dbstate.db.commit_repository(self._context.repository, trans)
+
+            elif nav_type == SupportedNavTypes.MEDIA.value:
+                note.set_type(NoteType.MEDIA)
+                note_handle = self.dbstate.db.add_note(note, trans)
+                self._context.media.add_note(note_handle)
+                self.dbstate.db.commit_media(self._context.media, trans)
 
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
         self.add_icon_event(
