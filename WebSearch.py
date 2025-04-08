@@ -132,6 +132,7 @@ MODEL_SCHEMA = [
     ("locale_text_visible", bool),
     ("display_keys_count", bool),
     ("source_type_sort", str),
+    ("source_type", str),
 ]
 
 ModelColumns = IntEnum(
@@ -925,7 +926,9 @@ class WebSearch(Gramplet):
                     return
                 url = self.model.get_value(tree_iter, ModelColumns.FINAL_URL.value)
                 nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
-
+                source_type = self.model.get_value(tree_iter, ModelColumns.SOURCE_TYPE.value)
+                saved_icon_visible = self.model.get_value(tree_iter, ModelColumns.SAVED_ICON_VISIBLE.value)
+                
                 self._context.active_tree_path = path
                 self._context.active_url = url
                 self.ui.context_menu.show_all()
@@ -939,7 +942,7 @@ class WebSearch(Gramplet):
                     SupportedNavTypes.CITATIONS.value,
                     SupportedNavTypes.REPOSITORIES.value,
                     SupportedNavTypes.PLACES.value,
-                ]:
+                ] and source_type != 'NOTE' and not saved_icon_visible:
                     self.ui.context_menu_items.add_note.show()
                 else:
                     self.ui.context_menu_items.add_note.hide()
@@ -951,7 +954,7 @@ class WebSearch(Gramplet):
                     SupportedNavTypes.MEDIA.value,
                     SupportedNavTypes.SOURCES.value,
                     SupportedNavTypes.CITATIONS.value,
-                ]:
+                ] and source_type != 'ATTRIBUTE' and not saved_icon_visible:
                     self.ui.context_menu_items.add_attribute.show()
                 else:
                     self.ui.context_menu_items.add_attribute.hide()
@@ -978,11 +981,6 @@ class WebSearch(Gramplet):
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
         nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
         note_handle = None
-
-        print("Доступні типи нотаток у Gramps:")
-        for note_type in dir(NoteType):
-            if not note_type.startswith("__"):
-                print(note_type)
 
         with DbTxn(_("Add Web Link Note"), self.dbstate.db) as trans:
             if nav_type == SupportedNavTypes.PEOPLE.value:
@@ -1172,6 +1170,9 @@ class WebSearch(Gramplet):
                 model_visibility_pos=ModelColumns.SAVED_ICON_VISIBLE.value,
             )
         )
+
+        notification = self.show_notification(_("Attribute has been successfully added"))
+        notification.show_all()
 
     def on_query_tooltip(self, widget, x, y, keyboard_mode, tooltip):
         """Displays a tooltip with key and comment information."""

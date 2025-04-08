@@ -131,6 +131,7 @@ class ModelRowGenerator:
             replaced_keys_count = len(pattern_keys_info["replaced_keys"])
             total_keys_count = self.get_total_keys_count(pattern_keys_info)
             keys_color = self.get_keys_color(replaced_keys_count, total_keys_count)
+            source_type = locale
             locale_text = self.get_locale_text(locale)
             display_keys_count = self.get_display_keys_count(locale)
             source_type_sort = self.get_source_type_sort(locale)
@@ -160,6 +161,7 @@ class ModelRowGenerator:
                 "locale_text_visible": not locale_icon_visible,
                 "display_keys_count": display_keys_count,
                 "source_type_sort": source_type_sort,
+                "source_type": source_type,
             }
         except Exception:
             print(traceback.format_exc(), file=sys.stderr)

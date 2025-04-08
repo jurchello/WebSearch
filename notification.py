@@ -106,7 +106,7 @@ class Notification(Gtk.Window):
         css_provider.load_from_data(
             b"""
             #TransparentWindow {
-                background-color: rgba(0, 0, 0, 0.7);
+                background-color: rgba(0, 0, 0, 0.9);
                 border-radius: 10px;
                 padding: 10px;
             }
