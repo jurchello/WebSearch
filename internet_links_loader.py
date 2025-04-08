@@ -33,10 +33,10 @@ class InternetLinksLoader:
     def __init__(self):
         self.url_regex = re.compile(URL_REGEX)
 
-    def get_links_from_internet_objects(self, person, nav_type):
+    def get_links_from_internet_objects(self, obj, nav_type):
 
         links = []
-        list = person.get_url_list()
+        list = obj.get_url_list()
 
         for url_obj in list:
             description = url_obj.get_description()

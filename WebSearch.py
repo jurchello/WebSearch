@@ -414,7 +414,7 @@ class WebSearch(Gramplet):
             attr_websites = self.attribute_links_loader.get_links_from_attributes(obj, nav_type)
             websites += attr_websites
 
-        if self._show_internet_links and nav_type == SupportedNavTypes.PEOPLE.value:
+        if self._show_internet_links and nav_type in [SupportedNavTypes.PEOPLE.value, SupportedNavTypes.PLACES.value, SupportedNavTypes.REPOSITORIES.value]:
             internet_websites = self.internet_links_loader.get_links_from_internet_objects(
                 obj, nav_type
             )
