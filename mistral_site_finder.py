@@ -55,6 +55,7 @@ except ImportError:
         file=sys.stderr,
     )
 
+
 class MistralSiteFinder:
     """
     MistralSiteFinder class for retrieving genealogy-related websites using Mistral AI.

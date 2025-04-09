@@ -20,23 +20,30 @@
 
 # ----------------------------------------------------------------------------
 
+
+"""
+Parses and returns URLs from note objects in the Gramps database.
+Supports both manually entered URLs and Gramps-internal note links.
+"""
+
+
 import re
 
-from gramps.gen.lib import AttributeType, Note
-from gramps.gen.lib.srcattrtype import SrcAttributeType
-from gramps.gui.editors import EditObject
+from gramps.gen.lib import Note
 
-from constants import URL_REGEX, URL_RSTRIP, SourceTypes
+from constants import URL_REGEX, URL_RSTRIP
 
 
 class NoteLinksLoader:
+    """Loads URLs from notes and returns them in a unified format for WebSearch."""
 
     def __init__(self, db):
+        """Initializes the loader with a database and compiles the URL pattern."""
         self.db = db
         self.url_regex = re.compile(URL_REGEX)
 
     def get_links_from_notes(self, obj, nav_type):
-        """Main method to get links from notes."""
+        """Returns all URLs found in the notes attached to the given object."""
         links = []
         if hasattr(obj, "get_note_list"):
             note_handles = obj.get_note_list()

@@ -20,35 +20,37 @@
 
 # ----------------------------------------------------------------------------
 
-import re
+"""Extracts and formats links from the 'Internet' tab of Gramps objects."""
 
-from gramps.gen.lib import AttributeType
-from gramps.gen.lib.srcattrtype import SrcAttributeType
+
+import re
 
 from constants import URL_REGEX, URL_RSTRIP, SourceTypes
 
 
 class InternetLinksLoader:
+    """Loader for extracting and formatting URLs from the 'Internet' tab."""
 
     def __init__(self):
+        """Compiles the regular expression for URL detection."""
         self.url_regex = re.compile(URL_REGEX)
 
     def get_links_from_internet_objects(self, obj, nav_type):
-
+        """Extracts formatted URLs from an object's 'Internet' tab."""
         links = []
-        list = obj.get_url_list()
+        url_list = obj.get_url_list()
 
-        for url_obj in list:
+        for url_obj in url_list:
             description = url_obj.get_description()
             full_path = url_obj.get_full_path()
-            urlType = url_obj.get_type()
-            if urlType:
-                type = urlType.xml_str()
+            url_type = url_obj.get_type()
+            if url_type:
+                url_type_str = url_type.xml_str()
 
             url = self._extract_url(full_path)
 
-            if type:
-                title = type
+            if url_type_str:
+                title = url_type_str
             else:
                 title = "No title"
 
@@ -73,6 +75,6 @@ class InternetLinksLoader:
         return links
 
     def _extract_url(self, text):
-        """Extract the first URL found in the given text."""
+        """Extracts the first URL found in the given text."""
         match = self.url_regex.search(text)
         return match.group(0) if match else None

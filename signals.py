@@ -25,7 +25,8 @@ Defines a custom GObject signal emitter for asynchronous events in the WebSearch
 """
 
 import gi
-gi.require_version("Gtk", "3.0") # pylint: disable=wrong-import-position
+
+gi.require_version("Gtk", "3.0")  # pylint: disable=wrong-import-position
 from gi.repository import GObject
 
 

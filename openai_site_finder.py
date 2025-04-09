@@ -26,6 +26,7 @@ websites in JSON format.
 """
 
 import sys
+import traceback
 
 try:
     import openai
@@ -93,8 +94,14 @@ class OpenaiSiteFinder:
             )
 
         except (
+            openai.BadRequestError,
+            openai.LengthFinishReasonError,
+        ) as e:
+            print(f"Error: {str(e)}", file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
+            return "[]"
+        except (
             openai.APIConnectionError,
-            openai.APIError,
             openai.APIResponseValidationError,
             openai.APIStatusError,
             openai.APITimeoutError,
@@ -109,19 +116,12 @@ class OpenaiSiteFinder:
         ) as e:
             print(f"Error: {str(e)}", file=sys.stderr)
             return "[]"
-
-        except (
-            openai.BadRequestError,
-            openai.LengthFinishReasonError,
-        ) as e:
-            print(f"Error: {str(e)}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+        except openai.APIError as e:
+            print(f"General API error: {str(e)}", file=sys.stderr)
             return "[]"
-
         except openai.OpenAIError as e:
             print(f"General OpenAI error: {str(e)}", file=sys.stderr)
             return "[]"
-
         except Exception as e:
             print(f"Unexpected error: {str(e)}", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)

@@ -374,5 +374,5 @@ CATEGORY_ICON = {
     "Citations": "gramps-citation",
 }
 
-URL_REGEX = "https?://[^\s]+"
+URL_REGEX = r"https?://[^\s]+"
 URL_RSTRIP = ".,!?);]"

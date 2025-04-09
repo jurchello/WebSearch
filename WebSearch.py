@@ -35,7 +35,6 @@ import json
 import os
 import sys
 import threading
-import traceback
 import urllib.parse
 import webbrowser
 from enum import IntEnum
@@ -45,7 +44,8 @@ from types import SimpleNamespace
 # Third-party libraries
 # --------------------------
 import gi
-gi.require_version("Gtk", "3.0") # pylint: disable=wrong-import-position
+
+gi.require_version("Gtk", "3.0")  # pylint: disable=wrong-import-position
 from gi.repository import Gdk, GdkPixbuf, GObject, Gtk
 
 # --------------------------
@@ -410,7 +410,6 @@ class WebSearch(Gramplet):
         except Exception:
             self.model.clear()
 
-
     def populate_links(self, core_keys, attribute_keys, nav_type, obj):
         """Populates the list model with formatted website links relevant to the current entity."""
         self.model.clear()
@@ -425,7 +424,6 @@ class WebSearch(Gramplet):
         websites = self.collect_all_websites(context)
         self.insert_websites_into_model(websites, context)
 
-
     def collect_all_websites(self, ctx):
         """Returns a combined list of all applicable websites for the given entity context."""
         websites = self.website_loader.load_websites(self.config_ini_manager)
@@ -438,13 +436,14 @@ class WebSearch(Gramplet):
             SupportedNavTypes.PLACES.value,
             SupportedNavTypes.REPOSITORIES.value,
         ]:
-            websites += self.internet_links_loader.get_links_from_internet_objects(ctx.obj, ctx.nav_type)
+            websites += self.internet_links_loader.get_links_from_internet_objects(
+                ctx.obj, ctx.nav_type
+            )
 
         if self._show_note_links:
             websites += self.note_links_loader.get_links_from_notes(ctx.obj, ctx.nav_type)
 
         return websites
-
 
     def insert_websites_into_model(self, websites, ctx):
         """Formats each website entry and appends it to the Gtk model."""
@@ -453,7 +452,6 @@ class WebSearch(Gramplet):
             model_row = self.model_row_generator.generate(common_data, website_data)
             if model_row:
                 self.model.append([model_row[name] for name, _ in MODEL_SCHEMA])
-                
 
     def on_link_clicked(self, tree_view, path, column):
         """Handles the event when a URL is clicked in the tree view and opens the link."""
@@ -1010,10 +1008,11 @@ class WebSearch(Gramplet):
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
         note.set(
             _(
-                "📌 This '{title}' web link was archived for future reference by the WebSearch gramplet "
-                "(v. {version}):\n\n"
+                "📌 This '{title}' web link was archived for future reference by the "
+                "WebSearch gramplet (v. {version}):\n\n"
                 "🔗 {url}\n\n"
-                "You can use this link to revisit the source and verify the information related to this entity."
+                "You can use this link to revisit the source and verify the information "
+                "related to this entity."
             ).format(
                 title=self.model.get_value(tree_iter, ModelColumns.TITLE.value),
                 version=self.version,
