@@ -406,30 +406,50 @@ class WebSearch(Gramplet):
         except Exception:
             self.model.clear()
 
+
     def populate_links(self, core_keys, attribute_keys, nav_type, obj):
         """Populates the list model with formatted website links relevant to the current entity."""
         self.model.clear()
+
+        context = SimpleNamespace(
+            core_keys=core_keys,
+            attribute_keys=attribute_keys,
+            nav_type=nav_type,
+            obj=obj,
+        )
+
+        websites = self.collect_all_websites(context)
+        self.insert_websites_into_model(websites, context)
+
+
+    def collect_all_websites(self, ctx):
+        """Returns a combined list of all applicable websites for the given entity context."""
         websites = self.website_loader.load_websites(self.config_ini_manager)
 
         if self._show_attribute_links:
-            attr_websites = self.attribute_links_loader.get_links_from_attributes(obj, nav_type)
-            websites += attr_websites
+            websites += self.attribute_links_loader.get_links_from_attributes(ctx.obj, ctx.nav_type)
 
-        if self._show_internet_links and nav_type in [SupportedNavTypes.PEOPLE.value, SupportedNavTypes.PLACES.value, SupportedNavTypes.REPOSITORIES.value]:
-            internet_websites = self.internet_links_loader.get_links_from_internet_objects(
-                obj, nav_type
-            )
-            websites += internet_websites
+        if self._show_internet_links and ctx.nav_type in [
+            SupportedNavTypes.PEOPLE.value,
+            SupportedNavTypes.PLACES.value,
+            SupportedNavTypes.REPOSITORIES.value,
+        ]:
+            websites += self.internet_links_loader.get_links_from_internet_objects(ctx.obj, ctx.nav_type)
 
         if self._show_note_links:
-            note_websites = self.note_links_loader.get_links_from_notes(obj, nav_type)
-            websites += note_websites
+            websites += self.note_links_loader.get_links_from_notes(ctx.obj, ctx.nav_type)
 
-        common_data = (core_keys, attribute_keys, nav_type, obj)
+        return websites
+
+
+    def insert_websites_into_model(self, websites, ctx):
+        """Formats each website entry and appends it to the Gtk model."""
+        common_data = (ctx.core_keys, ctx.attribute_keys, ctx.nav_type, ctx.obj)
         for website_data in websites:
             model_row = self.model_row_generator.generate(common_data, website_data)
             if model_row:
                 self.model.append([model_row[name] for name, _ in MODEL_SCHEMA])
+                
 
     def on_link_clicked(self, tree_view, path, column):
         """Handles the event when a URL is clicked in the tree view and opens the link."""
