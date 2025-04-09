@@ -42,18 +42,6 @@ class OpenaiSiteFinder:
 
     This class interacts with OpenAI's API to fetch a list of genealogy research websites
     while excluding certain domains and filtering results based on locale preferences.
-
-    Key Features:
-    - Uses OpenAI to generate a list of relevant genealogy research sites.
-    - Accepts excluded domains and locale-based filters.
-    - Returns results in strict JSON format with "domain" and "url" keys.
-
-    Attributes:
-    - api_key (str): API key for OpenAI authentication.
-
-    Methods:
-    - find_sites(excluded_domains, locales, include_global):
-        Sends a query to OpenAI and returns a JSON-formatted list of relevant genealogy websites.
     """
 
     def __init__(self, api_key, model):
@@ -67,17 +55,7 @@ class OpenaiSiteFinder:
         self.model = model
 
     def find_sites(self, excluded_domains, locales, include_global):
-        """
-        Query OpenAI to find genealogy research websites.
-
-        Args:
-            excluded_domains (list of str): List of domains to exclude from results.
-            locales (list of str): Regional locale codes to target.
-            include_global (bool): Whether to include globally used sites.
-
-        Returns:
-            str: JSON-formatted string representing a list of sites or "[]" if an error occurs.
-        """
+        """Query OpenAI to find genealogy research websites."""
         system_message = (
             "You assist in finding resources for genealogical research. "
             "Your response must be strictly formatted as a JSON array of objects "

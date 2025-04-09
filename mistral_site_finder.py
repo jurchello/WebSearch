@@ -28,12 +28,32 @@ import traceback
 
 try:
     import requests
+    from requests.exceptions import (
+        ConnectionError,
+        ConnectTimeout,
+        Timeout,
+        ReadTimeout,
+        HTTPError,
+        TooManyRedirects,
+        InvalidURL,
+        URLRequired,
+        MissingSchema,
+        InvalidSchema,
+        SSLError,
+        ProxyError,
+        ChunkedEncodingError,
+        ContentDecodingError,
+        InvalidHeader,
+        StreamConsumedError,
+        UnrewindableBodyError,
+        RequestException,
+    )
+
 except ImportError:
     print(
         "⚠ The 'requests' module is missing. Install it using: `pip install requests`.",
         file=sys.stderr,
     )
-
 
 class MistralSiteFinder:
     """
@@ -41,38 +61,16 @@ class MistralSiteFinder:
 
     This class interacts with Mistral's API to fetch a list of genealogy research websites
     while excluding certain domains and filtering results based on locale preferences.
-
-    Attributes:
-    - api_key (str): API key for Mistral authentication.
-
-    Methods:
-    - find_sites(excluded_domains, locales, include_global):
-        Sends a query to Mistral and returns a JSON-formatted list of relevant genealogy websites.
     """
 
     def __init__(self, api_key, model):
-        """
-        Initialize the MistralSiteFinder with a Mistral API key.
-
-        Args:
-            api_key (str): Mistral API key used for authentication.
-        """
+        """Initialize the MistralSiteFinder with a Mistral API key."""
         self.api_key = api_key
         self.model = model
         self.api_url = "https://api.mistral.ai/v1/chat/completions"
 
     def find_sites(self, excluded_domains, locales, include_global):
-        """
-        Query Mistral to find genealogy research websites.
-
-        Args:
-            excluded_domains (list of str): List of domains to exclude from results.
-            locales (list of str): Regional locale codes to target.
-            include_global (bool): Whether to include globally used sites.
-
-        Returns:
-            str: JSON-formatted string representing a list of sites or "[]" if an error occurs.
-        """
+        """Query Mistral to find genealogy research websites."""
         system_message = (
             "You assist in finding resources for genealogical research. "
             "Your response must be strictly formatted as a JSON array of objects "
@@ -118,44 +116,34 @@ class MistralSiteFinder:
             data = response.json()
 
         except (
-            requests.ConnectionError,
-            requests.ConnectTimeout,
-            requests.Timeout,
-            requests.ReadTimeout,
-            requests.HTTPError,
-            requests.TooManyRedirects,
-            requests.InvalidURL,
-            requests.InvalidProxyURL,
-            requests.URLRequired,
-            requests.MissingSchema,
-            requests.InvalidSchema,
-            requests.SSLError,
-            requests.ProxyError,
-            requests.ChunkedEncodingError,
+            ConnectionError,
+            ConnectTimeout,
+            Timeout,
+            ReadTimeout,
+            HTTPError,
+            TooManyRedirects,
+            InvalidURL,
+            URLRequired,
+            MissingSchema,
+            InvalidSchema,
+            SSLError,
+            ProxyError,
+            ChunkedEncodingError,
         ) as e:
             print(f"Error: {str(e)}", file=sys.stderr)
             return "[]"
 
         except (
-            requests.ContentDecodingError,
-            requests.InvalidHeader,
-            requests.StreamConsumedError,
-            requests.UnrewindableBodyError,
+            ContentDecodingError,
+            InvalidHeader,
+            StreamConsumedError,
+            UnrewindableBodyError,
         ) as e:
             print(f"Error: {str(e)}", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
             return "[]"
 
-        except (
-            requests.RequestsDependencyWarning,
-            requests.RequestsWarning,
-            requests.RetryError,
-            requests.FileModeWarning,
-        ) as e:
-            print(f"Warning: {str(e)}")
-            return "[]"
-
-        except requests.RequestException as e:
+        except RequestException as e:
             print(f"General request error: {str(e)}", file=sys.stderr)
             return "[]"
 
