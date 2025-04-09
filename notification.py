@@ -25,9 +25,7 @@ Notification popup for WebSearch Gramplet in Gramps.
 """
 
 import gi
-
-gi.require_version("Gtk", "3.0")
-
+gi.require_version("Gtk", "3.0") # pylint: disable=wrong-import-position
 from gi.repository import Gdk, GObject, Gtk, Pango
 
 

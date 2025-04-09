@@ -28,9 +28,10 @@ or source's data. Integrates multiple regional websites into a single sidebar to
 with customizable URL templates.
 """
 
-import json
-
+# --------------------------
 # Standard Python libraries
+# --------------------------
+import json
 import os
 import sys
 import threading
@@ -40,19 +41,25 @@ import webbrowser
 from enum import IntEnum
 from types import SimpleNamespace
 
+# --------------------------
 # Third-party libraries
+# --------------------------
 import gi
-
-gi.require_version("Gtk", "3.0")
+gi.require_version("Gtk", "3.0") # pylint: disable=wrong-import-position
 from gi.repository import Gdk, GdkPixbuf, GObject, Gtk
+
+# --------------------------
+# GRAMPS API
+# --------------------------
 from gramps.gen.db import DbTxn
 from gramps.gen.lib import Attribute, Note, NoteType
-
-# GRAMPS API
 from gramps.gen.plug import Gramplet
 from gramps.gui.display import display_url
 from gramps.gui.editors import EditObject
 
+# --------------------------
+# Own project imports
+# --------------------------
 from attribute_links_loader import AttributeLinksLoader
 from attribute_mapping_loader import AttributeMappingLoader
 from config_ini_manager import ConfigINIManager
@@ -92,8 +99,6 @@ from constants import (
     URLCompactnessLevel,
     SourceTypes,
 )
-
-# Own project imports
 from entity_data_builder import EntityDataBuilder
 from helpers import get_system_locale
 from internet_links_loader import InternetLinksLoader
@@ -108,6 +113,7 @@ from signals import WebSearchSignalEmitter
 from url_formatter import UrlFormatter
 from website_loader import WebsiteLoader
 from gramplet_version_extractor import GrampletVersionExtractor
+from translation_helper import _
 
 MODEL_SCHEMA = [
     ("icon_name", str),
@@ -141,8 +147,6 @@ ModelColumns = IntEnum(
     "ModelColumns", {name.upper(): idx for idx, (name, _) in enumerate(MODEL_SCHEMA)}
 )
 MODEL_TYPES = [type_ for _, type_ in MODEL_SCHEMA]
-
-from translation_helper import _
 
 
 class WebSearch(Gramplet):

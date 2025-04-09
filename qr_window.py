@@ -27,9 +27,8 @@ Provides a GTK window to display a QR code for a given URL in the WebSearch Gram
 import sys
 
 import gi
-
-gi.require_version("Gtk", "3.0")
-gi.require_version("GdkPixbuf", "2.0")
+gi.require_version("Gtk", "3.0") # pylint: disable=wrong-import-position
+gi.require_version("GdkPixbuf", "2.0") # pylint: disable=wrong-import-position
 from gi.repository import GdkPixbuf, Gtk
 
 try:
