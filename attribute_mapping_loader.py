@@ -82,7 +82,7 @@ class AttributeMappingLoader:
                                 "value": attr_value,
                             }
                         )
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"❌ Error processing {nav_type} attributes: {e}", file=sys.stderr)
 
         return uids_data
@@ -94,7 +94,7 @@ class AttributeMappingLoader:
             for uid_entry in uids_data:
                 if re.match(uid_entry["url_regex"], url_pattern, re.IGNORECASE):
                     filtered_uids_data[uid_entry["key_name"]] = uid_entry["value"]
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"❌ Error adding matching keys: {e}", file=sys.stderr)
 
         return filtered_uids_data

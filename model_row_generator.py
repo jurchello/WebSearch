@@ -163,7 +163,7 @@ class ModelRowGenerator:
                 "source_type_sort": source_type_sort,
                 "source_type": source_type,
             }
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             print(traceback.format_exc(), file=sys.stderr)
             return None
 
@@ -209,7 +209,7 @@ class ModelRowGenerator:
                 final_locale = SourceTypes.UID.value
             if final_locale == SourceTypes.UID.value and not replaced_keys_set:
                 should_skip = True
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             pass
 
         return final_locale, should_skip
@@ -286,7 +286,7 @@ class ModelRowGenerator:
         try:
             pattern = re.compile(r"%\(([a-zA-Z0-9_.-]+)\)s")
             return pattern.sub(replacer, template)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(
                 f"❌ URL formatting error: {e}\nTemplate: {template}\nData: {data}",
                 file=sys.stderr,
@@ -343,7 +343,7 @@ class ModelRowGenerator:
         try:
             pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(path, width, height)
             return pixbuf, True
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(
                 f"❌ Error loading icon '{path}' {f'for {label}' if label else ''}: {e}",
                 file=sys.stderr,
@@ -364,7 +364,7 @@ class ModelRowGenerator:
                     ICON_USER_DATA_PATH, ICON_SIZE, ICON_SIZE
                 )
                 user_data_icon_visible = True
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
         return user_data_icon, user_data_icon_visible
 
@@ -382,7 +382,7 @@ class ModelRowGenerator:
                     ICON_VISITED_PATH, ICON_SIZE, ICON_SIZE
                 )
                 visited_icon_visible = True
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
         return visited_icon, visited_icon_visible
 
@@ -400,7 +400,7 @@ class ModelRowGenerator:
                     ICON_SAVED_PATH, ICON_SIZE, ICON_SIZE
                 )
                 saved_icon_visible = True
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
         return saved_icon, saved_icon_visible
 

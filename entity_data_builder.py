@@ -82,7 +82,7 @@ class EntityDataBuilder:
                 given, middle = name, None
 
             surname = person.get_primary_name().get_primary().strip() or None
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             print(traceback.format_exc(), file=sys.stderr)
             given, middle, surname = None, None, None
 
@@ -147,8 +147,8 @@ class EntityDataBuilder:
             else None
         )
 
-        father_data, father_attribute_keys = self.get_person_data(father) if father else {}
-        mother_data, mother_attribute_keys = self.get_person_data(mother) if mother else {}
+        father_data, unused_father_attribute_keys = self.get_person_data(father) if father else {}
+        mother_data, unused_mother_attribute_keys = self.get_person_data(mother) if mother else {}
 
         marriage_year = marriage_year_from = marriage_year_to = marriage_year_before = (
             marriage_year_after
@@ -307,7 +307,7 @@ class EntityDataBuilder:
             latitude = PlaceDataExtractor.get_place_latitude(place)
             longitude = PlaceDataExtractor.get_place_longitude(place)
             place_type = PlaceDataExtractor.get_place_type(place)
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             print(traceback.format_exc(), file=sys.stderr)
 
         place_data = {
@@ -326,7 +326,7 @@ class EntityDataBuilder:
         """Extracts basic information from a source object, including title and locale."""
         try:
             title = source.get_title() or None
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             print(traceback.format_exc(), file=sys.stderr)
             title = None
 

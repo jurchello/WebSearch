@@ -28,6 +28,7 @@ import re
 from constants import URL_REGEX, URL_RSTRIP, SourceTypes
 
 
+# pylint: disable=too-few-public-methods
 class InternetLinksLoader:
     """Loader for extracting and formatting URLs from the 'Internet' tab."""
 
@@ -43,17 +44,17 @@ class InternetLinksLoader:
         for url_obj in url_list:
             description = url_obj.get_description()
             full_path = url_obj.get_full_path()
+
+            url_type_str = None
             url_type = url_obj.get_type()
             if url_type:
                 url_type_str = url_type.xml_str()
-
-            url = self._extract_url(full_path)
-
             if url_type_str:
                 title = url_type_str
             else:
                 title = "No title"
 
+            url = self._extract_url(full_path)
             if url:
                 url = url.rstrip(URL_RSTRIP)
                 title = title.strip()

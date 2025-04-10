@@ -29,6 +29,7 @@ import re
 import os
 
 
+# pylint: disable=too-few-public-methods
 class GrampletVersionExtractor:
     """Extracts the version of the WebSearch Gramplet from the current directory."""
 
@@ -50,5 +51,5 @@ class GrampletVersionExtractor:
             if match:
                 return match.group(1)
             return "Version not found"
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             return f"Error reading file: {e}"

@@ -30,6 +30,7 @@ from gramps.gen.lib.srcattrtype import SrcAttributeType
 from constants import URL_REGEX, URL_RSTRIP, SourceTypes
 
 
+# pylint: disable=too-few-public-methods
 class AttributeLinksLoader:
     """
     Extracts direct URLs from the attributes of a Gramps object.

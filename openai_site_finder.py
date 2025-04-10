@@ -37,6 +37,7 @@ except ImportError:
     )
 
 
+# pylint: disable=too-few-public-methods
 class OpenaiSiteFinder:
     """
     OpenaiSiteFinder class for retrieving genealogy-related websites using OpenAI.
@@ -92,46 +93,7 @@ class OpenaiSiteFinder:
                     {"role": "user", "content": user_message},
                 ],
             )
-
-        except (
-            openai.BadRequestError,
-            openai.LengthFinishReasonError,
-        ) as e:
-            print(f"Error: {str(e)}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
-            return "[]"
-        except (
-            openai.APIConnectionError,
-            openai.APIResponseValidationError,
-            openai.APIStatusError,
-            openai.APITimeoutError,
-            openai.AuthenticationError,
-            openai.ConflictError,
-            openai.ContentFilterFinishReasonError,
-            openai.InternalServerError,
-            openai.NotFoundError,
-            openai.PermissionDeniedError,
-            openai.RateLimitError,
-            openai.UnprocessableEntityError,
-        ) as e:
-            print(f"Error: {str(e)}", file=sys.stderr)
-            return "[]"
-        except openai.APIError as e:
-            print(f"General API error: {str(e)}", file=sys.stderr)
-            return "[]"
-        except openai.OpenAIError as e:
-            print(f"General OpenAI error: {str(e)}", file=sys.stderr)
-            return "[]"
-        except Exception as e:
-            print(f"Unexpected error: {str(e)}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
-            return "[]"
-
-        try:
             return completion.choices[0].message.content
-        except Exception as e:
-            print(
-                f"❌ Error parsing OpenAI response: {e}. completion data: {completion}",
-                file=sys.stderr,
-            )
+        except Exception:  # pylint: disable=broad-exception-caught
+            print(traceback.format_exc(), file=sys.stderr)
             return "[]"

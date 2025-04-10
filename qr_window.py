@@ -110,7 +110,7 @@ class QRCodeWindow(Gtk.Window):
                 GdkPixbuf.Pixbuf.new_from_file_at_size("/tmp/qrcode.png", 250, 250),
                 None,
             )
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             error_message = _("⚠ Error generating QR code:\nOriginal error: “{}”").format(e)
             print(error_message, file=sys.stderr)
             return None, error_message

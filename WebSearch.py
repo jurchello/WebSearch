@@ -28,6 +28,8 @@ or source's data. Integrates multiple regional websites into a single sidebar to
 with customizable URL templates.
 """
 
+# pylint: disable=invalid-name
+
 # --------------------------
 # Standard Python libraries
 # --------------------------
@@ -308,11 +310,11 @@ class WebSearch(Gramplet):
         try:
             results = self.finder.find_sites(all_excluded_domains, locales, include_global)
             GObject.idle_add(self.signal_emitter.emit, "sites-fetched", results)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"❌ Error fetching sites: {e}", file=sys.stderr)
             GObject.idle_add(self.signal_emitter.emit, "sites-fetched", None)
 
-    def on_sites_fetched(self, gramplet, results):
+    def on_sites_fetched(self, unused_gramplet, results):
         """
         Handles the 'sites-fetched' signal and populates badges if valid results are received.
         """
@@ -330,7 +332,7 @@ class WebSearch(Gramplet):
                     self.populate_badges(domain_url_pairs)
             except json.JSONDecodeError as e:
                 print(f"❌ JSON Decode Error: {e}", file=sys.stderr)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 print(f"❌ Error processing sites: {e}", file=sys.stderr)
 
     def db_changed(self):
@@ -389,7 +391,7 @@ class WebSearch(Gramplet):
         if notebook:
             notebook.connect("switch-page", self.on_category_changed)
 
-    def on_category_changed(self, notebook, page, page_num, *args):
+    def on_category_changed(self, unused_notebook, unused_page, page_num, *unused_args):
         """Handle changes in the selected category and update the context."""
         try:
             page_lookup = self.gui.uistate.viewmanager.page_lookup
@@ -407,7 +409,7 @@ class WebSearch(Gramplet):
                     else:
                         self.model.clear()
                     break
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             self.model.clear()
 
     def populate_links(self, core_keys, attribute_keys, nav_type, obj):
@@ -453,7 +455,7 @@ class WebSearch(Gramplet):
             if model_row:
                 self.model.append([model_row[name] for name, _ in MODEL_SCHEMA])
 
-    def on_link_clicked(self, tree_view, path, column):
+    def on_link_clicked(self, unused_tree_view, path, unused_column):
         """Handles the event when a URL is clicked in the tree view and opens the link."""
         tree_iter = self.model.get_iter(path)
         url = self.model.get_value(tree_iter, ModelColumns.FINAL_URL.value)
@@ -480,7 +482,7 @@ class WebSearch(Gramplet):
             if url.startswith("gramps://"):
                 obj_class, prop, value = url[9:].split("/")
                 EditObject(self.dbstate, self.gui.uistate, [], obj_class, prop, value)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"❌ Error when open the internal link: {url} - {e}")
 
     def add_icon_event(self, settings):
@@ -502,7 +504,7 @@ class WebSearch(Gramplet):
                 self.ui.columns.icons.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
                 self.ui.columns.icons.set_fixed_width(-1)
                 self.ui.columns.icons.queue_resize()
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
 
     def active_person_changed(self, handle):
@@ -918,7 +920,7 @@ class WebSearch(Gramplet):
 
         return badge_box
 
-    def on_button_press_event(self, widget, event, url):
+    def on_button_press_event(self, unused_widget, unused_event, url):
         """Handles button press event to open a URL."""
         self.open_url(url)
 
@@ -926,7 +928,7 @@ class WebSearch(Gramplet):
         """Opens the given URL in the default web browser."""
         webbrowser.open(urllib.parse.quote(url, safe=URL_SAFE_CHARS))
 
-    def on_remove_badge(self, button, badge):
+    def on_remove_badge(self, unused_button, badge):
         """Handles removing a badge and saving its domain to skipped list."""
         domain_label = None
         for child in badge.get_children():
@@ -945,7 +947,7 @@ class WebSearch(Gramplet):
         if event.button == RIGHT_MOUSE_BUTTON:
             path_info = widget.get_path_at_pos(event.x, event.y)
             if path_info:
-                path, column, cell_x, cell_y = path_info
+                path, unused_column, unused_cell_x, unused_cell_y = path_info
                 tree_iter = self.model.get_iter(path)
                 if not tree_iter or not self.model.iter_is_valid(tree_iter):
                     return
@@ -998,7 +1000,7 @@ class WebSearch(Gramplet):
 
                 self.ui.context_menu.popup_at_pointer(event)
 
-    def on_add_note(self, widget):
+    def on_add_note(self, unused_widget):
         """Adds the current selected URL as a note to the person record."""
         if not self._context.active_tree_path:
             print("❌ Error: No saved path to the iterator!", file=sys.stderr)
@@ -1091,11 +1093,11 @@ class WebSearch(Gramplet):
                 _("Note #%(id)s has been successfully added") % {"id": note_gramps_id}
             )
             notification.show_all()
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             notification = self.show_notification(_("Error creating note"))
             notification.show_all()
 
-    def on_show_qr_code(self, widget):
+    def on_show_qr_code(self, unused_widget):
         """Opens a window showing the QR code for the selected URL."""
         selection = self.ui.tree_view.get_selection()
         model, tree_iter = selection.get_selected()
@@ -1104,7 +1106,7 @@ class WebSearch(Gramplet):
             qr_window = QRCodeWindow(url)
             qr_window.show_all()
 
-    def on_copy_url_to_clipboard(self, widget):
+    def on_copy_url_to_clipboard(self, unused_widget):
         """Copies the selected URL to the system clipboard."""
         selection = self.ui.tree_view.get_selection()
         model, tree_iter = selection.get_selected()
@@ -1116,7 +1118,7 @@ class WebSearch(Gramplet):
             notification = self.show_notification(_("URL is copied to the Clipboard"))
             notification.show_all()
 
-    def on_hide_link_for_selected_item(self, widget):
+    def on_hide_link_for_selected_item(self, unused_widget):
         """Hides the selected link only for the current Gramps object."""
         selection = self.ui.tree_view.get_selection()
         model, tree_iter = selection.get_selected()
@@ -1132,7 +1134,7 @@ class WebSearch(Gramplet):
                 )
             model.remove(tree_iter)
 
-    def on_hide_link_for_all_items(self, widget):
+    def on_hide_link_for_all_items(self, unused_widget):
         """Hides the selected link for all Gramps objects."""
         selection = self.ui.tree_view.get_selection()
         model, tree_iter = selection.get_selected()
@@ -1162,11 +1164,11 @@ class WebSearch(Gramplet):
             self.ui.tree_view.set_cursor(tree_path)
             tree_iter = self.model.get_iter(tree_path)
             return tree_iter
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"❌ Error in get_active_tree_iter: {e}", file=sys.stderr)
             return None
 
-    def on_add_attribute(self, widget):
+    def on_add_attribute(self, unused_widget):
         """(Unused) Adds the selected URL as an attribute to the person."""
         if not self._context.active_tree_path:
             print("❌ Error: No saved path to the iterator!", file=sys.stderr)
@@ -1216,13 +1218,13 @@ class WebSearch(Gramplet):
         notification = self.show_notification(_("Attribute has been successfully added"))
         notification.show_all()
 
-    def on_query_tooltip(self, widget, x, y, keyboard_mode, tooltip):
+    def on_query_tooltip(self, widget, x, y, unused_keyboard_mode, tooltip):
         """Displays a tooltip with key and comment information."""
         bin_x, bin_y = widget.convert_widget_to_bin_window_coords(x, y)
         path_info = widget.get_path_at_pos(bin_x, bin_y)
 
         if path_info:
-            path, column, cell_x, cell_y = path_info
+            path, unused_column, unused_cell_x, unused_cell_y = path_info
             tree_iter = self.model.get_iter(path)
             title = self.model.get_value(tree_iter, ModelColumns.TITLE.value)
             comment = self.model.get_value(tree_iter, ModelColumns.COMMENT.value) or ""

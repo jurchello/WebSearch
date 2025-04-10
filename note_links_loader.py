@@ -84,7 +84,7 @@ class NoteLinksLoader:
             if note_obj is None:
                 print(f"⚠️ Warning: Note with handle {note_handle} not found.")
             return note_obj
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             print(f"⚠️ Warning: Handle {note_handle} not found in the database.")
             return None
 
@@ -99,7 +99,7 @@ class NoteLinksLoader:
         note_links = note_obj.get_links()
         for link in note_links:
             if len(link) == 4:
-                source, obj_type, sub_type, handle = link
+                source, unused_obj_type, unused_sub_type, handle = link
                 if source != "gramps":
                     existing_links.add(handle.rstrip(URL_RSTRIP))
         return existing_links

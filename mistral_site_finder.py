@@ -28,27 +28,6 @@ import traceback
 
 try:
     import requests
-    from requests.exceptions import (
-        ConnectionError,
-        ConnectTimeout,
-        Timeout,
-        ReadTimeout,
-        HTTPError,
-        TooManyRedirects,
-        InvalidURL,
-        URLRequired,
-        MissingSchema,
-        InvalidSchema,
-        SSLError,
-        ProxyError,
-        ChunkedEncodingError,
-        ContentDecodingError,
-        InvalidHeader,
-        StreamConsumedError,
-        UnrewindableBodyError,
-        RequestException,
-    )
-
 except ImportError:
     print(
         "⚠ The 'requests' module is missing. Install it using: `pip install requests`.",
@@ -56,6 +35,7 @@ except ImportError:
     )
 
 
+# pylint: disable=too-few-public-methods
 class MistralSiteFinder:
     """
     MistralSiteFinder class for retrieving genealogy-related websites using Mistral AI.
@@ -115,46 +95,7 @@ class MistralSiteFinder:
             response = requests.post(self.api_url, json=payload, headers=headers, timeout=30)
             response.raise_for_status()
             data = response.json()
-
-        except (
-            ConnectionError,
-            ConnectTimeout,
-            Timeout,
-            ReadTimeout,
-            HTTPError,
-            TooManyRedirects,
-            InvalidURL,
-            URLRequired,
-            MissingSchema,
-            InvalidSchema,
-            SSLError,
-            ProxyError,
-            ChunkedEncodingError,
-        ) as e:
-            print(f"Error: {str(e)}", file=sys.stderr)
-            return "[]"
-
-        except (
-            ContentDecodingError,
-            InvalidHeader,
-            StreamConsumedError,
-            UnrewindableBodyError,
-        ) as e:
-            print(f"Error: {str(e)}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
-            return "[]"
-
-        except RequestException as e:
-            print(f"General request error: {str(e)}", file=sys.stderr)
-            return "[]"
-
-        except Exception as e:
-            print(f"Unexpected error: {str(e)}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
-            return "[]"
-
-        try:
             return data["choices"][0]["message"]["content"]
-        except Exception as e:
-            print(f"❌ Error parsing Mistral response: {e}. data: {data}", file=sys.stderr)
+        except Exception:  # pylint: disable=broad-exception-caught
+            print(traceback.format_exc(), file=sys.stderr)
             return "[]"
