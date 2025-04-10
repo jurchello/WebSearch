@@ -36,6 +36,8 @@ except ImportError:
         file=sys.stderr,
     )
 
+from site_finder_prompt import BasePromptBuilder
+
 
 # pylint: disable=too-few-public-methods
 class OpenaiSiteFinder:
@@ -47,41 +49,16 @@ class OpenaiSiteFinder:
     """
 
     def __init__(self, api_key, model):
-        """
-        Initialize the OpenaiSiteFinder with an OpenAI API key.
-
-        Args:
-            api_key (str): OpenAI API key used for authentication.
-        """
+        """Initialize the OpenaiSiteFinder with an OpenAI API key."""
         self.api_key = api_key
         self.model = model
+        self.prompt_builder = BasePromptBuilder()
 
     def find_sites(self, excluded_domains, locales, include_global):
         """Query OpenAI to find genealogy research websites."""
-        system_message = (
-            "You assist in finding resources for genealogical research. "
-            "Your response must be strictly formatted as a JSON array of objects "
-            "with only two keys: 'domain' and 'url'. Do not include any additional text, "
-            "explanations, or comments."
-        )
 
-        if not locales:
-            locale_text = "only globally used"
-            locales_str = "none"
-        else:
-            locale_text = "both regional and globally used" if include_global else "regional"
-            locales_str = ", ".join(locales)
-
-        excluded_domains_str = ", ".join(excluded_domains) if excluded_domains else "none"
-
-        user_message = (
-            f"I am looking for additional genealogical research websites for {locale_text} "
-            f"resources. Relevant locales: {locales_str}. "
-            f"Exclude the following domains: {excluded_domains_str}. "
-            "Provide exactly 10 relevant websites formatted as a JSON array of objects "
-            "with keys 'domain' and 'url'. "
-            "Example response: [{'domain': 'example.com', 'url': 'https://example.com'}]. "
-            "If no relevant websites are found, return an empty array [] without any explanations."
+        system_message, user_message = self.prompt_builder.build_prompt(
+            locales, include_global, excluded_domains
         )
 
         try:
