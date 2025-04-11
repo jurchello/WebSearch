@@ -26,12 +26,12 @@ Parses and returns URLs from note objects in the Gramps database.
 Supports both manually entered URLs and Gramps-internal note links.
 """
 
-
-import re
+from types import SimpleNamespace
 
 from gramps.gen.lib import Note
 
-from constants import URL_REGEX, URL_RSTRIP
+from url_utils import UrlUtils
+from constants import SourceTypes
 
 
 class NoteLinksLoader:
@@ -40,20 +40,18 @@ class NoteLinksLoader:
     def __init__(self, db):
         """Initializes the loader with a database and compiles the URL pattern."""
         self.db = db
-        self.url_regex = re.compile(URL_REGEX)
+        self.url_regex = UrlUtils.compile_regex()
 
     def get_links_from_notes(self, obj, nav_type):
         """Returns all URLs found in the notes attached to the given object."""
         links = []
         if hasattr(obj, "get_note_list"):
-            note_handles = obj.get_note_list()
-            for note_handle in note_handles:
+            for note_handle in obj.get_note_list():
                 note_obj = self.get_note_object(note_handle)
                 if note_obj:
                     links.extend(self.get_links_from_note_obj(note_obj, nav_type))
         elif isinstance(obj, Note):
             links.extend(self.get_links_from_note_obj(obj, nav_type))
-
         return links
 
     def get_links_from_note_obj(self, note_obj, nav_type):
@@ -62,19 +60,40 @@ class NoteLinksLoader:
         parsed_links = self.parse_links_from_text(note_obj.get())
         existing_links = self.get_existing_links(note_obj)
 
-        # Add parsed links if not in existing links
         for url in parsed_links:
             if url not in existing_links:
-                links.append(self.format_parsed_link(nav_type, url))
+                link_data = SimpleNamespace(
+                    nav_type=nav_type,
+                    source_type="NOTE",
+                    title="Note Link (parsed)",
+                    url=url,
+                    comment="",
+                    is_enabled=True,
+                    is_custom=False,
+                )
+                links.append(UrlUtils.format_link(link_data))
                 existing_links.add(url)
 
-        # Add existing note links
-        note_links = note_obj.get_links()
-        for link in note_links:
-            formatted_link = self.format_existing_link(nav_type, link)
-            if formatted_link:
-                links.append(formatted_link)
+        for link in note_obj.get_links():
+            link_data = self.create_existing_link_data(nav_type, link)
+            if link_data:
+                links.append(UrlUtils.format_link(link_data))
 
+        return links
+
+    def parse_links_from_text(self, note_text):
+        """Extract URLs from the note text."""
+        matches = self.url_regex.findall(note_text)
+        return list({UrlUtils.clean_url(url) for url in matches})
+
+    def get_existing_links(self, note_obj):
+        """Extract existing URLs from structured Gramps note links."""
+        links = set()
+        for link in note_obj.get_links():
+            if len(link) == 4:
+                source, _, _, handle = link
+                if source != "gramps":
+                    links.add(UrlUtils.clean_url(handle))
         return links
 
     def get_note_object(self, note_handle):
@@ -88,28 +107,8 @@ class NoteLinksLoader:
             print(f"⚠️ Warning: Handle {note_handle} not found in the database.")
             return None
 
-    def parse_links_from_text(self, note_text):
-        """Extract URLs from the note text."""
-        urls = self.url_regex.findall(note_text)
-        return list(set(url.rstrip(URL_RSTRIP) for url in urls))
-
-    def get_existing_links(self, note_obj):
-        """Extract existing links from a note object."""
-        existing_links = set()
-        note_links = note_obj.get_links()
-        for link in note_links:
-            if len(link) == 4:
-                source, unused_obj_type, unused_sub_type, handle = link
-                if source != "gramps":
-                    existing_links.add(handle.rstrip(URL_RSTRIP))
-        return existing_links
-
-    def format_parsed_link(self, nav_type, url):
-        """Format a parsed link into the required structure."""
-        return (nav_type, "NOTE", "None Link (parsed)", True, url, "", False)
-
-    def format_existing_link(self, nav_type, link):
-        """Format an existing note link into the required structure."""
+    def create_existing_link_data(self, nav_type, link):
+        """Creates structured data for a note's existing link."""
         if len(link) != 4:
             print(f"⚠️ Warning: Invalid link format: {link}")
             return None
@@ -119,10 +118,18 @@ class NoteLinksLoader:
             return None
 
         if source == "gramps":
-            final_url = f"{source}://{obj_type}/{sub_type}/{handle}"
+            url = f"{source}://{obj_type}/{sub_type}/{handle}"
             title = "Note Link (internal)"
         else:
-            final_url = handle
+            url = handle
             title = "Note Link (external)"
 
-        return (nav_type, "NOTE", title, True, final_url, "", False)
+        return SimpleNamespace(
+            nav_type=nav_type,
+            source_type=SourceTypes.NOTE.value,
+            title=title,
+            url=url,
+            comment="",
+            is_enabled=True,
+            is_custom=False,
+        )

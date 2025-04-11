@@ -22,12 +22,13 @@
 
 """Extracts web links from attributes of Gramps objects for the WebSearch Gramplet."""
 
-import re
+from types import SimpleNamespace
 
 from gramps.gen.lib import AttributeType
 from gramps.gen.lib.srcattrtype import SrcAttributeType
 
-from constants import URL_REGEX, URL_RSTRIP, SourceTypes
+from url_utils import UrlUtils
+from constants import SourceTypes
 
 
 # pylint: disable=too-few-public-methods
@@ -42,7 +43,7 @@ class AttributeLinksLoader:
 
     def __init__(self):
         """Initialize the regular expression for detecting URLs in attribute values."""
-        self.url_regex = re.compile(URL_REGEX)
+        self.url_regex = UrlUtils.compile_regex()
 
     def get_links_from_attributes(self, obj, nav_type):
         """Extract links from attributes of a given Gramps object."""
@@ -52,41 +53,34 @@ class AttributeLinksLoader:
             return links
 
         for attr in obj.get_attribute_list():
-            attr_type = attr.get_type()
 
-            if isinstance(attr_type, AttributeType):
-                attr_name = attr_type.type2base()
-            elif isinstance(attr_type, SrcAttributeType):
-                attr_name = attr_type.string
-            else:
+            attr_name = self.get_attribute_name(attr.get_type())
+            if not attr_name:
                 continue
 
             attr_value = attr.get_value()
             if not isinstance(attr_value, str):
                 continue
 
-            url = self._extract_url(attr_value)
+            url = UrlUtils.extract_url(attr_value, self.url_regex)
             if url:
-                url = url.rstrip(URL_RSTRIP)
-                title = attr_name.strip()
-                comment = None
-                is_enabled = True
-                is_custom = False
-                links.append(
-                    (
-                        nav_type,
-                        SourceTypes.ATTRIBUTE.value,
-                        title,
-                        is_enabled,
-                        url,
-                        comment,
-                        is_custom,
-                    )
+                link_data = SimpleNamespace(
+                    nav_type=nav_type,
+                    source_type=SourceTypes.ATTRIBUTE.value,
+                    title=attr_name,
+                    url=url,
+                    comment=None,
+                    is_enabled=True,
+                    is_custom=False,
                 )
+                links.append(UrlUtils.format_link(link_data))
 
         return links
 
-    def _extract_url(self, text):
-        """Extract the first URL found in the given text."""
-        match = self.url_regex.search(text)
-        return match.group(0) if match else None
+    def get_attribute_name(self, attr_type):
+        """Returns the name of the attribute type or None if unsupported."""
+        if isinstance(attr_type, AttributeType):
+            return attr_type.type2base()
+        if isinstance(attr_type, SrcAttributeType):
+            return attr_type.string
+        return None

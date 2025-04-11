@@ -22,10 +22,10 @@
 
 """Extracts and formats links from the 'Internet' tab of Gramps objects."""
 
+from types import SimpleNamespace
 
-import re
-
-from constants import URL_REGEX, URL_RSTRIP, SourceTypes
+from url_utils import UrlUtils
+from constants import SourceTypes
 
 
 # pylint: disable=too-few-public-methods
@@ -34,48 +34,34 @@ class InternetLinksLoader:
 
     def __init__(self):
         """Compiles the regular expression for URL detection."""
-        self.url_regex = re.compile(URL_REGEX)
+        self.url_regex = UrlUtils.compile_regex()
 
     def get_links_from_internet_objects(self, obj, nav_type):
         """Extracts formatted URLs from an object's 'Internet' tab."""
         links = []
         url_list = obj.get_url_list()
-
         for url_obj in url_list:
-            description = url_obj.get_description()
             full_path = url_obj.get_full_path()
-
-            url_type_str = None
             url_type = url_obj.get_type()
-            if url_type:
-                url_type_str = url_type.xml_str()
-            if url_type_str:
-                title = url_type_str
-            else:
-                title = "No title"
-
-            url = self._extract_url(full_path)
+            title = self.get_url_title(url_type)
+            url = UrlUtils.extract_url(full_path, self.url_regex)
             if url:
-                url = url.rstrip(URL_RSTRIP)
-                title = title.strip()
-                comment = description
-                is_enabled = True
-                is_custom = False
-                links.append(
-                    (
-                        nav_type,
-                        SourceTypes.INTERNET.value,
-                        title,
-                        is_enabled,
-                        url,
-                        comment,
-                        is_custom,
-                    )
+                link_data = SimpleNamespace(
+                    nav_type=nav_type,
+                    source_type=SourceTypes.INTERNET.value,
+                    title=title,
+                    url=url,
+                    comment=url_obj.get_description(),
+                    is_enabled=True,
+                    is_custom=False,
                 )
+                links.append(UrlUtils.format_link(link_data))
 
         return links
 
-    def _extract_url(self, text):
-        """Extracts the first URL found in the given text."""
-        match = self.url_regex.search(text)
-        return match.group(0) if match else None
+    def get_url_title(self, url_type):
+        """Returns a cleaned title from the URL type object, or a default title."""
+        if url_type:
+            raw_title = url_type.xml_str()
+            return (raw_title or "No title").strip()
+        return "No title"
