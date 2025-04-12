@@ -55,19 +55,21 @@ class ArchiveReferenceParser:
         # ДААРК-142-1-15
         (
             r"(?:(?P<archive_code>[А-ЯІЇЄҐA-Z]{2,})[\s-]+)?"
-            r"(?P<collection_number>\d+)[-–](?P<series_number>\d+)[-–](?P<file_number>\d+)",
+            r"(?P<collection_number>[A-Za-zА-Яа-яІіЇїЄєҐґ]?\d+)"
+            r"[-–](?P<series_number>\d+)"
+            r"[-–](?P<file_number>\d+)",
             ["archive_code", "collection_number", "series_number", "file_number"],
         ),
         # ф. 142 оп. 1 сп. 15
         # ф. 142. оп. 1. сп. 15
         # ф. 142, оп. 1, сп. 15
         # ДААРК ф. 142 оп. 1 сп. 15
-        # ДААРК, ф. 142, оп. 1, сп. 15
+        # ДААРК, ф. р142, оп. 1, сп. 15
         # ДААРК. ф. 142. оп. 1. сп. 15
         (
             r"(?:(?P<archive_code>[А-ЯІЇЄҐA-Z]{2,})(?:[\s]*[.,]?[\s]*))?"
             r"(фонд|Фонд|ф|Ф|Fund|FUND|F|f|Collection|COLLECTION|Coll|coll)\.*(?:[\s]*[.,]?[\s]*)"
-            r"(?P<collection_number>\d+)"
+            r"(?P<collection_number>[A-Za-zА-Яа-яІіЇїЄєҐґ]?\d+)"
             r"(?:[\s]*[.,]?[\s]*)"
             r"(опис|Опис|ОПИС|оп|Оп|ОП|Inventory|INVENTORY|inventory|Inv|INV|inv|Series|SERIES|series|Ser|SER|ser)\.*"  # pylint: disable=line-too-long
             r"(?:[\s]*[.,]?[\s]*)"
@@ -105,6 +107,25 @@ class ArchiveReferenceParser:
         "TNA Collection, 142. Inventory. 1 File. 15",
         "TNA Coll 142 Ser 1 It 15",
         "TNA Collection 142, Inv. 1, File 15",
+        "р142-1-15",
+        "ДААРК р142-1-15",
+        "ДААРК-р142-1-15",
+        "ф. р142 оп. 1 сп. 15",
+        "ф. р142. оп. 1. сп. 15",
+        "ф. Р142, оп. 1, сп. 15",
+        "Ф. р142 Оп. 1 Сп. 15",
+        "Ф. Р142. Оп. 1. Сп. 15",
+        "Ф. Р142, Оп. 1, Сп. 15",
+        "ДААРК ф. р142 оп. 1 сп. 15",
+        "ДААРК, ф. Р142, оп. 1, сп. 15",
+        "ДААРК. ф. р142. оп. 1. сп. 15",
+        "Fund p142 Inventory 1 File 15",
+        "Collection. P142, Series. 1, Item. 15",
+        "coll p142 inv 1 fl 15",
+        "F. P142. Ser. 1. It. 15",
+        "TNA Collection, p142. Inventory. 1 File. 15",
+        "TNA Coll P142 Ser 1 It 15",
+        "TNA Collection P142, Inv. 1, File 15",
     ]
 
     TEST_CASES_CODE_ONLY: List[str] = [
