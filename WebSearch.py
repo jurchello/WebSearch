@@ -116,6 +116,7 @@ from url_formatter import UrlFormatter
 from website_loader import WebsiteLoader
 from gramplet_version_extractor import GrampletVersionExtractor
 from translation_helper import _
+from archive_reference_parser import ArchiveReferenceParser
 
 MODEL_SCHEMA = [
     ("icon_name", str),
@@ -173,6 +174,14 @@ class WebSearch(Gramplet):
         Sets up all required components, directories, signal emitters, and configuration managers.
         Also initializes the Gramplet GUI and internal context for tracking active Gramps objects.
         """
+
+        # TODO: added for temporary testing, should be removed later
+        ArchiveReferenceParser.print_table(
+            "FULL REFERENCE TESTS",
+            ArchiveReferenceParser.TEST_CASES_FULL,
+            ArchiveReferenceParser.parse_full_reference,
+        )
+
         self.version = GrampletVersionExtractor().get()
         self._context = SimpleNamespace(
             person=None,
