@@ -1,12 +1,12 @@
 [
-    {
-      "n": "WebSearch",
-      "i": "web_search",
-      "t": 10,
-      "d": "Customized queries for online services based on the active Person, Place, Family, or Source record",
-      "v": "0.76.49",
-      "g": "6.0",
-      "s": 2,
-      "z": "WebSearch.addon.tgz"
-    }
-  ]
+  {
+    "n": "WebSearch",
+    "i": "web_search",
+    "t": 10,
+    "d": "Customized queries for online services based on the active Person, Place, Family, or Source record",
+    "v": "0.76.49",
+    "g": "6.0",
+    "s": 2,
+    "z": "WebSearch.addon.tgz"
+  }
+]
