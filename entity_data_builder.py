@@ -44,6 +44,7 @@ from event_data_extractor import EventDataExtractor
 from helpers import get_system_locale
 from person_data_extractor import PersonDataExtractor
 from place_data_extractor import PlaceDataExtractor
+from archive_reference_parser import ArchiveReferenceParser
 
 
 class EntityDataBuilder:
@@ -324,14 +325,32 @@ class EntityDataBuilder:
 
     def get_source_data(self, source):
         """Extracts basic information from a source object, including title and locale."""
+
+        title = None
         try:
             title = source.get_title() or None
         except Exception:  # pylint: disable=broad-exception-caught
             print(traceback.format_exc(), file=sys.stderr)
-            title = None
+
+        full_abbreviation = None
+        try:
+            full_abbreviation = source.get_abbreviation() or None
+        except Exception:  # pylint: disable=broad-exception-caught
+            print(traceback.format_exc(), file=sys.stderr)
+
+        parsed_ref = {}
+        if full_abbreviation:
+            result = ArchiveReferenceParser.parse_full_reference(full_abbreviation)
+            if result:
+                parsed_ref = result
 
         source_data = {
             SourceDataKeys.TITLE.value: title or "",
+            SourceDataKeys.FULL_ABBREVIATION.value: full_abbreviation or "",
+            SourceDataKeys.ARCHIVE_CODE.value: parsed_ref.get("archive_code") or "",
+            SourceDataKeys.COLLECTION_NUMBER.value: parsed_ref.get("collection_number") or "",
+            SourceDataKeys.SERIES_NUMBER.value: parsed_ref.get("series_number") or "",
+            SourceDataKeys.FILE_NUMBER.value: parsed_ref.get("file_number") or "",
             SourceDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
         }
 

@@ -194,6 +194,11 @@ class SourceDataKeys(Enum):
     """Defines key keys for source-based navigation."""
 
     TITLE = "source_title"
+    FULL_ABBREVIATION = "full_abbreviation"
+    ARCHIVE_CODE = "archive_code"
+    COLLECTION_NUMBER = "collection_number"
+    SERIES_NUMBER = "series_number"
+    FILE_NUMBER = "file_number"
     SYSTEM_LOCALE = "locale"
 
 
