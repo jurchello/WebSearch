@@ -107,12 +107,16 @@ class PlaceDataExtractor:
             if name is None:
                 return None
             root_place_name = name.get_value()
-            place_ref = place.get_placeref_list()[0] if place.get_placeref_list() else None
+            place_ref = (
+                place.get_placeref_list()[0] if place.get_placeref_list() else None
+            )
             while place_ref:
                 p = db.get_place_from_handle(place_ref.get_reference_handle())
                 if p:
                     root_place_name = p.get_name().get_value()
-                    place_ref = p.get_placeref_list()[0] if p.get_placeref_list() else None
+                    place_ref = (
+                        p.get_placeref_list()[0] if p.get_placeref_list() else None
+                    )
                 else:
                     break
         except Exception:  # pylint: disable=broad-exception-caught
@@ -131,9 +135,13 @@ class PlaceDataExtractor:
             if not name:
                 return ""
             place_names = [name.get_value()]
-            place_ref = place.get_placeref_list()[0] if place.get_placeref_list() else None
+            place_ref = (
+                place.get_placeref_list()[0] if place.get_placeref_list() else None
+            )
             while place_ref:
-                parent_place = db.get_place_from_handle(place_ref.get_reference_handle())
+                parent_place = db.get_place_from_handle(
+                    place_ref.get_reference_handle()
+                )
                 if parent_place:
                     place_names.append(parent_place.get_name().get_value())
                     place_ref = (

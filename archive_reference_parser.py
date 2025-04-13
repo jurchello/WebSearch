@@ -158,7 +158,11 @@ class ArchiveReferenceParser:
         for pattern, keys in cls.ARCHIVE_PATTERNS_CODE_ONLY:
             match = re.search(pattern, text)
             if match:
-                return {key: match.group(key) for key in keys if match.group(key) is not None}
+                return {
+                    key: match.group(key)
+                    for key in keys
+                    if match.group(key) is not None
+                }
         return None
 
     @staticmethod

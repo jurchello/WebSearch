@@ -176,11 +176,11 @@ class WebSearch(Gramplet):
         """
 
         # TODO: added for temporary testing, should be removed later
-        ArchiveReferenceParser.print_table(
-            "FULL REFERENCE TESTS",
-            ArchiveReferenceParser.TEST_CASES_FULL,
-            ArchiveReferenceParser.parse_full_reference,
-        )
+        # ArchiveReferenceParser.print_table(
+        #    "FULL REFERENCE TESTS",
+        #    ArchiveReferenceParser.TEST_CASES_FULL,
+        #    ArchiveReferenceParser.parse_full_reference,
+        # )
 
         self.version = GrampletVersionExtractor().get()
         self._context = SimpleNamespace(
@@ -207,7 +207,9 @@ class WebSearch(Gramplet):
                     container=self.builder.get_object("badge_container"),
                 ),
             ),
-            ai_recommendations_label=self.builder.get_object("ai_recommendations_label"),
+            ai_recommendations_label=self.builder.get_object(
+                "ai_recommendations_label"
+            ),
             tree_view=self.builder.get_object("treeview"),
             context_menu=self.builder.get_object("context_menu"),
             context_menu_items=SimpleNamespace(
@@ -317,7 +319,9 @@ class WebSearch(Gramplet):
         skipped_domains = self.website_loader.load_skipped_domains()
         all_excluded_domains = csv_domains.union(skipped_domains)
         try:
-            results = self.finder.find_sites(all_excluded_domains, locales, include_global)
+            results = self.finder.find_sites(
+                all_excluded_domains, locales, include_global
+            )
             GObject.idle_add(self.signal_emitter.emit, "sites-fetched", results)
         except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"❌ Error fetching sites: {e}", file=sys.stderr)
@@ -346,7 +350,9 @@ class WebSearch(Gramplet):
 
     def db_changed(self):
         """Responds to changes in the database and updates the active context accordingly."""
-        self.entity_data_builder = EntityDataBuilder(self.dbstate, self.config_ini_manager)
+        self.entity_data_builder = EntityDataBuilder(
+            self.dbstate, self.config_ini_manager
+        )
         self.model_row_generator = ModelRowGenerator(
             SimpleNamespace(
                 website_loader=self.website_loader,
@@ -411,8 +417,8 @@ class WebSearch(Gramplet):
                     nav_type = VIEW_IDS_MAPPING.get(view_id, None)
                     if nav_type:
                         self._context.last_active_entity_type = nav_type
-                        self._context.last_active_entity_handle = self.gui.uistate.get_active(
-                            nav_type
+                        self._context.last_active_entity_handle = (
+                            self.gui.uistate.get_active(nav_type)
                         )
                         self.call_entity_changed_method()
                     else:
@@ -440,7 +446,9 @@ class WebSearch(Gramplet):
         websites = self.website_loader.load_websites(self.config_ini_manager)
 
         if self._show_attribute_links:
-            websites += self.attribute_links_loader.get_links_from_attributes(ctx.obj, ctx.nav_type)
+            websites += self.attribute_links_loader.get_links_from_attributes(
+                ctx.obj, ctx.nav_type
+            )
 
         if self._show_internet_links and ctx.nav_type in [
             SupportedNavTypes.PEOPLE.value,
@@ -452,7 +460,9 @@ class WebSearch(Gramplet):
             )
 
         if self._show_note_links:
-            websites += self.note_links_loader.get_links_from_notes(ctx.obj, ctx.nav_type)
+            websites += self.note_links_loader.get_links_from_notes(
+                ctx.obj, ctx.nav_type
+            )
 
         return websites
 
@@ -507,7 +517,9 @@ class WebSearch(Gramplet):
         if not self.website_loader.has_hash_in_file(hash_value, file_path):
             self.website_loader.save_hash_to_file(hash_value, file_path)
             try:
-                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(icon_path, ICON_SIZE, ICON_SIZE)
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(
+                    icon_path, ICON_SIZE, ICON_SIZE
+                )
                 self.model.set_value(tree_iter, model_icon_pos, pixbuf)
                 self.model.set_value(tree_iter, model_visibility_pos, True)
                 self.ui.columns.icons.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
@@ -533,7 +545,9 @@ class WebSearch(Gramplet):
             return
 
         person_data, attribute_keys = self.entity_data_builder.get_person_data(person)
-        self.populate_links(person_data, attribute_keys, SupportedNavTypes.PEOPLE.value, person)
+        self.populate_links(
+            person_data, attribute_keys, SupportedNavTypes.PEOPLE.value, person
+        )
         self.update()
 
     def active_event_changed(self, handle):
@@ -866,7 +880,9 @@ class WebSearch(Gramplet):
         self.ui.context_menu_items.add_attribute.set_label(_("Add link to attribute"))
         self.ui.context_menu_items.show_qr.set_label(_("Show QR-code"))
         self.ui.context_menu_items.copy_link.set_label(_("Copy link to clipboard"))
-        self.ui.context_menu_items.hide_selected.set_label(_("Hide link for selected item"))
+        self.ui.context_menu_items.hide_selected.set_label(
+            _("Hide link for selected item")
+        )
         self.ui.context_menu_items.hide_all.set_label(_("Hide link for all items"))
 
         self.ui.ai_recommendations_label.set_text(_("🔍 AI Suggestions"))
@@ -962,7 +978,9 @@ class WebSearch(Gramplet):
                     return
                 url = self.model.get_value(tree_iter, ModelColumns.FINAL_URL.value)
                 nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
-                source_type = self.model.get_value(tree_iter, ModelColumns.SOURCE_TYPE.value)
+                source_type = self.model.get_value(
+                    tree_iter, ModelColumns.SOURCE_TYPE.value
+                )
                 saved_icon_visible = self.model.get_value(
                     tree_iter, ModelColumns.SAVED_ICON_VISIBLE.value
                 )
@@ -1224,7 +1242,9 @@ class WebSearch(Gramplet):
             )
         )
 
-        notification = self.show_notification(_("Attribute has been successfully added"))
+        notification = self.show_notification(
+            _("Attribute has been successfully added")
+        )
         notification.show_all()
 
     def on_query_tooltip(self, widget, x, y, unused_keyboard_mode, tooltip):
@@ -1241,13 +1261,17 @@ class WebSearch(Gramplet):
             keys_json = self.model.get_value(tree_iter, ModelColumns.KEYS_JSON.value)
             keys = json.loads(keys_json)
             replaced_keys = [
-                f"{key}={value}" for var in keys["replaced_keys"] for key, value in var.items()
+                f"{key}={value}"
+                for var in keys["replaced_keys"]
+                for key, value in var.items()
             ]
             empty_keys = list(keys["empty_keys"])
 
             tooltip_text = _("Title: {title}\n").format(title=title)
             if replaced_keys:
-                tooltip_text += _("Replaced: {keys}\n").format(keys=", ".join(replaced_keys))
+                tooltip_text += _("Replaced: {keys}\n").format(
+                    keys=", ".join(replaced_keys)
+                )
             if empty_keys:
                 tooltip_text += _("Empty: {keys}\n").format(keys=", ".join(empty_keys))
             if comment:
@@ -1267,7 +1291,9 @@ class WebSearch(Gramplet):
         self.config_ini_manager.set_boolean_list(
             "websearch.enabled_files", self.opts[0].get_selected()
         )
-        self.config_ini_manager.set_enum("websearch.middle_name_handling", self.opts[1].get_value())
+        self.config_ini_manager.set_enum(
+            "websearch.middle_name_handling", self.opts[1].get_value()
+        )
         self.config_ini_manager.set_boolean_option(
             "websearch.show_short_url", self.opts[2].get_value()
         )
@@ -1278,11 +1304,21 @@ class WebSearch(Gramplet):
             "websearch.url_prefix_replacement", self.opts[4].get_value()
         )
 
-        self.config_ini_manager.set_enum("websearch.ai_provider", self.opts[5].get_value())
-        self.config_ini_manager.set_string("websearch.openai_api_key", self.opts[6].get_value())
-        self.config_ini_manager.set_string("websearch.openai_model", self.opts[7].get_value())
-        self.config_ini_manager.set_string("websearch.mistral_api_key", self.opts[8].get_value())
-        self.config_ini_manager.set_string("websearch.mistral_model", self.opts[9].get_value())
+        self.config_ini_manager.set_enum(
+            "websearch.ai_provider", self.opts[5].get_value()
+        )
+        self.config_ini_manager.set_string(
+            "websearch.openai_api_key", self.opts[6].get_value()
+        )
+        self.config_ini_manager.set_string(
+            "websearch.openai_model", self.opts[7].get_value()
+        )
+        self.config_ini_manager.set_string(
+            "websearch.mistral_api_key", self.opts[8].get_value()
+        )
+        self.config_ini_manager.set_string(
+            "websearch.mistral_model", self.opts[9].get_value()
+        )
         self.config_ini_manager.set_boolean_option(
             "websearch.show_attribute_links", self.opts[10].get_value()
         )
@@ -1294,15 +1330,23 @@ class WebSearch(Gramplet):
         )
         selected_labels = self.opts[13].get_selected()
         selected_columns = [
-            key for key, label in ALL_COLUMNS_LOCALIZED.items() if label in selected_labels
+            key
+            for key, label in ALL_COLUMNS_LOCALIZED.items()
+            if label in selected_labels
         ]
-        self.config_ini_manager.set_boolean_list("websearch.display_columns", selected_columns)
+        self.config_ini_manager.set_boolean_list(
+            "websearch.display_columns", selected_columns
+        )
 
         selected_labels = self.opts[14].get_selected()
         selected_icons = [
-            key for key, label in ALL_ICONS_LOCALIZED.items() if label in selected_labels
+            key
+            for key, label in ALL_ICONS_LOCALIZED.items()
+            if label in selected_labels
         ]
-        self.config_ini_manager.set_boolean_list("websearch.display_icons", selected_icons)
+        self.config_ini_manager.set_boolean_list(
+            "websearch.display_icons", selected_icons
+        )
 
         self.config_ini_manager.save()
 
@@ -1332,11 +1376,19 @@ class WebSearch(Gramplet):
         )
         self._ai_provider = self.load_ai_provider()
 
-        self._openai_api_key = self.config_ini_manager.get_string("websearch.openai_api_key", "")
-        self._openai_model = self.config_ini_manager.get_string("websearch.openai_model", "")
+        self._openai_api_key = self.config_ini_manager.get_string(
+            "websearch.openai_api_key", ""
+        )
+        self._openai_model = self.config_ini_manager.get_string(
+            "websearch.openai_model", ""
+        )
 
-        self._mistral_api_key = self.config_ini_manager.get_string("websearch.mistral_api_key", "")
-        self._mistral_model = self.config_ini_manager.get_string("websearch.mistral_model", "")
+        self._mistral_api_key = self.config_ini_manager.get_string(
+            "websearch.mistral_api_key", ""
+        )
+        self._mistral_model = self.config_ini_manager.get_string(
+            "websearch.mistral_model", ""
+        )
 
         if self._ai_provider == AIProviders.OPENAI.value:
             self._ai_api_key = self._openai_api_key

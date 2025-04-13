@@ -74,7 +74,9 @@ class MistralSiteFinder:
         }
 
         try:
-            response = requests.post(self.api_url, json=payload, headers=headers, timeout=30)
+            response = requests.post(
+                self.api_url, json=payload, headers=headers, timeout=30
+            )
             response.raise_for_status()
             data = response.json()
             return data["choices"][0]["message"]["content"]

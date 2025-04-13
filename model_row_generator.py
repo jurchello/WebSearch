@@ -82,7 +82,9 @@ class ModelRowGenerator:
         """Generates a structured data row for the ListStore model."""
         try:
             core_keys, attribute_keys, nav_type, obj = common_data
-            nav, locale, title, is_enabled, url_pattern, comment, is_custom = website_data
+            nav, locale, title, is_enabled, url_pattern, comment, is_custom = (
+                website_data
+            )
 
             if nav != nav_type or not is_true(is_enabled):
                 return None
@@ -126,7 +128,9 @@ class ModelRowGenerator:
             hash_value = self.website_loader.generate_hash(f"{final_url}|{obj_handle}")
             visited_icon, visited_icon_visible = self.get_visited_icon_data(hash_value)
             saved_icon, saved_icon_visible = self.get_saved_icon_data(hash_value)
-            user_data_icon, user_data_icon_visible = self.get_user_data_icon_data(is_custom)
+            user_data_icon, user_data_icon_visible = self.get_user_data_icon_data(
+                is_custom
+            )
             locale_icon, locale_icon_visible = self.get_locale_icon_data(locale)
             replaced_keys_count = len(pattern_keys_info["replaced_keys"])
             total_keys_count = self.get_total_keys_count(pattern_keys_info)
@@ -184,7 +188,9 @@ class ModelRowGenerator:
         )
         combined_keys = core_keys.copy()
         combined_keys.update(matched_attribute_keys)
-        pattern_keys_info = self.url_formatter.check_pattern_keys(url_pattern, combined_keys)
+        pattern_keys_info = self.url_formatter.check_pattern_keys(
+            url_pattern, combined_keys
+        )
         pattern_keys_json = json.dumps(pattern_keys_info)
         return (
             combined_keys,

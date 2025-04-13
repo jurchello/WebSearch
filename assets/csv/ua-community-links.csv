@@ -1,3 +1,3 @@
 Navigation type,Title,Is enabled,URL                                                                                                                                         ,Comment
-"People,Places",Static PP example,1,https://www.google.com/search?q=I+like+this+link1,
-*,Static All example,1,https://www.google.com/search?q=I+like+this+link2,
+People,"Ukrgenealogy (g,m,s)",1,https://ukrgenealogy.com.ua/search.php?keywords=%(given)s+%(middle)s+%(surname)s&submit=Пошук,
+

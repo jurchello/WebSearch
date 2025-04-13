@@ -43,10 +43,14 @@ class BasePromptBuilder:
             locale_text = "only globally used"
             locales_str = "none"
         else:
-            locale_text = "both regional and globally used" if include_global else "regional"
+            locale_text = (
+                "both regional and globally used" if include_global else "regional"
+            )
             locales_str = ", ".join(locales)
 
-        excluded_domains_str = ", ".join(excluded_domains) if excluded_domains else "none"
+        excluded_domains_str = (
+            ", ".join(excluded_domains) if excluded_domains else "none"
+        )
 
         return (
             f"I am looking for additional genealogical research websites for {locale_text} "

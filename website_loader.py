@@ -41,6 +41,7 @@ from constants import (
     USER_DATA_CSV_DIR,
     CsvColumnNames,
     SourceTypes,
+    SupportedNavTypes,
 )
 
 
@@ -169,39 +170,58 @@ class WebsiteLoader:
 
             with open(selected_file_path, "r", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
-                reader.fieldnames = [name.strip() if name else name for name in reader.fieldnames]
+                reader.fieldnames = [
+                    name.strip() if name else name for name in reader.fieldnames
+                ]
 
                 for row in reader:
                     if not row:
                         continue
 
-                    nav_type = row.get(CsvColumnNames.NAV_TYPE.value, "").strip()
+                    nav_type_raw = row.get(CsvColumnNames.NAV_TYPE.value, "").strip()
                     title = row.get(CsvColumnNames.TITLE.value, "").strip()
                     is_enabled = row.get(CsvColumnNames.IS_ENABLED.value, "").strip()
                     url = row.get(CsvColumnNames.URL.value, "").strip()
                     comment = row.get(CsvColumnNames.COMMENT.value, None)
 
-                    if not all([nav_type, title, is_enabled, url]):
+                    if not all([nav_type_raw, title, is_enabled, url]):
                         print(
                             f"⚠️ Some data missing in: {selected_file_path}. A row is skipped: "
                             f"{row}",
                             file=sys.stderr,
                         )
-
                         continue
 
-                    websites.append(
-                        [
-                            nav_type,
-                            locale,
-                            title,
-                            is_enabled,
-                            url,
-                            comment,
-                            is_custom_file,
-                        ]
-                    )
+                    nav_types = cls.expand_nav_types(nav_type_raw)
+
+                    for nt in nav_types:
+                        websites.append(
+                            [
+                                nt,
+                                locale,
+                                title,
+                                is_enabled,
+                                url,
+                                comment,
+                                is_custom_file,
+                            ]
+                        )
         return websites
+
+    @staticmethod
+    def expand_nav_types(nav_type_raw):
+        """
+        Parses and expands navigation type field from CSV, handling '*' as all supported types.
+        """
+        nav_type_raw = nav_type_raw.strip()
+        if nav_type_raw == "*":
+            return [nt.value for nt in SupportedNavTypes]
+
+        return [
+            nt.strip()
+            for nt in nav_type_raw.split(",")
+            if nt.strip() in {nt_enum.value for nt_enum in SupportedNavTypes}
+        ]
 
     @classmethod
     def get_domains_data(cls, config_ini_manager):
@@ -232,7 +252,9 @@ class WebsiteLoader:
 
             with open(selected_file_path, "r", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
-                reader.fieldnames = [name.strip() if name else name for name in reader.fieldnames]
+                reader.fieldnames = [
+                    name.strip() if name else name for name in reader.fieldnames
+                ]
 
                 for row in reader:
                     if not row:
