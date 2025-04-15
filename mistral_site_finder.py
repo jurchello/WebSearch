@@ -35,6 +35,7 @@ except ImportError:
     )
 
 from site_finder_prompt import BasePromptBuilder
+from models import AIDomainData
 
 
 # pylint: disable=too-few-public-methods
@@ -53,12 +54,10 @@ class MistralSiteFinder:
         self.api_url = "https://api.mistral.ai/v1/chat/completions"
         self.prompt_builder = BasePromptBuilder()
 
-    def find_sites(self, excluded_domains, locales, include_global):
+    def find_sites(self, ai_domain_data: AIDomainData):
         """Query Mistral to find genealogy research websites."""
 
-        system_message, user_message = self.prompt_builder.build_prompt(
-            locales, include_global, excluded_domains
-        )
+        system_message, user_message = self.prompt_builder.build_prompt(ai_domain_data)
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",

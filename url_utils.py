@@ -28,17 +28,3 @@ class UrlUtils:
     def clean_url(url):
         """Remove unwanted trailing characters from a URL."""
         return (url or "").rstrip(URL_RSTRIP)
-
-    @staticmethod
-    def format_link(data):
-        """Format structured link data into a 7-element tuple for use in the model."""
-
-        return (
-            data.nav_type,
-            data.source_type,
-            (data.title or "").strip(),
-            data.is_enabled,
-            UrlUtils.clean_url(data.url),
-            (data.comment or "").strip(),
-            data.is_custom,
-        )

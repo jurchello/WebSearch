@@ -64,6 +64,7 @@ class EntityDataBuilder:
 
     def get_person_data(self, person):
         """Extracts structured personal and date-related data from a Person object."""
+        # pylint: disable=too-many-locals
         try:
             name = person.get_primary_name().get_first_name().strip()
             middle_name_handling = self.config_ini_manager.get_enum(
@@ -90,7 +91,6 @@ class EntityDataBuilder:
         except Exception:  # pylint: disable=broad-exception-caught
             print(traceback.format_exc(), file=sys.stderr)
             given, middle, surname = None, None, None
-
         (
             birth_year,
             birth_year_from,
@@ -147,6 +147,7 @@ class EntityDataBuilder:
 
     def get_family_data(self, family):
         """Extracts structured data related to a family, including parents and events."""
+        # pylint: disable=too-many-locals
         father = (
             self.db.get_person_from_handle(family.get_father_handle())
             if family.get_father_handle()

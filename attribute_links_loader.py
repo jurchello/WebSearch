@@ -22,13 +22,12 @@
 
 """Extracts web links from attributes of Gramps objects for the WebSearch Gramplet."""
 
-from types import SimpleNamespace
-
 from gramps.gen.lib import AttributeType
 from gramps.gen.lib.srcattrtype import SrcAttributeType
 
 from url_utils import UrlUtils
 from constants import SourceTypes
+from models import WebsiteEntry
 
 
 # pylint: disable=too-few-public-methods
@@ -64,16 +63,18 @@ class AttributeLinksLoader:
 
             url = UrlUtils.extract_url(attr_value, self.url_regex)
             if url:
-                link_data = SimpleNamespace(
-                    nav_type=nav_type,
-                    source_type=SourceTypes.ATTRIBUTE.value,
-                    title=attr_name,
-                    url=url,
-                    comment=None,
-                    is_enabled=True,
-                    is_custom=False,
+                links.append(
+                    WebsiteEntry(
+                        nav_type=nav_type,
+                        country_code=None,
+                        source_type=SourceTypes.ATTRIBUTE.value,
+                        title=(attr_name or "").strip(),
+                        is_enabled=True,
+                        url_pattern=UrlUtils.clean_url(url),
+                        comment=None,
+                        is_custom_file=False,
+                    )
                 )
-                links.append(UrlUtils.format_link(link_data))
 
         return links
 

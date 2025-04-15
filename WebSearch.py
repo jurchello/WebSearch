@@ -116,11 +116,11 @@ from url_formatter import UrlFormatter
 from website_loader import WebsiteLoader
 from gramplet_version_extractor import GrampletVersionExtractor
 from translation_helper import _
-from archive_reference_parser import ArchiveReferenceParser
+from models import LinkContext, AIDomainData
+from printing import print_model_as_row_tables
 
 MODEL_SCHEMA = [
     ("icon_name", str),
-    ("locale_text", str),
     ("title", str),
     ("final_url", str),
     ("comment", str),
@@ -138,12 +138,14 @@ MODEL_SCHEMA = [
     ("keys_color", str),
     ("user_data_icon", GdkPixbuf.Pixbuf),
     ("user_data_icon_visible", bool),
-    ("locale_icon", GdkPixbuf.Pixbuf),
-    ("locale_icon_visible", bool),
-    ("locale_text_visible", bool),
     ("display_keys_count", bool),
-    ("source_type_sort", str),
+    ("file_identifier_text", str),
+    ("file_identifier_text_visible", bool),
+    ("file_identifier_icon", GdkPixbuf.Pixbuf),
+    ("file_identifier_icon_visible", bool),
+    ("file_identifier_sort", str),
     ("source_type", str),
+    ("country_code", str),
 ]
 
 ModelColumns = IntEnum(
@@ -221,7 +223,9 @@ class WebSearch(Gramplet):
                 hide_all=self.builder.get_object("hide_all"),
             ),
             text_renderers=SimpleNamespace(
-                locale=self.builder.get_object("locale_text_renderer"),
+                file_identifier=self.builder.get_object(
+                    "file_identifier_text_renderer"
+                ),
                 keys_replaced=self.builder.get_object("keys_replaced_renderer"),
                 slash=self.builder.get_object("slash_renderer"),
                 keys_total=self.builder.get_object("keys_total_renderer"),
@@ -234,11 +238,13 @@ class WebSearch(Gramplet):
                 visited=self.builder.get_object("visited_icon_renderer"),
                 saved=self.builder.get_object("saved_icon_renderer"),
                 user_data=self.builder.get_object("user_data_icon_renderer"),
-                locale=self.builder.get_object("locale_icon_renderer"),
+                file_identifier=self.builder.get_object(
+                    "file_identifier_icon_renderer"
+                ),
             ),
             columns=SimpleNamespace(
                 icons=self.builder.get_object("icons_column"),
-                locale=self.builder.get_object("locale_column"),
+                file_identifier=self.builder.get_object("file_identifier_column"),
                 keys=self.builder.get_object("keys_column"),
                 title=self.builder.get_object("title_column"),
                 url=self.builder.get_object("url_column"),
@@ -277,9 +283,7 @@ class WebSearch(Gramplet):
 
     def refresh_ai_section(self):
         """Updates AI provider settings and fetches AI-recommended sites if necessary."""
-        locales, domains, include_global = self.website_loader.get_domains_data(
-            self.config_ini_manager
-        )
+        ai_domin_data = self.website_loader.get_domains_data(self.config_ini_manager)
 
         self.toggle_badges_visibility()
 
@@ -304,7 +308,7 @@ class WebSearch(Gramplet):
 
         threading.Thread(
             target=self.fetch_sites_in_background,
-            args=(domains, locales, include_global),
+            args=(ai_domin_data),
             daemon=True,
         ).start()
 
@@ -314,14 +318,11 @@ class WebSearch(Gramplet):
             if not os.path.exists(directory):
                 os.makedirs(directory, exist_ok=True)
 
-    def fetch_sites_in_background(self, csv_domains, locales, include_global):
+    def fetch_sites_in_background(self, ai_domain_data: AIDomainData):
         """Fetches AI-recommended genealogy sites in a background thread."""
-        skipped_domains = self.website_loader.load_skipped_domains()
-        all_excluded_domains = csv_domains.union(skipped_domains)
+        ai_domain_data.skipped_domains = self.website_loader.load_skipped_domains()
         try:
-            results = self.finder.find_sites(
-                all_excluded_domains, locales, include_global
-            )
+            results = self.finder.find_sites(ai_domain_data)
             GObject.idle_add(self.signal_emitter.emit, "sites-fetched", results)
         except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"❌ Error fetching sites: {e}", file=sys.stderr)
@@ -431,7 +432,7 @@ class WebSearch(Gramplet):
         """Populates the list model with formatted website links relevant to the current entity."""
         self.model.clear()
 
-        context = SimpleNamespace(
+        context = LinkContext(
             core_keys=core_keys,
             attribute_keys=attribute_keys,
             nav_type=nav_type,
@@ -466,13 +467,23 @@ class WebSearch(Gramplet):
 
         return websites
 
-    def insert_websites_into_model(self, websites, ctx):
+    def insert_websites_into_model(self, websites, link_context: LinkContext):
         """Formats each website entry and appends it to the Gtk model."""
-        common_data = (ctx.core_keys, ctx.attribute_keys, ctx.nav_type, ctx.obj)
         for website_data in websites:
-            model_row = self.model_row_generator.generate(common_data, website_data)
+            model_row = self.model_row_generator.generate(link_context, website_data)
             if model_row:
                 self.model.append([model_row[name] for name, _ in MODEL_SCHEMA])
+        print_model_as_row_tables(
+            self.model,
+            MODEL_SCHEMA,
+            80,
+            [
+                "file_identifier_text",
+                "file_identifier_sort",
+                "source_type",
+                "country_code",
+            ],
+        )
 
     def on_link_clicked(self, unused_tree_view, path, unused_column):
         """Handles the event when a URL is clicked in the tree view and opens the link."""
@@ -731,7 +742,9 @@ class WebSearch(Gramplet):
             column.set_reorderable(True)
 
         # Columns sorting
-        self.add_sorting(self.ui.columns.locale, ModelColumns.SOURCE_TYPE_SORT.value)
+        self.add_sorting(
+            self.ui.columns.file_identifier, ModelColumns.FILE_IDENTIFIER_SORT.value
+        )
         self.add_sorting(self.ui.columns.title, ModelColumns.TITLE.value)
         self.add_sorting(self.ui.columns.url, ModelColumns.FORMATTED_URL.value)
         self.add_sorting(self.ui.columns.comment, ModelColumns.COMMENT.value)
@@ -797,21 +810,25 @@ class WebSearch(Gramplet):
             ModelColumns.DISPLAY_KEYS_COUNT.value,
         )
         self.ui.text_renderers.keys_total.set_property("foreground", "green")
-        self.ui.columns.locale.add_attribute(
-            self.ui.text_renderers.locale, "text", ModelColumns.LOCALE_TEXT.value
+        self.ui.columns.file_identifier.add_attribute(
+            self.ui.text_renderers.file_identifier,
+            "text",
+            ModelColumns.FILE_IDENTIFIER_TEXT.value,
         )
-        self.ui.columns.locale.add_attribute(
-            self.ui.text_renderers.locale,
+        self.ui.columns.file_identifier.add_attribute(
+            self.ui.text_renderers.file_identifier,
             "visible",
-            ModelColumns.LOCALE_TEXT_VISIBLE.value,
+            ModelColumns.FILE_IDENTIFIER_TEXT_VISIBLE.value,
         )
-        self.ui.columns.locale.add_attribute(
-            self.ui.icon_renderers.locale, "pixbuf", ModelColumns.LOCALE_ICON.value
+        self.ui.columns.file_identifier.add_attribute(
+            self.ui.icon_renderers.file_identifier,
+            "pixbuf",
+            ModelColumns.FILE_IDENTIFIER_ICON.value,
         )
-        self.ui.columns.locale.add_attribute(
-            self.ui.icon_renderers.locale,
+        self.ui.columns.file_identifier.add_attribute(
+            self.ui.icon_renderers.file_identifier,
             "visible",
-            ModelColumns.LOCALE_ICON_VISIBLE.value,
+            ModelColumns.FILE_IDENTIFIER_ICON_VISIBLE.value,
         )
         self.ui.columns.title.add_attribute(
             self.ui.text_renderers.title, "text", ModelColumns.TITLE.value
@@ -862,7 +879,9 @@ class WebSearch(Gramplet):
             "websearch.display_columns", DEFAULT_DISPLAY_COLUMNS
         )
         self.ui.columns.icons.set_visible("icons" in self._display_columns)
-        self.ui.columns.locale.set_visible("locale" in self._display_columns)
+        self.ui.columns.file_identifier.set_visible(
+            "file_identifier" in self._display_columns
+        )
         self.ui.columns.keys.set_visible("keys" in self._display_columns)
         self.ui.columns.title.set_visible("title" in self._display_columns)
         self.ui.columns.url.set_visible("url" in self._display_columns)
@@ -870,7 +889,7 @@ class WebSearch(Gramplet):
 
     def translate(self):
         """Sets translated text for UI elements and context menu."""
-        self.ui.columns.locale.set_title("")
+        self.ui.columns.file_identifier.set_title("")
         self.ui.columns.keys.set_title(_("Keys"))
         self.ui.columns.title.set_title(_("Title"))
         self.ui.columns.url.set_title(_("Website URL"))
@@ -1253,33 +1272,39 @@ class WebSearch(Gramplet):
         path_info = widget.get_path_at_pos(bin_x, bin_y)
 
         if path_info:
-            path, unused_column, unused_cell_x, unused_cell_y = path_info
+            path, *_ = path_info
             tree_iter = self.model.get_iter(path)
-            title = self.model.get_value(tree_iter, ModelColumns.TITLE.value)
-            comment = self.model.get_value(tree_iter, ModelColumns.COMMENT.value) or ""
-
-            keys_json = self.model.get_value(tree_iter, ModelColumns.KEYS_JSON.value)
-            keys = json.loads(keys_json)
-            replaced_keys = [
-                f"{key}={value}"
-                for var in keys["replaced_keys"]
-                for key, value in var.items()
-            ]
-            empty_keys = list(keys["empty_keys"])
-
-            tooltip_text = _("Title: {title}\n").format(title=title)
-            if replaced_keys:
-                tooltip_text += _("Replaced: {keys}\n").format(
-                    keys=", ".join(replaced_keys)
-                )
-            if empty_keys:
-                tooltip_text += _("Empty: {keys}\n").format(keys=", ".join(empty_keys))
-            if comment:
-                tooltip_text += _("Comment: {comment}\n").format(comment=comment)
-            tooltip_text = tooltip_text.rstrip()
+            tooltip_text = self._build_tooltip_text(tree_iter)
             tooltip.set_text(tooltip_text)
             return True
         return False
+
+    def _build_tooltip_text(self, tree_iter):
+        """Builds the tooltip text from a model row."""
+        title = self.model.get_value(tree_iter, ModelColumns.TITLE.value)
+        comment = self.model.get_value(tree_iter, ModelColumns.COMMENT.value) or ""
+        keys_json = self.model.get_value(tree_iter, ModelColumns.KEYS_JSON.value)
+        keys = json.loads(keys_json)
+
+        replaced_keys = [
+            f"{key}={value}"
+            for var in keys["replaced_keys"]
+            for key, value in var.items()
+        ]
+        empty_keys = list(keys["empty_keys"])
+
+        tooltip_lines = [_("Title: {title}").format(title=title)]
+
+        if replaced_keys:
+            tooltip_lines.append(
+                _("Replaced: {keys}").format(keys=", ".join(replaced_keys))
+            )
+        if empty_keys:
+            tooltip_lines.append(_("Empty: {keys}").format(keys=", ".join(empty_keys)))
+        if comment:
+            tooltip_lines.append(_("Comment: {comment}").format(comment=comment))
+
+        return "\n".join(tooltip_lines)
 
     def build_options(self):
         """Builds the list of configurable options for the Gramplet."""

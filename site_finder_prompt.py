@@ -22,14 +22,33 @@
 """
 This module provides a base class for generating AI prompt messages related to
 genealogy website suggestions.
+
+It supports both regular (regional/global) and community-contributed genealogy websites.
+The AI is instructed to return exactly 10 relevant websites:
+- 5 based on `regular_domains` and `regular_country_codes`
+- 5 based on `community_urls` and `community_country_codes`
+
+All results must be returned as a JSON array with strictly defined format.
 """
+
+from models import AIDomainData
 
 
 class BasePromptBuilder:
-    """Base class for building AI prompt messages for genealogy website suggestions."""
+    """
+    Base class for building AI prompt messages for genealogy website suggestions.
+
+    It uses the provided domain and country data to instruct an AI model to generate
+    additional relevant website links, divided equally between regular and community-based sources.
+    """
 
     def get_system_message(self) -> str:
-        """Returns the system message to guide the AI's behavior."""
+        """
+        Returns the system message to guide the AI's behavior.
+
+        This message sets the strict format expectations: a JSON array of objects
+        with only 'domain' and 'url' keys and no extra explanations.
+        """
         return (
             "You assist in finding resources for genealogical research. "
             "Your response must be strictly formatted as a JSON array of objects "
@@ -37,34 +56,65 @@ class BasePromptBuilder:
             "explanations, or comments."
         )
 
-    def get_user_message(self, locales, include_global, excluded_domains) -> str:
-        """Generate the user message for the AI model."""
-        if not locales:
-            locale_text = "only globally used"
-            locales_str = "none"
-        else:
-            locale_text = (
-                "both regional and globally used" if include_global else "regional"
-            )
-            locales_str = ", ".join(locales)
+    def get_user_message(self, ai_domain_data: AIDomainData) -> str:
+        """
+        Generates the user-facing prompt that instructs the AI to return genealogy websites.
 
+        The prompt requests:
+        - 5 websites based on regular domains and country codes
+        - 5 websites based on community URLs and country codes
+        - All results must exclude `skipped_domains` if specified
+
+        Args:
+            ai_domain_data (AIDomainData): Structured input data including domains, URLs,
+                                           country codes, and flags.
+
+        Returns:
+            str: The user prompt string for the AI model.
+        """
+
+        # Regular section
+        if not ai_domain_data.regular_country_codes:
+            regular_codes_text = "only globally used"
+            regular_codes_str = "none"
+        else:
+            regular_codes_text = (
+                "both regional and globally used"
+                if ai_domain_data.include_global
+                else "regional"
+            )
+            regular_codes_str = ", ".join(sorted(ai_domain_data.regular_country_codes))
+
+        # Community section
+        if ai_domain_data.community_country_codes:
+            community_codes_str = ", ".join(
+                sorted(ai_domain_data.community_country_codes)
+            )
+        else:
+            community_codes_str = "none"
+
+        # Skipped domains
         excluded_domains_str = (
-            ", ".join(excluded_domains) if excluded_domains else "none"
+            ", ".join(sorted(ai_domain_data.skipped_domains))
+            if ai_domain_data.skipped_domains
+            else "none"
         )
 
         return (
-            f"I am looking for additional genealogical research websites for {locale_text} "
-            f"resources. Relevant locales: {locales_str}. "
-            f"Exclude the following domains: {excluded_domains_str}. "
-            "Provide exactly 10 relevant websites formatted as a JSON array of objects "
-            "with keys 'domain' and 'url'. "
-            "Example response: [{'domain': 'example.com', 'url': 'https://example.com'}]. "
-            "If no relevant websites are found, return an empty array [] without any explanations."
+            f"I am looking for additional genealogical research websites.\n"
+            f"Please return exactly 10 websites as a JSON array:\n"
+            f"- 5 relevant to {regular_codes_text} resources (locales: {regular_codes_str})\n"
+            f"- 5 based on community-curated sources (locales: {community_codes_str})\n"
+            f"Exclude the following domains: {excluded_domains_str}.\n"
+            "Each item must include only two keys: 'domain' and 'url'.\n"
+            'Example: [{"domain": "example.com", "url": "https://example.com"}]\n'
+            "If no suitable websites are found, return an empty array: [].\n"
+            "Do not include any explanations or extra text in the response."
         )
 
-    def build_prompt(self, locales, include_global, excluded_domains):
+    def build_prompt(self, ai_domain_data: AIDomainData):
         """Build the full prompt tuple for the AI request."""
         return (
             self.get_system_message(),
-            self.get_user_message(locales, include_global, excluded_domains),
+            self.get_user_message(ai_domain_data),
         )
