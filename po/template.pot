@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-15 16:32+0300\n"
+"POT-Creation-Date: 2025-04-15 16:42+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <jurchello@gmail.com>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -257,10 +257,6 @@ msgid ""
 "related to this entity."
 msgstr ""
 
-#: WebSearch.py:1056
-msgid "Add Web Link Note"
-msgstr ""
-
 #: WebSearch.py:1120
 #, python-format
 msgid "Note #%(id)s has been successfully added"
@@ -276,10 +272,6 @@ msgstr ""
 
 #: WebSearch.py:1205
 msgid "WebSearch Link"
-msgstr ""
-
-#: WebSearch.py:1212
-msgid "Add Web Link Attribute"
 msgstr ""
 
 #: WebSearch.py:1246

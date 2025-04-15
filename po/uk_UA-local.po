@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gramps 52\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-15 16:32+0300\n"
+"POT-Creation-Date: 2025-04-15 16:41+0300\n"
 "PO-Revision-Date: 2025-03-18 10:24+0200\n"
 "Last-Translator: yurii <jurchello@gmail.com>\n"
 "Language-Team: Ukrainian <trans-uk@lists.fedoraproject.org>\n"
@@ -281,10 +281,6 @@ msgstr ""
 "Ви можете скористатися цим посиланням, щоб знову відвідати джерело та "
 "перевірити інформацію, пов’язану з цією сутністю."
 
-#: WebSearch.py:1056
-msgid "Add Web Link Note"
-msgstr "Додати нотатку з веб-посиланням"
-
 #: WebSearch.py:1120
 #, python-format
 msgid "Note #%(id)s has been successfully added"
@@ -301,11 +297,6 @@ msgstr "URL скопійовано до буфера обміну"
 #: WebSearch.py:1205
 msgid "WebSearch Link"
 msgstr "Посилання WebSearch"
-
-#: WebSearch.py:1212
-#, fuzzy
-msgid "Add Web Link Attribute"
-msgstr "Додати нотатку з веб-посиланням"
 
 #: WebSearch.py:1246
 #, fuzzy
@@ -331,6 +322,13 @@ msgstr "Порожні: {keys}\n"
 #, fuzzy, python-brace-format
 msgid "Comment: {comment}"
 msgstr "Коментар: {comment}\n"
+
+#~ msgid "Add Web Link Note"
+#~ msgstr "Додати нотатку з веб-посиланням"
+
+#, fuzzy
+#~ msgid "Add Web Link Attribute"
+#~ msgstr "Додати нотатку з веб-посиланням"
 
 #~ msgid "Icon - Direct URLs from attributes (link chain)"
 #~ msgstr "Іконка - Прямі URL з атрибутів (ланцюг посилань)"
