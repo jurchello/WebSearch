@@ -77,6 +77,9 @@ class SupportedNavTypes(Enum):
     REPOSITORIES = "Repositories"
 
 
+SUPPORTED_NAV_TYPE_VALUES = {nt.value for nt in SupportedNavTypes}
+
+
 class PersonDataKeys(Enum):
     """Defines all available key keys for 'Person' navigation type."""
 
@@ -220,17 +223,46 @@ class SourceTypes(Enum):
     ATTRIBUTE = "ATTRIBUTE"
     INTERNET = "INTERNET"
     NOTE = "NOTE"
+    COMMUNITY = "COMMUNITY"
+    ARCHIVE = "ARCHIVE"
+    FORUM = "FORUM"
+
+
+SUPPORTED_SOURCE_TYPE_VALUES = {st.value for st in SourceTypes}
 
 
 SOURCE_TYPE_SORT_ORDER = {
-    SourceTypes.COMMON.value: "0",
-    SourceTypes.UID.value: "1",
-    SourceTypes.STATIC.value: "2",
-    SourceTypes.CROSS.value: "3",
-    SourceTypes.ATTRIBUTE.value: "4",
-    SourceTypes.INTERNET.value: "5",
-    SourceTypes.NOTE.value: "6",
+    SourceTypes.COMMON.value: "A",
+    SourceTypes.UID.value: "B",
+    SourceTypes.STATIC.value: "C",
+    SourceTypes.CROSS.value: "D",
+    SourceTypes.ATTRIBUTE.value: "E",
+    SourceTypes.INTERNET.value: "F",
+    SourceTypes.NOTE.value: "G",
+    SourceTypes.COMMUNITY.value: "H",
+    SourceTypes.ARCHIVE.value: "I",
+    SourceTypes.FORUM.value: "J",
 }
+
+SOURCE_TYPES_HIDE_KEYS_COUNT = [
+    SourceTypes.STATIC.value,
+    SourceTypes.ATTRIBUTE.value,
+    SourceTypes.INTERNET.value,
+    SourceTypes.NOTE.value,
+    SourceTypes.COMMUNITY.value,
+    SourceTypes.ARCHIVE.value,
+    SourceTypes.FORUM.value,
+]
+
+SOURCE_TYPES_WITH_FIXED_LINKS = [
+    SourceTypes.STATIC.value,
+    SourceTypes.ATTRIBUTE.value,
+    SourceTypes.INTERNET.value,
+    SourceTypes.NOTE.value,
+    SourceTypes.COMMUNITY.value,
+    SourceTypes.ARCHIVE.value,
+    SourceTypes.FORUM.value,
+]
 
 VIEW_IDS_MAPPING = {
     "dashboardview": None,
@@ -266,11 +298,18 @@ COMMON_CSV_FILE_NAME = "common-links.csv"
 UID_CSV_FILE_NAME = "uid-links.csv"
 STATIC_CSV_FILE_NAME = "static-links.csv"
 CROSS_CSV_FILE_NAME = "cross-links.csv"
-ALL_COLUMNS = ["icons", "locale", "keys", "title", "url", "comment"]
-DEFAULT_DISPLAY_COLUMNS = ["icons", "locale", "keys", "title", "url", "comment"]
+ALL_COLUMNS = ["icons", "file_identifier", "keys", "title", "url", "comment"]
+DEFAULT_DISPLAY_COLUMNS = [
+    "icons",
+    "file_identifier",
+    "keys",
+    "title",
+    "url",
+    "comment",
+]
 ALL_COLUMNS_LOCALIZED = {
     "icons": _("Column - Icons"),
-    "locale": _("Column - Source Types (flags)"),
+    "file_identifier": _("Column - Source Types (flags)"),
     "keys": _("Column - Keys"),
     "title": _("Column - Title"),
     "url": _("Column - Website Url"),
@@ -332,7 +371,9 @@ ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(CONFIGS_DIR, "attribute_mapping.json"
 VISITED_HASH_FILE_PATH = os.path.join(DATA_DIR, "visited_links.txt")
 SAVED_HASH_FILE_PATH = os.path.join(DATA_DIR, "saved_links.txt")
 HIDDEN_HASH_FILE_PATH = os.path.join(DATA_DIR, "hidden_links.txt")
-SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(DATA_DIR, "skipped_domain_suggestions.txt")
+SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(
+    DATA_DIR, "skipped_domain_suggestions.txt"
+)
 ICON_VISITED_PATH = os.path.join(ICONS_DIR, "emblem-default.png")
 ICON_SAVED_PATH = os.path.join(ICONS_DIR, "media-floppy.png")
 ICON_UID_PATH = os.path.join(ICONS_DIR, "uid.png")
@@ -345,8 +386,12 @@ ICON_INTERNET_PATH = os.path.join(ICONS_DIR, "internet.png")
 ICON_NOTE_PATH = os.path.join(ICONS_DIR, "note.png")
 
 STYLE_CSS_PATH = os.path.join(ASSETS_DIR, "style.css")
-DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(CONFIGS_DIR, "attribute_mapping.json")
-USER_DATA_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(USER_DATA_JSON_DIR, "attribute_mapping.json")
+DEFAULT_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(
+    CONFIGS_DIR, "attribute_mapping.json"
+)
+USER_DATA_ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(
+    USER_DATA_JSON_DIR, "attribute_mapping.json"
+)
 
 
 DEFAULT_CATEGORY_ICON = "gramps-gramplet"
@@ -361,7 +406,7 @@ DEFAULT_SHOW_INTERNET_LINKS = True
 DEFAULT_SHOW_NOTE_LINKS = True
 DEFAULT_AI_PROVIDER = AIProviders.DISABLED.value
 
-DEFAULT_COLUMNS_ORDER = ["icons", "locale", "keys", "title", "url", "comment"]
+DEFAULT_COLUMNS_ORDER = ["icons", "file_identifier", "keys", "title", "url", "comment"]
 
 CATEGORY_ICON = {
     "Dashboard": "gramps-gramplet",

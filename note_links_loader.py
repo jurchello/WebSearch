@@ -26,12 +26,11 @@ Parses and returns URLs from note objects in the Gramps database.
 Supports both manually entered URLs and Gramps-internal note links.
 """
 
-from types import SimpleNamespace
-
 from gramps.gen.lib import Note
 
 from url_utils import UrlUtils
 from constants import SourceTypes
+from models import WebsiteEntry
 
 
 class NoteLinksLoader:
@@ -62,22 +61,23 @@ class NoteLinksLoader:
 
         for url in parsed_links:
             if url not in existing_links:
-                link_data = SimpleNamespace(
+                link_data = WebsiteEntry(
                     nav_type=nav_type,
-                    source_type="NOTE",
+                    country_code=None,
+                    source_type=SourceTypes.NOTE.value,
                     title="Note Link (parsed)",
-                    url=url,
-                    comment="",
                     is_enabled=True,
-                    is_custom=False,
+                    url_pattern=UrlUtils.clean_url(url),
+                    comment=None,
+                    is_custom_file=False,
                 )
-                links.append(UrlUtils.format_link(link_data))
+                links.append(link_data)
                 existing_links.add(url)
 
         for link in note_obj.get_links():
             link_data = self.create_existing_link_data(nav_type, link)
             if link_data:
-                links.append(UrlUtils.format_link(link_data))
+                links.append(link_data)
 
         return links
 
@@ -124,12 +124,13 @@ class NoteLinksLoader:
             url = handle
             title = "Note Link (external)"
 
-        return SimpleNamespace(
+        return WebsiteEntry(
             nav_type=nav_type,
+            country_code=None,
             source_type=SourceTypes.NOTE.value,
             title=title,
-            url=url,
-            comment="",
             is_enabled=True,
-            is_custom=False,
+            url_pattern=UrlUtils.clean_url(url),
+            comment=None,
+            is_custom_file=False,
         )

@@ -64,6 +64,7 @@ class EntityDataBuilder:
 
     def get_person_data(self, person):
         """Extracts structured personal and date-related data from a Person object."""
+        # pylint: disable=too-many-locals
         try:
             name = person.get_primary_name().get_first_name().strip()
             middle_name_handling = self.config_ini_manager.get_enum(
@@ -73,9 +74,13 @@ class EntityDataBuilder:
             )
 
             if middle_name_handling == MiddleNameHandling.SEPARATE.value:
-                given, middle = (name.split(" ", 1) + [None])[:2] if name else (None, None)
+                given, middle = (
+                    (name.split(" ", 1) + [None])[:2] if name else (None, None)
+                )
             elif middle_name_handling == MiddleNameHandling.REMOVE.value:
-                given, middle = (name.split(" ", 1) + [None])[:2] if name else (None, None)
+                given, middle = (
+                    (name.split(" ", 1) + [None])[:2] if name else (None, None)
+                )
                 middle = None
             elif middle_name_handling == MiddleNameHandling.LEAVE_ALONE.value:
                 given, middle = name, None
@@ -86,7 +91,6 @@ class EntityDataBuilder:
         except Exception:  # pylint: disable=broad-exception-caught
             print(traceback.format_exc(), file=sys.stderr)
             given, middle, surname = None, None, None
-
         (
             birth_year,
             birth_year_from,
@@ -116,13 +120,17 @@ class EntityDataBuilder:
             PersonDataKeys.DEATH_YEAR_TO.value: death_year_to or "",
             PersonDataKeys.DEATH_YEAR_BEFORE.value: death_year_before or "",
             PersonDataKeys.DEATH_YEAR_AFTER.value: death_year_after or "",
-            PersonDataKeys.BIRTH_PLACE.value: PersonDataExtractor.get_birth_place(self.db, person)
+            PersonDataKeys.BIRTH_PLACE.value: PersonDataExtractor.get_birth_place(
+                self.db, person
+            )
             or "",
             PersonDataKeys.BIRTH_ROOT_PLACE.value: PersonDataExtractor.get_birth_root_place(
                 self.db, person
             )
             or "",
-            PersonDataKeys.DEATH_PLACE.value: PersonDataExtractor.get_death_place(self.db, person)
+            PersonDataKeys.DEATH_PLACE.value: PersonDataExtractor.get_death_place(
+                self.db, person
+            )
             or "",
             PersonDataKeys.DEATH_ROOT_PLACE.value: PersonDataExtractor.get_death_root_place(
                 self.db, person
@@ -131,12 +139,15 @@ class EntityDataBuilder:
             PersonDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
         }
 
-        attribute_keys = self.attribute_loader.get_attributes_for_nav_type("Person", person)
+        attribute_keys = self.attribute_loader.get_attributes_for_nav_type(
+            "Person", person
+        )
 
         return person_data, attribute_keys
 
     def get_family_data(self, family):
         """Extracts structured data related to a family, including parents and events."""
+        # pylint: disable=too-many-locals
         father = (
             self.db.get_person_from_handle(family.get_father_handle())
             if family.get_father_handle()
@@ -148,8 +159,12 @@ class EntityDataBuilder:
             else None
         )
 
-        father_data, unused_father_attribute_keys = self.get_person_data(father) if father else {}
-        mother_data, unused_mother_attribute_keys = self.get_person_data(mother) if mother else {}
+        father_data, unused_father_attribute_keys = (
+            self.get_person_data(father) if father else {}
+        )
+        mother_data, unused_mother_attribute_keys = (
+            self.get_person_data(mother) if mother else {}
+        )
 
         marriage_year = marriage_year_from = marriage_year_to = marriage_year_before = (
             marriage_year_after
@@ -166,7 +181,9 @@ class EntityDataBuilder:
             event = self.db.get_event_from_handle(event_ref.get_reference_handle())
             event_type = event.get_type()
             event_place = EventDataExtractor.get_event_place(self.db, event)
-            event_root_place = PlaceDataExtractor.get_root_place_name(self.db, event_place)
+            event_root_place = PlaceDataExtractor.get_root_place_name(
+                self.db, event_place
+            )
             if event_type == EventType.MARRIAGE:
                 (
                     marriage_year,
@@ -189,9 +206,15 @@ class EntityDataBuilder:
                 divorce_root_place = event_root_place
 
         family_data = {
-            FamilyDataKeys.FATHER_GIVEN.value: father_data.get(PersonDataKeys.GIVEN.value, ""),
-            FamilyDataKeys.FATHER_MIDDLE.value: father_data.get(PersonDataKeys.MIDDLE.value, ""),
-            FamilyDataKeys.FATHER_SURNAME.value: father_data.get(PersonDataKeys.SURNAME.value, ""),
+            FamilyDataKeys.FATHER_GIVEN.value: father_data.get(
+                PersonDataKeys.GIVEN.value, ""
+            ),
+            FamilyDataKeys.FATHER_MIDDLE.value: father_data.get(
+                PersonDataKeys.MIDDLE.value, ""
+            ),
+            FamilyDataKeys.FATHER_SURNAME.value: father_data.get(
+                PersonDataKeys.SURNAME.value, ""
+            ),
             FamilyDataKeys.FATHER_BIRTH_YEAR.value: father_data.get(
                 PersonDataKeys.BIRTH_YEAR.value, ""
             ),
@@ -234,9 +257,15 @@ class EntityDataBuilder:
             FamilyDataKeys.FATHER_DEATH_ROOT_PLACE.value: father_data.get(
                 PersonDataKeys.DEATH_ROOT_PLACE.value, ""
             ),
-            FamilyDataKeys.MOTHER_GIVEN.value: mother_data.get(PersonDataKeys.GIVEN.value, ""),
-            FamilyDataKeys.MOTHER_MIDDLE.value: mother_data.get(PersonDataKeys.MIDDLE.value, ""),
-            FamilyDataKeys.MOTHER_SURNAME.value: mother_data.get(PersonDataKeys.SURNAME.value, ""),
+            FamilyDataKeys.MOTHER_GIVEN.value: mother_data.get(
+                PersonDataKeys.GIVEN.value, ""
+            ),
+            FamilyDataKeys.MOTHER_MIDDLE.value: mother_data.get(
+                PersonDataKeys.MIDDLE.value, ""
+            ),
+            FamilyDataKeys.MOTHER_SURNAME.value: mother_data.get(
+                PersonDataKeys.SURNAME.value, ""
+            ),
             FamilyDataKeys.MOTHER_BIRTH_YEAR.value: mother_data.get(
                 PersonDataKeys.BIRTH_YEAR.value, ""
             ),
@@ -348,7 +377,8 @@ class EntityDataBuilder:
             SourceDataKeys.TITLE.value: title or "",
             SourceDataKeys.FULL_ABBREVIATION.value: full_abbreviation or "",
             SourceDataKeys.ARCHIVE_CODE.value: parsed_ref.get("archive_code") or "",
-            SourceDataKeys.COLLECTION_NUMBER.value: parsed_ref.get("collection_number") or "",
+            SourceDataKeys.COLLECTION_NUMBER.value: parsed_ref.get("collection_number")
+            or "",
             SourceDataKeys.SERIES_NUMBER.value: parsed_ref.get("series_number") or "",
             SourceDataKeys.FILE_NUMBER.value: parsed_ref.get("file_number") or "",
             SourceDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",

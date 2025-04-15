@@ -160,6 +160,28 @@ A user-defined **Key** can be inserted into a URL template of a csv file as foll
 https://www.familysearch.org/en/tree/person/details/%(FamilySearch.UID)s
 ```
 
+### 2.3 Navigation Type Wildcards and Multiple Types
+
+WebSearch now supports advanced **navigation type syntax** in CSV files:
+
+- **Multiple types**: Use a comma-separated list of navigation types in the `Navigation type` column:
+
+
+```"People,Places"```
+
+This makes it easier to define links that are relevant across different Gramps entities, without duplicating entries.
+
+#### Example
+
+```
+Navigation type,Title,Is enabled,URL,Comment
+"People,Places",Geo Search,1,https://example.com/search?q=%(place)s,Available for people and places
+*,General Tool,1,https://example.com/tool?q=%(surname)s,Works for all types
+```
+
+ℹ️ The * wildcard expands automatically to all supported types listed in SupportedNavTypes.
+
+
 ## 3. Configuration
 
 The WebSearch Gramplet uses two configuration files, each serving a specific purpose:

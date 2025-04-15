@@ -128,14 +128,18 @@ class SettingsUIManager:
                 enum_class=URLCompactnessLevel,
                 default=DEFAULT_URL_COMPACTNESS_LEVEL,
                 descriptions={
-                    URLCompactnessLevel.SHORTEST.value: _("Shortest - No Prefix, No Keys"),
+                    URLCompactnessLevel.SHORTEST.value: _(
+                        "Shortest - No Prefix, No Keys"
+                    ),
                     URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value: _(
                         "Compact - No Prefix, Keys Without Attributes"
                     ),
                     URLCompactnessLevel.COMPACT_WITH_ATTRIBUTES.value: _(
                         "Compact - No Prefix, Keys With Attributes"
                     ),
-                    URLCompactnessLevel.LONG.value: _("Long - Without Prefix on the Left"),
+                    URLCompactnessLevel.LONG.value: _(
+                        "Long - Without Prefix on the Left"
+                    ),
                 },
             ),
         )
@@ -270,7 +274,9 @@ class SettingsUIManager:
 
         opt = EnumeratedListOption(label, default)
         for item in enum_class:
-            display_text = descriptions.get(item.value, item.value) if descriptions else item.value
+            display_text = (
+                descriptions.get(item.value, item.value) if descriptions else item.value
+            )
             opt.add_item(item.value, _(display_text))
         opt.set_value(self.config_ini_manager.get_enum(config_key, enum_class, default))
         self.opts.append(opt)

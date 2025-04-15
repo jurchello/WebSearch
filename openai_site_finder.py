@@ -37,6 +37,7 @@ except ImportError:
     )
 
 from site_finder_prompt import BasePromptBuilder
+from models import AIDomainData
 
 
 # pylint: disable=too-few-public-methods
@@ -54,12 +55,10 @@ class OpenaiSiteFinder:
         self.model = model
         self.prompt_builder = BasePromptBuilder()
 
-    def find_sites(self, excluded_domains, locales, include_global):
+    def find_sites(self, ai_domain_data: AIDomainData):
         """Query OpenAI to find genealogy research websites."""
 
-        system_message, user_message = self.prompt_builder.build_prompt(
-            locales, include_global, excluded_domains
-        )
+        system_message, user_message = self.prompt_builder.build_prompt(ai_domain_data)
 
         try:
             client = openai.OpenAI(api_key=self.api_key)

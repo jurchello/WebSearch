@@ -121,10 +121,16 @@ class UrlFormatter:
         if self.__url_compactness_level == URLCompactnessLevel.SHORTEST.value:
             return self.format_shortest(url)
 
-        if self.__url_compactness_level == URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value:
+        if (
+            self.__url_compactness_level
+            == URLCompactnessLevel.COMPACT_NO_ATTRIBUTES.value
+        ):
             return self.format_compact_no_attributes(url, keys)
 
-        if self.__url_compactness_level == URLCompactnessLevel.COMPACT_WITH_ATTRIBUTES.value:
+        if (
+            self.__url_compactness_level
+            == URLCompactnessLevel.COMPACT_WITH_ATTRIBUTES.value
+        ):
             return self.format_compact_with_attributes(url, keys)
 
         if self.__url_compactness_level == URLCompactnessLevel.LONG.value:
@@ -228,7 +234,9 @@ class UrlFormatter:
             formatted_keys = []
             for var in replaced_keys:
                 for key, value in var.items():
-                    formatted_keys.append(f"{key}={value}" if show_attribute else f"{value}")
+                    formatted_keys.append(
+                        f"{key}={value}" if show_attribute else f"{value}"
+                    )
             return (
                 url
                 + DEFAULT_QUERY_PARAMETERS_REPLACEMENT

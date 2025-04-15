@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gramps 52\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-05 20:09+0300\n"
+"POT-Creation-Date: 2025-04-15 16:41+0300\n"
 "PO-Revision-Date: 2025-03-18 10:24+0200\n"
 "Last-Translator: yurii <jurchello@gmail.com>\n"
 "Language-Team: Ukrainian <trans-uk@lists.fedoraproject.org>\n"
@@ -18,101 +18,106 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: settings_ui_manager.py:111
+#: settings_ui_manager.py:110
 msgid "Middle Name Handling"
 msgstr "Обробка по батькові"
 
-#: settings_ui_manager.py:116
+#: settings_ui_manager.py:115
 msgid "Leave alone"
 msgstr "Залишити без змін"
 
-#: settings_ui_manager.py:117
+#: settings_ui_manager.py:116
 msgid "Separate"
 msgstr "Відокремити"
 
-#: settings_ui_manager.py:118
+#: settings_ui_manager.py:117
 msgid "Remove"
 msgstr "Видалити"
 
-#: settings_ui_manager.py:127
+#: settings_ui_manager.py:126
 msgid "URL Compactness Level"
 msgstr "Рівень стиснення URL"
 
-#: settings_ui_manager.py:133
+#: settings_ui_manager.py:132
 msgid "Shortest - No Prefix, No Keys"
 msgstr "Найкоротший – Без префікса, без змінних"
 
-#: settings_ui_manager.py:136
+#: settings_ui_manager.py:135
 msgid "Compact - No Prefix, Keys Without Attributes"
 msgstr "Компактний – Без префікса, змінні без атрибутів"
 
-#: settings_ui_manager.py:139
+#: settings_ui_manager.py:138
 msgid "Compact - No Prefix, Keys With Attributes"
 msgstr "Компактний – Без префікса, змінні з атрибутами"
 
-#: settings_ui_manager.py:142
+#: settings_ui_manager.py:141
 msgid "Long - Without Prefix on the Left"
 msgstr "Довгий – Без префікса зліва"
 
-#: settings_ui_manager.py:149
+#: settings_ui_manager.py:148
 msgid "URL Prefix Replacement"
 msgstr "Замінник префікса URL"
 
-#: settings_ui_manager.py:156
+#: settings_ui_manager.py:155
 msgid "AI Provider"
 msgstr "Провайдер ШІ"
 
-#: settings_ui_manager.py:161
+#: settings_ui_manager.py:160
 msgid "(Disabled)"
 msgstr "(Вимкнено)"
 
-#: settings_ui_manager.py:162
+#: settings_ui_manager.py:161
 #, fuzzy
 msgid "OpenAI"
 msgstr "Використовувати OpenAI"
 
-#: settings_ui_manager.py:163
+#: settings_ui_manager.py:162
 msgid "Mistral AI"
 msgstr "Mistral"
 
-#: settings_ui_manager.py:170
+#: settings_ui_manager.py:169
 #, fuzzy
 msgid "OpenAI API Key"
 msgstr "Ключ API OpenAI"
 
-#: settings_ui_manager.py:175
+#: settings_ui_manager.py:174
 msgid "OpenAI Model"
 msgstr "OpenAI"
 
-#: settings_ui_manager.py:180
+#: settings_ui_manager.py:179
 #, fuzzy
 msgid "Mistral API Key"
 msgstr "Ключ API OpenAI"
 
-#: settings_ui_manager.py:185
+#: settings_ui_manager.py:184
 msgid "Mistral Model"
 msgstr "Модель Mistral"
 
-#: settings_ui_manager.py:190
+#: settings_ui_manager.py:189
 #, fuzzy
 msgid "Show Links From the 'Attributes' tab"
 msgstr "Показувати посилання з вкладки 'Атрибути'"
 
-#: settings_ui_manager.py:195
+#: settings_ui_manager.py:194
 #, fuzzy
 msgid "Show Links From the 'Internet' tab"
 msgstr "Показувати посилання з вкладки 'Інтернет'"
 
-#: settings_ui_manager.py:226
+#: settings_ui_manager.py:199
+#, fuzzy
+msgid "Show Links From the Notes"
+msgstr "Показувати посилання з вкладки 'Примітки'"
+
+#: settings_ui_manager.py:230
 msgid "Enable CSV Files"
 msgstr "Увімкнути файли CSV"
 
-#: settings_ui_manager.py:233
+#: settings_ui_manager.py:237
 #, fuzzy
 msgid "Display Columns"
 msgstr "Показувати колонку 'Змінні'"
 
-#: settings_ui_manager.py:247
+#: settings_ui_manager.py:251
 msgid "Display Icons"
 msgstr "Показувати іконки"
 
@@ -128,77 +133,83 @@ msgstr ""
 "Налаштовувані запити до онлайн-сервісів на основі активного запису Персони, "
 "Місця, Сім'ї або Джерела"
 
-#: constants.py:262
+#: constants.py:311
 msgid "Column - Icons"
 msgstr "Колонка - Іконки"
 
-#: constants.py:263
+#: constants.py:312
 msgid "Column - Source Types (flags)"
 msgstr "Колонка - Типи джерел (прапорці)"
 
-#: constants.py:264
+#: constants.py:313
 msgid "Column - Keys"
 msgstr "Колонка - Змінні"
 
-#: constants.py:265
+#: constants.py:314
 msgid "Column - Title"
 msgstr "Колонка - Назва"
 
-#: constants.py:266
+#: constants.py:315
 msgid "Column - Website Url"
 msgstr "Колонка - URL вебсайту"
 
-#: constants.py:267
+#: constants.py:316
 #, fuzzy
 msgid "Column - Comment"
 msgstr "Коментар: {comment}\n"
 
-#: constants.py:293
+#: constants.py:345
 msgid "Icon - Visited URLs (checkmark)"
 msgstr "Іконка - Відвідані URL (галочка)"
 
-#: constants.py:294
+#: constants.py:346
 msgid "Icon - Saved URLs (floppy disk)"
 msgstr "Іконка - Збережені URL (дискета)"
 
-#: constants.py:295
+#: constants.py:347
 msgid "Icon - URLs linked to UID attributes (UID badge)"
 msgstr "Іконка - URL, пов’язані з атрибутами UID (бейдж UID)"
 
-#: constants.py:296
+#: constants.py:348
 msgid "Icon - URLs from regional CSV files (flag)"
 msgstr "Іконка - URL з регіональних CSV файлів (прапор)"
 
-#: constants.py:297
+#: constants.py:349
 msgid "Icon - URLs from static CSV files (red pin)"
 msgstr "Іконка - URL з статичних CSV файлів (червона шпилька)"
 
-#: constants.py:298
+#: constants.py:350
 msgid "Icon - URLs from common CSV files (earth)"
 msgstr "Іконка - URL з загальних CSV файлів (земля)"
 
-#: constants.py:299
-msgid "Icon - Direct URLs from attributes (link chain)"
-msgstr "Іконка - Прямі URL з атрибутів (ланцюг посилань)"
-
-#: constants.py:300
+#: constants.py:351
 msgid "Icon - URLs from cross CSV files (shuffle arrows)"
 msgstr "Іконка - URL з перехресних CSV файлів (стрілки переміщення)"
 
-#: constants.py:301
+#: constants.py:352
 msgid "Icon - URLs from custom user directory (spreadsheet icon)"
 msgstr "Іконка - URL з користувацьких директорій (іконка таблиці)"
 
-#: constants.py:302
+#: constants.py:353
 #, fuzzy
-msgid "Icon - URLs from the 'Internet' tab (web icon)"
-msgstr "Іконка - URL з вкладки 'Інтернет' (павутина)"
+msgid "Icon - URLs from the 'Attributes' tab ('A' icon)"
+msgstr "Іконка - URL з вкладки 'Атрибути' ('A'-іконка)"
 
-#: qr_window.py:76
+#: constants.py:354
+#, fuzzy
+msgid "Icon - URLs from the 'Internet' tab ('I' icon)"
+msgstr "Іконка - URL з вкладки 'Інтернет' ('I'-іконка)"
+
+#: constants.py:355
+#, fuzzy
+msgid "Icon - URLs from the 'Notes' tab ('N' icon)"
+msgstr "Іконка - URL з вкладки 'Примітки' ('N'-іконка)"
+
+#: qr_window.py:77
 msgid "QR-code"
 msgstr "QR-код"
 
-#: qr_window.py:114
+#: qr_window.py:115
 msgid ""
 "⚠ Error generating QR code:\n"
 "Original error: “{}”"
@@ -206,105 +217,121 @@ msgstr ""
 "⚠ Помилка генерації QR-коду:\n"
 "Оригінальна помилка: «{}»"
 
-#: WebSearch.py:727
+#: WebSearch.py:874
 msgid "Keys"
 msgstr "Змінні"
 
-#: WebSearch.py:728
+#: WebSearch.py:875
 msgid "Title"
 msgstr "Назва"
 
-#: WebSearch.py:729
+#: WebSearch.py:876
 msgid "Website URL"
 msgstr "URL вебсайту"
 
-#: WebSearch.py:730
+#: WebSearch.py:877
 msgid "Comment"
 msgstr "Коментар"
 
-#: WebSearch.py:732
+#: WebSearch.py:879
 msgid "Add link to note"
 msgstr "Додати посилання до нотатки"
 
-#: WebSearch.py:733
+#: WebSearch.py:880
+#, fuzzy
+msgid "Add link to attribute"
+msgstr "Додати посилання до атрибутів"
+
+#: WebSearch.py:881
 msgid "Show QR-code"
 msgstr "Показати QR-код"
 
-#: WebSearch.py:734
+#: WebSearch.py:882
 msgid "Copy link to clipboard"
 msgstr "Скопіювати посилання у буфер"
 
-#: WebSearch.py:736
+#: WebSearch.py:884
 msgid "Hide link for selected item"
 msgstr "Приховати посилання для вибраного елемента"
 
-#: WebSearch.py:738
+#: WebSearch.py:886
 msgid "Hide link for all items"
 msgstr "Приховати посилання для всіх елементів"
 
-#: WebSearch.py:740
+#: WebSearch.py:888
 msgid "🔍 AI Suggestions"
 msgstr "🔍 Рекомендації ШІ"
 
-#: WebSearch.py:857
-#, python-brace-format
+#: WebSearch.py:1040
+#, fuzzy, python-brace-format
 msgid ""
-"📌 This web link was added using the WebSearch gramplet for future "
-"reference:\n"
+"📌 This '{title}' web link was archived for future reference by the "
+"WebSearch gramplet (v. {version}):\n"
 "\n"
 "🔗 {url}\n"
 "\n"
 "You can use this link to revisit the source and verify the information "
-"related to this person."
+"related to this entity."
 msgstr ""
-"📌 Це веб-посилання було додано за допомогою грамплета WebSearch для "
-"майбутнього використання:\n"
+"📌 Це вебпосилання «{title}» було збережено для подальшого використання "
+"грамплетом WebSearch (v. {version}):\n"
 "\n"
 "🔗 {url}\n"
 "\n"
-"Ви можете скористатися цим посиланням, щоб знову переглянути джерело та "
-"перевірити інформацію, пов’язану з цією особою."
+"Ви можете скористатися цим посиланням, щоб знову відвідати джерело та "
+"перевірити інформацію, пов’язану з цією сутністю."
 
-#: WebSearch.py:869
-msgid "Add Web Link Note"
-msgstr "Додати нотатку з веб-посиланням"
-
-#: WebSearch.py:891
+#: WebSearch.py:1120
 #, python-format
 msgid "Note #%(id)s has been successfully added"
 msgstr "Нотатка #%(id)s успішно створена"
 
-#: WebSearch.py:895
+#: WebSearch.py:1124
 msgid "Error creating note"
 msgstr "Виникла помилка під час створення нотатки"
 
-#: WebSearch.py:916
+#: WebSearch.py:1145
 msgid "URL is copied to the Clipboard"
 msgstr "URL скопійовано до буфера обміну"
 
-#: WebSearch.py:976
+#: WebSearch.py:1205
 msgid "WebSearch Link"
 msgstr "Посилання WebSearch"
 
-#: WebSearch.py:1019
+#: WebSearch.py:1246
+#, fuzzy
+msgid "Attribute has been successfully added"
+msgstr "Нотатка #%(id)s успішно створена"
+
+#: WebSearch.py:1277
 #, fuzzy, python-brace-format
-msgid "Title: {title}\n"
+msgid "Title: {title}"
 msgstr "Назва: {title}\n"
 
-#: WebSearch.py:1021
-#, python-brace-format
-msgid "Replaced: {keys}\n"
+#: WebSearch.py:1281
+#, fuzzy, python-brace-format
+msgid "Replaced: {keys}"
 msgstr "Замінено: {keys}\n"
 
-#: WebSearch.py:1025
-#, python-brace-format
-msgid "Empty: {keys}\n"
+#: WebSearch.py:1284
+#, fuzzy, python-brace-format
+msgid "Empty: {keys}"
 msgstr "Порожні: {keys}\n"
 
-#: WebSearch.py:1027
-#, python-brace-format
-msgid "Comment: {comment}\n"
+#: WebSearch.py:1286
+#, fuzzy, python-brace-format
+msgid "Comment: {comment}"
 msgstr "Коментар: {comment}\n"
+
+#~ msgid "Add Web Link Note"
+#~ msgstr "Додати нотатку з веб-посиланням"
+
+#, fuzzy
+#~ msgid "Add Web Link Attribute"
+#~ msgstr "Додати нотатку з веб-посиланням"
+
+#~ msgid "Icon - Direct URLs from attributes (link chain)"
+#~ msgstr "Іконка - Прямі URL з атрибутів (ланцюг посилань)"
 
 #~ msgid "Display 'Website URL' Column"
 #~ msgstr "Показувати колонку 'URL вебсайту'"

@@ -22,10 +22,9 @@
 
 """Extracts and formats links from the 'Internet' tab of Gramps objects."""
 
-from types import SimpleNamespace
-
 from url_utils import UrlUtils
 from constants import SourceTypes
+from models import WebsiteEntry
 
 
 # pylint: disable=too-few-public-methods
@@ -44,18 +43,21 @@ class InternetLinksLoader:
             full_path = url_obj.get_full_path()
             url_type = url_obj.get_type()
             title = self.get_url_title(url_type)
+            # pylint: disable=duplicate-code
             url = UrlUtils.extract_url(full_path, self.url_regex)
             if url:
-                link_data = SimpleNamespace(
-                    nav_type=nav_type,
-                    source_type=SourceTypes.INTERNET.value,
-                    title=title,
-                    url=url,
-                    comment=url_obj.get_description(),
-                    is_enabled=True,
-                    is_custom=False,
+                links.append(
+                    WebsiteEntry(
+                        nav_type=nav_type,
+                        country_code=None,
+                        source_type=SourceTypes.INTERNET.value,
+                        title=(title or "").strip(),
+                        is_enabled=True,
+                        url_pattern=UrlUtils.clean_url(url),
+                        comment=(url_obj.get_description() or "").strip(),
+                        is_custom_file=False,
+                    )
                 )
-                links.append(UrlUtils.format_link(link_data))
 
         return links
 
