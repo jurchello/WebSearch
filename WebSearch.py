@@ -1053,7 +1053,7 @@ class WebSearch(Gramplet):
         nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
         note_handle = None
 
-        with DbTxn(_("Add Web Link Note"), self.dbstate.db) as trans:
+        with DbTxn("Add Web Link Note", self.dbstate.db) as trans:
             if nav_type == SupportedNavTypes.PEOPLE.value:
                 note.set_type(NoteType.PERSON)
                 note_handle = self.dbstate.db.add_note(note, trans)
@@ -1209,7 +1209,7 @@ class WebSearch(Gramplet):
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
         nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
 
-        with DbTxn(_("Add Web Link Attribute"), self.dbstate.db) as trans:
+        with DbTxn("Add Web Link Attribute", self.dbstate.db) as trans:
             if nav_type == SupportedNavTypes.PEOPLE.value:
                 self._context.person.add_attribute(attribute)
                 self.dbstate.db.commit_person(self._context.person, trans)
