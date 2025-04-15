@@ -244,6 +244,26 @@ SOURCE_TYPE_SORT_ORDER = {
     SourceTypes.FORUM.value: "J",
 }
 
+SOURCE_TYPES_HIDE_KEYS_COUNT = [
+    SourceTypes.STATIC.value,
+    SourceTypes.ATTRIBUTE.value,
+    SourceTypes.INTERNET.value,
+    SourceTypes.NOTE.value,
+    SourceTypes.COMMUNITY.value,
+    SourceTypes.ARCHIVE.value,
+    SourceTypes.FORUM.value,
+]
+
+SOURCE_TYPES_WITH_FIXED_LINKS = [
+    SourceTypes.STATIC.value,
+    SourceTypes.ATTRIBUTE.value,
+    SourceTypes.INTERNET.value,
+    SourceTypes.NOTE.value,
+    SourceTypes.COMMUNITY.value,
+    SourceTypes.ARCHIVE.value,
+    SourceTypes.FORUM.value,
+]
+
 VIEW_IDS_MAPPING = {
     "dashboardview": None,
     "personlistview": "Person",

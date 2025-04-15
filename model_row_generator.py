@@ -58,6 +58,9 @@ from constants import (
     UID_ICON_HEIGHT,
     UID_ICON_WIDTH,
     VISITED_HASH_FILE_PATH,
+    SOURCE_TYPES_HIDE_KEYS_COUNT,
+    SUPPORTED_SOURCE_TYPE_VALUES,
+    SOURCE_TYPES_WITH_FIXED_LINKS,
     SourceTypes,
 )
 from helpers import is_true
@@ -94,12 +97,7 @@ class ModelRowGenerator:
             ):
                 return None
 
-            if website_data.source_type in [
-                SourceTypes.STATIC.value,
-                SourceTypes.ATTRIBUTE.value,
-                SourceTypes.INTERNET.value,
-                SourceTypes.NOTE.value,
-            ]:
+            if website_data.source_type in SOURCE_TYPES_WITH_FIXED_LINKS:
                 final_url = formatted_url = website_data.url_pattern
                 (
                     pattern_keys_info,
@@ -147,7 +145,7 @@ class ModelRowGenerator:
             file_identifier_text = self.get_file_identifier_text(
                 website_data.country_code, website_data.source_type
             )
-            display_keys_count = self.get_display_keys_count(file_identifier_text)
+            display_keys_count = self.get_display_keys_count(website_data.source_type)
             file_identifier_sort = self.get_file_identifier_sort(
                 website_data.country_code, website_data.source_type
             )
@@ -244,18 +242,10 @@ class ModelRowGenerator:
         }
         return keys, json.dumps(keys), 0, 0
 
-    def get_display_keys_count(self, file_identifier):
-        """Return False if key count display is not needed for this file_identifier type."""
+    def get_display_keys_count(self, source_type):
+        """Return False if key count display is not needed for this source_type."""
         display_keys_count = True
-        if file_identifier in [
-            SourceTypes.STATIC.value,
-            SourceTypes.ATTRIBUTE.value,
-            SourceTypes.INTERNET.value,
-            SourceTypes.NOTE.value,
-            SourceTypes.COMMUNITY.value,
-            SourceTypes.ARCHIVE.value,
-            SourceTypes.FORUM.value,
-        ]:
+        if source_type in SOURCE_TYPES_HIDE_KEYS_COUNT:
             display_keys_count = False
         return display_keys_count
 
@@ -273,18 +263,7 @@ class ModelRowGenerator:
         if country_code:
             return country_code
 
-        if source_type in [
-            SourceTypes.COMMON.value,
-            SourceTypes.UID.value,
-            SourceTypes.STATIC.value,
-            SourceTypes.CROSS.value,
-            SourceTypes.ATTRIBUTE.value,
-            SourceTypes.INTERNET.value,
-            SourceTypes.NOTE.value,
-            SourceTypes.COMMUNITY.value,
-            SourceTypes.ARCHIVE.value,
-            SourceTypes.FORUM.value,
-        ]:
+        if source_type in SUPPORTED_SOURCE_TYPE_VALUES:
             return source_type
 
         return ""

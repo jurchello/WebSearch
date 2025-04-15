@@ -117,7 +117,6 @@ from website_loader import WebsiteLoader
 from gramplet_version_extractor import GrampletVersionExtractor
 from translation_helper import _
 from models import LinkContext, AIDomainData
-from printing import print_model_as_row_tables
 
 MODEL_SCHEMA = [
     ("icon_name", str),
@@ -176,13 +175,6 @@ class WebSearch(Gramplet):
         Sets up all required components, directories, signal emitters, and configuration managers.
         Also initializes the Gramplet GUI and internal context for tracking active Gramps objects.
         """
-
-        # TODO: added for temporary testing, should be removed later
-        # ArchiveReferenceParser.print_table(
-        #    "FULL REFERENCE TESTS",
-        #    ArchiveReferenceParser.TEST_CASES_FULL,
-        #    ArchiveReferenceParser.parse_full_reference,
-        # )
 
         self.version = GrampletVersionExtractor().get()
         self._context = SimpleNamespace(
@@ -473,17 +465,6 @@ class WebSearch(Gramplet):
             model_row = self.model_row_generator.generate(link_context, website_data)
             if model_row:
                 self.model.append([model_row[name] for name, _ in MODEL_SCHEMA])
-        print_model_as_row_tables(
-            self.model,
-            MODEL_SCHEMA,
-            80,
-            [
-                "file_identifier_text",
-                "file_identifier_sort",
-                "source_type",
-                "country_code",
-            ],
-        )
 
     def on_link_clicked(self, unused_tree_view, path, unused_column):
         """Handles the event when a URL is clicked in the tree view and opens the link."""
