@@ -1,7 +1,7 @@
 [
   {
     "n": "WebSearch",
-    "i": "web_search",
+    "i": "WebSearch",
     "t": 10,
     "d": "Customized queries for online services based on the active Person, Place, Family, or Source record",
     "v": "0.80.58",
