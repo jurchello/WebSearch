@@ -31,7 +31,7 @@ Intended for debugging or inspection purposes in console-based environments.
 """
 
 from dataclasses import fields, is_dataclass
-from typing import Any
+from typing import Any, List
 from gi.repository import GdkPixbuf
 
 
@@ -135,3 +135,27 @@ def print_model_as_row_tables(
                 value_str = truncate(value)
             print(f"{name:<30} | {value_str}")
         print("-" * (max_value_width + 35))
+
+
+def print_parsed_archive_references_table(title: str, cases: List[str], parser_func):
+    """Prints a formatted table of test results for visual inspection."""
+    print(f"\n{title}")
+    print("-" * 100)
+    print(
+        f"{'#':<3} "
+        f"{'Input':<55} "
+        f"{'archive_code':<12} "
+        f"{'collection':<10} "
+        f"{'series':<8} "
+        f"{'file':<6}"
+    )
+    print("-" * 100)
+    for i, case in enumerate(cases, 1):
+        result = parser_func(case) or {}
+        print(
+            f"{i:<3} {case:<55} "
+            f"{str(result.get('archive_code', '')):<12} "
+            f"{str(result.get('collection_number', '')):<10} "
+            f"{str(result.get('series_number', '')):<8} "
+            f"{str(result.get('file_number', '')):<6}"
+        )

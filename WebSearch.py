@@ -300,7 +300,7 @@ class WebSearch(Gramplet):
 
         threading.Thread(
             target=self.fetch_sites_in_background,
-            args=(ai_domin_data),
+            args=(ai_domin_data,),
             daemon=True,
         ).start()
 

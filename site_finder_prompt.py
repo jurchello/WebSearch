@@ -94,17 +94,15 @@ class BasePromptBuilder:
             community_codes_str = "none"
 
         # Skipped domains
-        excluded_domains_str = (
-            ", ".join(sorted(ai_domain_data.skipped_domains))
-            if ai_domain_data.skipped_domains
-            else "none"
-        )
+        excluded_domains_str = self.get_all_domains(ai_domain_data)
 
         return (
             f"I am looking for additional genealogical research websites.\n"
-            f"Please return exactly 10 websites as a JSON array:\n"
-            f"- 5 relevant to {regular_codes_text} resources (locales: {regular_codes_str})\n"
-            f"- 5 based on community-curated sources (locales: {community_codes_str})\n"
+            "Please return exactly 10 websites as a JSON array:\n"
+            f"- 5 relevant to {regular_codes_text} resources including forums "
+            f"(locales: {regular_codes_str})\n"
+            f"- 5 based on community-curated sources like groups, channels "
+            f"but excluding forums (locales: {community_codes_str})\n"
             f"Exclude the following domains: {excluded_domains_str}.\n"
             "Each item must include only two keys: 'domain' and 'url'.\n"
             'Example: [{"domain": "example.com", "url": "https://example.com"}]\n'
@@ -118,3 +116,19 @@ class BasePromptBuilder:
             self.get_system_message(),
             self.get_user_message(ai_domain_data),
         )
+
+    def get_all_domains(self, ai_domain_data: AIDomainData):
+        """
+        Combines skipped and regular domains into a single formatted string.
+        This method merges the sets of skipped and regular domains from the given AIDomainData
+        and returns them as a sorted, comma-separated string. If both are empty, returns "none".
+        """
+        skipped = set(ai_domain_data.skipped_domains or [])
+        regular = set(ai_domain_data.regular_domains or [])
+        all_excluded_domains = skipped | regular
+
+        excluded_domains_str = (
+            ", ".join(sorted(all_excluded_domains)) if all_excluded_domains else "none"
+        )
+
+        return excluded_domains_str
