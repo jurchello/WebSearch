@@ -54,7 +54,7 @@ from gi.repository import Gdk, GdkPixbuf, GObject, Gtk
 # GRAMPS API
 # --------------------------
 from gramps.gen.db import DbTxn
-from gramps.gen.lib import Attribute, Note, NoteType
+from gramps.gen.lib import Attribute, Note, NoteType, SrcAttribute
 from gramps.gen.plug import Gramplet
 from gramps.gui.display import display_url
 from gramps.gui.editors import EditObject
@@ -1201,13 +1201,26 @@ class WebSearch(Gramplet):
             print("❌ Error: No saved path to the iterator!", file=sys.stderr)
             return
 
-        attribute = Attribute()
+        tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
+        nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
+
+        if nav_type in [
+            SupportedNavTypes.PEOPLE.value, 
+            SupportedNavTypes.FAMILIES.value, 
+            SupportedNavTypes.EVENTS.value, 
+            SupportedNavTypes.MEDIA.value
+        ]:
+            attribute = Attribute()
+
+        if nav_type in [
+            SupportedNavTypes.SOURCES.value, 
+            SupportedNavTypes.CITATIONS.value
+        ]:
+            attribute = SrcAttribute()
+        
         attribute.set_type(_("WebSearch Link"))
         attribute.set_value(self._context.active_url)
         attribute.set_privacy(True)
-
-        tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
-        nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
 
         with DbTxn("Add Web Link Attribute", self.dbstate.db) as trans:
             if nav_type == SupportedNavTypes.PEOPLE.value:
