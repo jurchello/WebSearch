@@ -65,6 +65,9 @@ class EntityDataBuilder:
     def get_person_data(self, person):
         """Extracts structured personal and date-related data from a Person object."""
         # pylint: disable=too-many-locals
+        if not person:
+            return {}, []
+    
         try:
             name = person.get_primary_name().get_first_name().strip()
             middle_name_handling = self.config_ini_manager.get_enum(
