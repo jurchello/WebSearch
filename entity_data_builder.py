@@ -163,10 +163,10 @@ class EntityDataBuilder:
         )
 
         father_data, unused_father_attribute_keys = (
-            self.get_person_data(father) if father else {}
+            self.get_person_data(father) if father else ({}, [])
         )
         mother_data, unused_mother_attribute_keys = (
-            self.get_person_data(mother) if mother else {}
+            self.get_person_data(mother) if mother else ({}, [])
         )
 
         marriage_year = marriage_year_from = marriage_year_to = marriage_year_before = (
