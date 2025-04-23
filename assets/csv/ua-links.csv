@@ -16,3 +16,4 @@ People,"MemoryBook (Google)",1,"https://www.google.com/search?q=site:memorybook.
 Places,OldMapsOnline,1,https://www.oldmapsonline.org/en/Pyriatyn?position=13.2811/50.23844/32.49722&year=1870#position=13.2811/50.23844/32.49722&year=1850,Після переходу натисніть кнопку «Explore Maps»
 People,SearchArchives,1,https://searcharchives.net.ua/search/?ArchiveIDs[]=3&ArchiveIDs[]=9&ArchiveIDs[]=10&ArchiveIDs[]=11&ArchiveIDs[]=12&ArchiveIDs[]=13&ArchiveIDs[]=14&ArchiveIDs[]=15&ArchiveIDs[]=16&Digitized=1&Search=%(surname)s %(given)s %(middle)s,
 Places,Google Books,1,https://www.google.com.ua/search?q=%(place)s&udm=36&uact=5,Пошук книг, згаданих із цією місцевістю (використовується Google Books)
+Places,Google,1,https://www.google.com.ua/search?q=%(title)s,
