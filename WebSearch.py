@@ -1205,19 +1205,19 @@ class WebSearch(Gramplet):
         nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
 
         if nav_type in [
-            SupportedNavTypes.PEOPLE.value, 
-            SupportedNavTypes.FAMILIES.value, 
-            SupportedNavTypes.EVENTS.value, 
-            SupportedNavTypes.MEDIA.value
+            SupportedNavTypes.PEOPLE.value,
+            SupportedNavTypes.FAMILIES.value,
+            SupportedNavTypes.EVENTS.value,
+            SupportedNavTypes.MEDIA.value,
         ]:
             attribute = Attribute()
 
         if nav_type in [
-            SupportedNavTypes.SOURCES.value, 
-            SupportedNavTypes.CITATIONS.value
+            SupportedNavTypes.SOURCES.value,
+            SupportedNavTypes.CITATIONS.value,
         ]:
             attribute = SrcAttribute()
-        
+
         attribute.set_type(_("WebSearch Link"))
         attribute.set_value(self._context.active_url)
         attribute.set_privacy(True)
