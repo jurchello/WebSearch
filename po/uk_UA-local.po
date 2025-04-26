@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gramps 52\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-04-15 16:41+0300\n"
+"POT-Creation-Date: 2025-04-26 19:59+0300\n"
 "PO-Revision-Date: 2025-03-18 10:24+0200\n"
 "Last-Translator: yurii <jurchello@gmail.com>\n"
 "Language-Team: Ukrainian <trans-uk@lists.fedoraproject.org>\n"
@@ -18,106 +18,107 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: settings_ui_manager.py:110
+#: settings_ui_manager.py:112
 msgid "Middle Name Handling"
 msgstr "Обробка по батькові"
 
-#: settings_ui_manager.py:115
+#: settings_ui_manager.py:117
 msgid "Leave alone"
 msgstr "Залишити без змін"
 
-#: settings_ui_manager.py:116
+#: settings_ui_manager.py:118
 msgid "Separate"
 msgstr "Відокремити"
 
-#: settings_ui_manager.py:117
+#: settings_ui_manager.py:119
 msgid "Remove"
 msgstr "Видалити"
 
-#: settings_ui_manager.py:126
+#: settings_ui_manager.py:128
 msgid "URL Compactness Level"
 msgstr "Рівень стиснення URL"
 
-#: settings_ui_manager.py:132
+#: settings_ui_manager.py:134
 msgid "Shortest - No Prefix, No Keys"
 msgstr "Найкоротший – Без префікса, без змінних"
 
-#: settings_ui_manager.py:135
+#: settings_ui_manager.py:137
 msgid "Compact - No Prefix, Keys Without Attributes"
 msgstr "Компактний – Без префікса, змінні без атрибутів"
 
-#: settings_ui_manager.py:138
+#: settings_ui_manager.py:140
 msgid "Compact - No Prefix, Keys With Attributes"
 msgstr "Компактний – Без префікса, змінні з атрибутами"
 
-#: settings_ui_manager.py:141
+#: settings_ui_manager.py:143
 msgid "Long - Without Prefix on the Left"
 msgstr "Довгий – Без префікса зліва"
 
-#: settings_ui_manager.py:148
+#: settings_ui_manager.py:150
 msgid "URL Prefix Replacement"
 msgstr "Замінник префікса URL"
 
-#: settings_ui_manager.py:155
+#: settings_ui_manager.py:157
 msgid "AI Provider"
-msgstr "Провайдер ШІ"
+msgstr "Провайдер AI"
 
-#: settings_ui_manager.py:160
+#: settings_ui_manager.py:162
 msgid "(Disabled)"
 msgstr "(Вимкнено)"
 
-#: settings_ui_manager.py:161
-#, fuzzy
+#: settings_ui_manager.py:163
 msgid "OpenAI"
-msgstr "Використовувати OpenAI"
+msgstr "OpenAI"
 
-#: settings_ui_manager.py:162
+#: settings_ui_manager.py:164
 msgid "Mistral AI"
-msgstr "Mistral"
+msgstr "Mistral AI"
 
-#: settings_ui_manager.py:169
-#, fuzzy
+#: settings_ui_manager.py:171
 msgid "OpenAI API Key"
 msgstr "Ключ API OpenAI"
 
-#: settings_ui_manager.py:174
+#: settings_ui_manager.py:176
 msgid "OpenAI Model"
 msgstr "OpenAI"
 
-#: settings_ui_manager.py:179
-#, fuzzy
+#: settings_ui_manager.py:181
 msgid "Mistral API Key"
-msgstr "Ключ API OpenAI"
+msgstr "Ключ API Mistral"
 
-#: settings_ui_manager.py:184
+#: settings_ui_manager.py:186
 msgid "Mistral Model"
 msgstr "Модель Mistral"
 
-#: settings_ui_manager.py:189
-#, fuzzy
+#: settings_ui_manager.py:191
 msgid "Show Links From the 'Attributes' tab"
 msgstr "Показувати посилання з вкладки 'Атрибути'"
 
-#: settings_ui_manager.py:194
-#, fuzzy
+#: settings_ui_manager.py:196
 msgid "Show Links From the 'Internet' tab"
 msgstr "Показувати посилання з вкладки 'Інтернет'"
 
-#: settings_ui_manager.py:199
-#, fuzzy
+#: settings_ui_manager.py:201
 msgid "Show Links From the Notes"
 msgstr "Показувати посилання з вкладки 'Примітки'"
 
-#: settings_ui_manager.py:230
+#: settings_ui_manager.py:209
+msgid "Enable AI-generated historical place data"
+msgstr "Увімкнути генерацію історичних даних про місце за допомогою AI"
+
+#: settings_ui_manager.py:215
+msgid "Custom country code for AI notes (optional)"
+msgstr "Код країни для AI-нотаток (необов'язково)"
+
+#: settings_ui_manager.py:244
 msgid "Enable CSV Files"
 msgstr "Увімкнути файли CSV"
 
-#: settings_ui_manager.py:237
-#, fuzzy
-msgid "Display Columns"
-msgstr "Показувати колонку 'Змінні'"
-
 #: settings_ui_manager.py:251
+msgid "Display Columns"
+msgstr "Показувати колонку"
+
+#: settings_ui_manager.py:265
 msgid "Display Icons"
 msgstr "Показувати іконки"
 
@@ -154,9 +155,8 @@ msgid "Column - Website Url"
 msgstr "Колонка - URL вебсайту"
 
 #: constants.py:316
-#, fuzzy
 msgid "Column - Comment"
-msgstr "Коментар: {comment}\n"
+msgstr "Колонка - Коментар"
 
 #: constants.py:345
 msgid "Icon - Visited URLs (checkmark)"
@@ -191,19 +191,64 @@ msgid "Icon - URLs from custom user directory (spreadsheet icon)"
 msgstr "Іконка - URL з користувацьких директорій (іконка таблиці)"
 
 #: constants.py:353
-#, fuzzy
 msgid "Icon - URLs from the 'Attributes' tab ('A' icon)"
 msgstr "Іконка - URL з вкладки 'Атрибути' ('A'-іконка)"
 
 #: constants.py:354
-#, fuzzy
 msgid "Icon - URLs from the 'Internet' tab ('I' icon)"
 msgstr "Іконка - URL з вкладки 'Інтернет' ('I'-іконка)"
 
 #: constants.py:355
-#, fuzzy
 msgid "Icon - URLs from the 'Notes' tab ('N' icon)"
 msgstr "Іконка - URL з вкладки 'Примітки' ('N'-іконка)"
+
+#: markdown_place_history_formatter.py:14
+msgid "No data available."
+msgstr "Немає доступних даних."
+
+#: markdown_place_history_formatter.py:19
+msgid "HISTORICAL ADMINISTRATIVE DIVISIONS OF"
+msgstr "ІСТОРИЧНІ АДМІНІСТРАТИВНІ ОДИНИЦІ ДЛЯ"
+
+#: markdown_place_history_formatter.py:20
+msgid "Foundation date:"
+msgstr "Дата заснування:"
+
+#: markdown_place_history_formatter.py:21
+msgid "Note:"
+msgstr "Примітка:"
+
+#: markdown_place_history_formatter.py:22
+msgid "Coordinates:"
+msgstr "Координати:"
+
+#: markdown_place_history_formatter.py:23
+msgid "Administrative history"
+msgstr "Адміністративна історія"
+
+#: markdown_place_history_formatter.py:24
+msgid "Data provided to AI:"
+msgstr "Дані, передані AI:"
+
+#: markdown_place_history_formatter.py:25
+msgid "Name"
+msgstr "Назва"
+
+#: markdown_place_history_formatter.py:26
+msgid "Full hierarchy"
+msgstr "Повна ієрархія"
+
+#: markdown_place_history_formatter.py:27
+msgid "Language"
+msgstr "Мова"
+
+#: markdown_place_history_formatter.py:28
+msgid "Latitude"
+msgstr "Широта"
+
+#: markdown_place_history_formatter.py:29
+msgid "Longitude"
+msgstr "Довгота"
 
 #: qr_window.py:77
 msgid "QR-code"
@@ -217,53 +262,72 @@ msgstr ""
 "⚠ Помилка генерації QR-коду:\n"
 "Оригінальна помилка: «{}»"
 
-#: WebSearch.py:874
+#: WebSearch.py:342
+msgid "AI provider is disabled"
+msgstr "Провайдер AI вимкнено"
+
+#: WebSearch.py:346
+msgid "No AI API key provided"
+msgstr "Не надано ключ API для AI"
+
+#: WebSearch.py:351
+msgid "AI-generated historical place data is currently disabled"
+msgstr "Генерація історичних даних про місце за допомогою AI наразі вимкнена"
+
+#: WebSearch.py:363
+msgid "AI provider is unknown. Please check your AI provider settings."
+msgstr "Невідомий провайдер AI. Будь ласка, перевірте налаштування провайдера AI."
+
+#: WebSearch.py:378
+msgid "⏳ Generating historical place data, please wait..."
+msgstr "⏳ Генеруємо історичні дані про місце, будь ласка, зачекайте..."
+
+#: WebSearch.py:990
 msgid "Keys"
 msgstr "Змінні"
 
-#: WebSearch.py:875
+#: WebSearch.py:991
 msgid "Title"
 msgstr "Назва"
 
-#: WebSearch.py:876
+#: WebSearch.py:992
 msgid "Website URL"
 msgstr "URL вебсайту"
 
-#: WebSearch.py:877
+#: WebSearch.py:993
 msgid "Comment"
 msgstr "Коментар"
 
-#: WebSearch.py:879
+#: WebSearch.py:995
 msgid "Add link to note"
 msgstr "Додати посилання до нотатки"
 
-#: WebSearch.py:880
-#, fuzzy
+#: WebSearch.py:996
 msgid "Add link to attribute"
 msgstr "Додати посилання до атрибутів"
 
-#: WebSearch.py:881
+#: WebSearch.py:997
 msgid "Show QR-code"
 msgstr "Показати QR-код"
 
-#: WebSearch.py:882
+#: WebSearch.py:998
 msgid "Copy link to clipboard"
 msgstr "Скопіювати посилання у буфер"
 
-#: WebSearch.py:884
+#: WebSearch.py:1000
 msgid "Hide link for selected item"
 msgstr "Приховати посилання для вибраного елемента"
 
-#: WebSearch.py:886
+#: WebSearch.py:1002
 msgid "Hide link for all items"
 msgstr "Приховати посилання для всіх елементів"
 
-#: WebSearch.py:888
+#: WebSearch.py:1004
 msgid "🔍 AI Suggestions"
-msgstr "🔍 Рекомендації ШІ"
+msgstr "🔍 Рекомендації AI"
 
-#: WebSearch.py:1040
-#, fuzzy, python-brace-format
+#: WebSearch.py:1156
+#, python-brace-format
 msgid ""
 "📌 This '{title}' web link was archived for future reference by the "
 "WebSearch gramplet (v. {version}):\n"
@@ -281,52 +345,50 @@ msgstr ""
 "Ви можете скористатися цим посиланням, щоб знову відвідати джерело та "
 "перевірити інформацію, пов’язану з цією сутністю."
 
-#: WebSearch.py:1120
+#: WebSearch.py:1236
 #, python-format
 msgid "Note #%(id)s has been successfully added"
 msgstr "Нотатка #%(id)s успішно створена"
 
-#: WebSearch.py:1124
+#: WebSearch.py:1240
 msgid "Error creating note"
 msgstr "Виникла помилка під час створення нотатки"
 
-#: WebSearch.py:1145
+#: WebSearch.py:1261
 msgid "URL is copied to the Clipboard"
 msgstr "URL скопійовано до буфера обміну"
 
-#: WebSearch.py:1205
+#: WebSearch.py:1337
 msgid "WebSearch Link"
 msgstr "Посилання WebSearch"
 
-#: WebSearch.py:1246
-#, fuzzy
+#: WebSearch.py:1375
 msgid "Attribute has been successfully added"
-msgstr "Нотатка #%(id)s успішно створена"
+msgstr "Нотатка успішно створена"
 
-#: WebSearch.py:1277
-#, fuzzy, python-brace-format
+#: WebSearch.py:1406
+#, python-brace-format
 msgid "Title: {title}"
-msgstr "Назва: {title}\n"
+msgstr "Назва: {title}"
 
-#: WebSearch.py:1281
-#, fuzzy, python-brace-format
+#: WebSearch.py:1410
+#, python-brace-format
 msgid "Replaced: {keys}"
-msgstr "Замінено: {keys}\n"
+msgstr "Замінено: {keys}"
 
-#: WebSearch.py:1284
-#, fuzzy, python-brace-format
+#: WebSearch.py:1413
+#, python-brace-format
 msgid "Empty: {keys}"
-msgstr "Порожні: {keys}\n"
+msgstr "Порожні: {keys}"
 
-#: WebSearch.py:1286
-#, fuzzy, python-brace-format
+#: WebSearch.py:1415
+#, python-brace-format
 msgid "Comment: {comment}"
-msgstr "Коментар: {comment}\n"
+msgstr "Коментар: {comment}"
 
 #~ msgid "Add Web Link Note"
 #~ msgstr "Додати нотатку з веб-посиланням"
 
-#, fuzzy
 #~ msgid "Add Web Link Attribute"
 #~ msgstr "Додати нотатку з веб-посиланням"
 
@@ -336,7 +398,6 @@ msgstr "Коментар: {comment}\n"
 #~ msgid "Display 'Website URL' Column"
 #~ msgstr "Показувати колонку 'URL вебсайту'"
 
-#, fuzzy
 #~ msgid "Show Flag Icons"
 #~ msgstr "Показувати прапори"
 
