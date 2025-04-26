@@ -74,3 +74,14 @@ class AIDomainData:
     community_urls: Set[str]
     include_global: bool
     skipped_domains: Set[str] = field(default_factory=set)
+
+
+@dataclass
+class PlaceHistoryRequestData:
+    """Data class for holding place history request data."""
+
+    name: str
+    full_hierarchy: str
+    language: str
+    latitude: Optional[str]
+    longitude: Optional[str]

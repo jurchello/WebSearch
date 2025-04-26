@@ -46,6 +46,8 @@ from constants import (
     DEFAULT_SHOW_SHORT_URL,
     DEFAULT_URL_COMPACTNESS_LEVEL,
     DEFAULT_URL_PREFIX_REPLACEMENT,
+    DEFAULT_ENABLED_PLACE_HISTORY,
+    DEFAULT_CUSTOM_COUNTRY_CODE_FOR_AI_NOTES,
 )
 
 
@@ -91,6 +93,14 @@ class ConfigINIManager:
         self.config.register("websearch.show_note_links", DEFAULT_SHOW_NOTE_LINKS)
         self.config.register("websearch.display_columns", DEFAULT_DISPLAY_COLUMNS)
         self.config.register("websearch.display_icons", DEFAULT_DISPLAY_ICONS)
+
+        self.config.register(
+            "websearch.enabled_place_history", DEFAULT_ENABLED_PLACE_HISTORY
+        )
+        self.config.register(
+            "websearch.custom_country_code_for_ai_notes",
+            DEFAULT_CUSTOM_COUNTRY_CODE_FOR_AI_NOTES,
+        )
 
         self.config.load()
 

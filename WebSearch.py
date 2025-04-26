@@ -42,6 +42,7 @@ import webbrowser
 from enum import IntEnum
 from types import SimpleNamespace
 
+
 # --------------------------
 # Third-party libraries
 # --------------------------
@@ -82,6 +83,8 @@ from constants import (
     DEFAULT_SHOW_SHORT_URL,
     DEFAULT_URL_COMPACTNESS_LEVEL,
     DEFAULT_URL_PREFIX_REPLACEMENT,
+    DEFAULT_ENABLED_PLACE_HISTORY,
+    DEFAULT_CUSTOM_COUNTRY_CODE_FOR_AI_NOTES,
     HIDDEN_HASH_FILE_PATH,
     ICON_SAVED_PATH,
     ICON_SIZE,
@@ -104,11 +107,9 @@ from constants import (
 from entity_data_builder import EntityDataBuilder
 from helpers import get_system_locale
 from internet_links_loader import InternetLinksLoader
-from mistral_site_finder import MistralSiteFinder
 from model_row_generator import ModelRowGenerator
 from note_links_loader import NoteLinksLoader
 from notification import Notification
-from openai_site_finder import OpenaiSiteFinder
 from qr_window import QRCodeWindow
 from settings_ui_manager import SettingsUIManager
 from signals import WebSearchSignalEmitter
@@ -116,7 +117,15 @@ from url_formatter import UrlFormatter
 from website_loader import WebsiteLoader
 from gramplet_version_extractor import GrampletVersionExtractor
 from translation_helper import _
-from models import LinkContext, AIDomainData
+from models import LinkContext, AIDomainData, PlaceHistoryRequestData
+from ai.openai_ai_client import OpenaiAIClient
+from ai.mistral_ai_client import MistralAIClient
+from ai.site_prompt_builder import SitePromptBuilder
+from ai.site_prompt_request import SitePromptRequest
+from ai.place_history_prompt_builder import PlaceHistoryPromptBuilder
+from ai.place_history_request import PlaceHistoryRequest
+from markdown_inserter import MarkdownInserter
+from markdown_place_history_formatter import MarkdownPlaceHistoryFormatter
 
 MODEL_SCHEMA = [
     ("icon_name", str),
@@ -186,7 +195,8 @@ class WebSearch(Gramplet):
             active_tree_path=None,
             last_active_entity_handle=None,
             last_active_entity_type=None,
-            previous_ai_provider=None,
+            previous_ai_site_provider=None,
+            previous_ai_place_history_provider=None,
         )
         self.system_locale = get_system_locale()
         self.gui = gui
@@ -242,6 +252,12 @@ class WebSearch(Gramplet):
                 url=self.builder.get_object("url_column"),
                 comment=self.builder.get_object("comment_column"),
             ),
+            notebook=self.builder.get_object("notebook"),
+            notes_textview=self.builder.get_object("notes_textview"),
+            pages=SimpleNamespace(
+                treeview_page=self.builder.get_object("treeview_page"),
+                textarea_container=self.builder.get_object("textarea_container"),
+            ),
         )
 
         self._columns_order = []
@@ -271,11 +287,30 @@ class WebSearch(Gramplet):
     def post_init(self):
         """Initializes GUI signals and refreshes the AI section."""
         self.signal_emitter.connect("sites-fetched", self.on_sites_fetched)
+        self.signal_emitter.connect(
+            "place-history-fetched", self.on_place_history_fetched
+        )
+        self.ui.notes_textview.set_editable(False)
+        self.ui.notes_textview.set_cursor_visible(False)
+        self.ui.notes_textview.set_can_focus(True)
+        self.ui.notes_textview.set_focus_on_click(True)
+        self.ui.notes_textview.set_accepts_tab(False)
+        self.ui.notes_textview.set_left_margin(10)
+        self.ui.notes_textview.set_right_margin(10)
+        self.ui.notes_textview.set_top_margin(5)
+        self.ui.notes_textview.set_bottom_margin(5)
+
+        self.markdown_inserter = MarkdownInserter(self.ui.notes_textview)
+        self.ui.notes_textview.connect("event-after", self.markdown_inserter.on_event)
+        self.ui.notes_textview.connect(
+            "motion-notify-event", self.markdown_inserter.on_hover_link
+        )
+
         self.refresh_ai_section()
 
     def refresh_ai_section(self):
         """Updates AI provider settings and fetches AI-recommended sites if necessary."""
-        ai_domin_data = self.website_loader.get_domains_data(self.config_ini_manager)
+        ai_domain_data = self.website_loader.get_domains_data(self.config_ini_manager)
 
         self.toggle_badges_visibility()
 
@@ -286,23 +321,74 @@ class WebSearch(Gramplet):
             print("❌ ERROR: No AI API Key found.", file=sys.stderr)
             return
 
-        if self._context.previous_ai_provider == self._ai_provider:
+        if self._context.previous_ai_site_provider == self._ai_provider:
             return
-        self._context.previous_ai_provider = self._ai_provider
+        self._context.previous_ai_site_provider = self._ai_provider
 
         if self._ai_provider == AIProviders.OPENAI.value:
-            self.finder = OpenaiSiteFinder(self._ai_api_key, self._ai_model)
+            self.finder = OpenaiAIClient(self._ai_api_key, self._ai_model)
         elif self._ai_provider == AIProviders.MISTRAL.value:
-            self.finder = MistralSiteFinder(self._ai_api_key, self._ai_model)
+            self.finder = MistralAIClient(self._ai_api_key, self._ai_model)
         else:
             print(f"⚠ Unknown AI provider: {self._ai_provider}", file=sys.stderr)
             return
 
         threading.Thread(
             target=self.fetch_sites_in_background,
-            args=(ai_domin_data,),
+            args=(ai_domain_data,),
             daemon=True,
         ).start()
+
+    def refresh_place_history_section(self, place_history_request_data):
+        """Refreshes the section displaying the historical administrative data for a place."""
+        if self._ai_provider == AIProviders.DISABLED.value:
+            self.update_message_in_ai_notes(_("AI provider is disabled"))
+            return
+
+        if not self._ai_api_key:
+            self.update_message_in_ai_notes(_("No AI API key provided"))
+            print("❌ ERROR: No AI API Key found.", file=sys.stderr)
+            return
+
+        if not self._enabled_place_history:
+            self.update_message_in_ai_notes(
+                _("AI-generated historical place data is currently disabled")
+            )
+            return
+
+        if self._ai_provider == AIProviders.OPENAI.value:
+            self.finder = OpenaiAIClient(self._ai_api_key, self._ai_model)
+        elif self._ai_provider == AIProviders.MISTRAL.value:
+            self.finder = MistralAIClient(self._ai_api_key, self._ai_model)
+        else:
+            error_message = _(
+                "AI provider is unknown. Please check your AI provider settings."
+            )
+            self.update_message_in_ai_notes(error_message)
+            print(
+                f"⚠ Unknown AI provider: {self._ai_provider}. {error_message}",
+                file=sys.stderr,
+            )
+            return
+
+        self.show_loading_message_in_notes()
+
+        threading.Thread(
+            target=self.fetch_place_history_in_background,
+            args=(place_history_request_data,),
+            daemon=True,
+        ).start()
+
+    def show_loading_message_in_notes(self):
+        """Displays a loading message in the notes text view."""
+        self.update_message_in_ai_notes(
+            _("⏳ Generating historical place data, please wait...")
+        )
+
+    def update_message_in_ai_notes(self, text):
+        """Updates the message displayed in the AI notes section of the UI."""
+        buffer = self.ui.notes_textview.get_buffer()
+        buffer.set_text(text)
 
     def make_directories(self):
         """Creates necessary directories for storing configurations and user data."""
@@ -314,11 +400,48 @@ class WebSearch(Gramplet):
         """Fetches AI-recommended genealogy sites in a background thread."""
         ai_domain_data.skipped_domains = self.website_loader.load_skipped_domains()
         try:
-            results = self.finder.find_sites(ai_domain_data)
-            GObject.idle_add(self.signal_emitter.emit, "sites-fetched", results)
+
+            prompt_builder = SitePromptBuilder()
+            request = SitePromptRequest(ai_domain_data, prompt_builder)
+            results = self.finder.request(request)
+
+            GObject.idle_add(
+                self.signal_emitter.emit, "sites-fetched", json.dumps(results)
+            )
         except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"❌ Error fetching sites: {e}", file=sys.stderr)
             GObject.idle_add(self.signal_emitter.emit, "sites-fetched", None)
+
+    def fetch_place_history_in_background(self, place_history_request_data):
+        """Fetches historical place data using AI in a background thread."""
+        try:
+            prompt_builder = PlaceHistoryPromptBuilder()
+            request = PlaceHistoryRequest(place_history_request_data, prompt_builder)
+            results = self.finder.request(request)
+            formatted_text = MarkdownPlaceHistoryFormatter().format(
+                results, place_history_request_data
+            )
+            GObject.idle_add(
+                self.signal_emitter.emit, "place-history-fetched", formatted_text
+            )
+
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            print(f"❌ Error fetching place history: {e}", file=sys.stderr)
+            GObject.idle_add(
+                self.signal_emitter.emit,
+                "place-history-fetched",
+                "⚠ Error while generating AI content.",
+            )
+
+    def on_place_history_fetched(self, unused_gramplet, text: str):
+        """
+        Handles the 'place-history-fetched' signal and updates the notes view.
+        """
+        self.update_notes_textview(text)
+
+    def update_notes_textview(self, text: str):
+        """Updates the notes textview in the UI thread."""
+        self.markdown_inserter.insert_markdown(text)
 
     def on_sites_fetched(self, unused_gramplet, results):
         """
@@ -656,6 +779,16 @@ class WebSearch(Gramplet):
         self.populate_links(place_data, {}, SupportedNavTypes.PLACES.value, place)
         self.update()
 
+        self.refresh_place_history_section(
+            PlaceHistoryRequestData(
+                name=place_data["place"],
+                full_hierarchy=place_data["title"],
+                language=self._custom_country_code_for_ai_notes or place_data["locale"],
+                latitude=place_data["latitude"],
+                longitude=place_data["longitude"],
+            )
+        )
+
     def active_source_changed(self, handle):
         """Handles updates when the active source changes in the GUI."""
         self._context.last_active_entity_handle = handle
@@ -870,6 +1003,9 @@ class WebSearch(Gramplet):
 
     def translate(self):
         """Sets translated text for UI elements and context menu."""
+        self.ui.notebook.set_tab_label_text(self.ui.pages.treeview_page, "🔗")
+        self.ui.notebook.set_tab_label_text(self.ui.pages.textarea_container, "🧠")
+
         self.ui.columns.file_identifier.set_title("")
         self.ui.columns.keys.set_title(_("Keys"))
         self.ui.columns.title.set_title(_("Title"))
@@ -1204,6 +1340,8 @@ class WebSearch(Gramplet):
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
         nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
 
+        attribute = None
+
         if nav_type in [
             SupportedNavTypes.PEOPLE.value,
             SupportedNavTypes.FAMILIES.value,
@@ -1217,6 +1355,9 @@ class WebSearch(Gramplet):
             SupportedNavTypes.CITATIONS.value,
         ]:
             attribute = SrcAttribute()
+
+        if not attribute:
+            return
 
         attribute.set_type(_("WebSearch Link"))
         attribute.set_value(self._context.active_url)
@@ -1322,7 +1463,6 @@ class WebSearch(Gramplet):
         self.config_ini_manager.set_string(
             "websearch.url_prefix_replacement", self.opts[4].get_value()
         )
-
         self.config_ini_manager.set_enum(
             "websearch.ai_provider", self.opts[5].get_value()
         )
@@ -1347,6 +1487,7 @@ class WebSearch(Gramplet):
         self.config_ini_manager.set_boolean_option(
             "websearch.show_note_links", self.opts[12].get_value()
         )
+
         selected_labels = self.opts[13].get_selected()
         selected_columns = [
             key
@@ -1365,6 +1506,13 @@ class WebSearch(Gramplet):
         ]
         self.config_ini_manager.set_boolean_list(
             "websearch.display_icons", selected_icons
+        )
+
+        self.config_ini_manager.set_boolean_option(
+            "websearch.enabled_place_history", self.opts[15].get_value()
+        )
+        self.config_ini_manager.set_string(
+            "websearch.custom_country_code_for_ai_notes", self.opts[16].get_value()
         )
 
         self.config_ini_manager.save()
@@ -1452,6 +1600,13 @@ class WebSearch(Gramplet):
         )
         self._display_icons = self.config_ini_manager.get_list(
             "websearch.display_icons", DEFAULT_DISPLAY_ICONS
+        )
+        self._enabled_place_history = self.config_ini_manager.get_boolean_option(
+            "websearch.enabled_place_history", DEFAULT_ENABLED_PLACE_HISTORY
+        )
+        self._custom_country_code_for_ai_notes = self.config_ini_manager.get_string(
+            "websearch.custom_country_code_for_ai_notes",
+            DEFAULT_CUSTOM_COUNTRY_CODE_FOR_AI_NOTES,
         )
 
     def load_ai_provider(self):
