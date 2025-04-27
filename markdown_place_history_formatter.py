@@ -62,6 +62,7 @@ class MarkdownPlaceHistoryFormatter(PlaceHistoryFormatter):
         language_label = _("Language")
         latitude_label = _("Latitude")
         longitude_label = _("Longitude")
+        place_type_label = _("Place Type:")
 
         # Title
         place_name = data.name
@@ -86,6 +87,9 @@ class MarkdownPlaceHistoryFormatter(PlaceHistoryFormatter):
             parts.append(
                 f"📍 {coordinates_label} [{latitude}, {longitude}]({map_link})"
             )
+
+        place_type = results.get("place_type", "Unknown")  # Default to 'Unknown' if not found
+        parts.append(f"🔠 **{place_type_label}** {place_type}")    
 
         parts.append("")
         parts.append(f"## 🗺 {admin_history_label}")
