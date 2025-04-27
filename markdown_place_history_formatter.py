@@ -63,6 +63,7 @@ class MarkdownPlaceHistoryFormatter(PlaceHistoryFormatter):
         latitude_label = _("Latitude")
         longitude_label = _("Longitude")
         place_type_label = _("Place Type:")
+        request_time_label = _("Last Retrieved At:")
 
         # Title
         place_name = data.name
@@ -89,7 +90,11 @@ class MarkdownPlaceHistoryFormatter(PlaceHistoryFormatter):
             )
 
         place_type = results.get("place_type", "Unknown")  # Default to 'Unknown' if not found
-        parts.append(f"🔠 **{place_type_label}** {place_type}")    
+        parts.append(f"🔠 **{place_type_label}** {place_type}") 
+
+        # Add request time
+        request_time = results.get("request_time", "Unknown")
+        parts.append(f"⏰ **{request_time_label}** {request_time}")   
 
         parts.append("")
         parts.append(f"## 🗺 {admin_history_label}")

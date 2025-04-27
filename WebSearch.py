@@ -41,6 +41,7 @@ import urllib.parse
 import webbrowser
 from enum import IntEnum
 from types import SimpleNamespace
+from datetime import datetime
 
 
 # --------------------------
@@ -96,6 +97,7 @@ from constants import (
     URL_SAFE_CHARS,
     USER_DATA_CSV_DIR,
     USER_DATA_JSON_DIR,
+    ADMINISTRATIVE_DIVISIONS_DIR,
     VIEW_IDS_MAPPING,
     VISITED_HASH_FILE_PATH,
     AIProviders,
@@ -126,6 +128,7 @@ from ai.place_history_prompt_builder import PlaceHistoryPromptBuilder
 from ai.place_history_request import PlaceHistoryRequest
 from markdown_inserter import MarkdownInserter
 from markdown_place_history_formatter import MarkdownPlaceHistoryFormatter
+from place_history_storage import PlaceHistoryStorage
 
 MODEL_SCHEMA = [
     ("icon_name", str),
@@ -385,6 +388,19 @@ class WebSearch(Gramplet):
         ).start()
 
     def refresh_place_history_section(self, place_history_request_data):
+
+        results = PlaceHistoryStorage().load_results_from_file(place_history_request_data)  
+        if results and results != {}:
+            self._context.active_place_latitude, self._context.active_place_longitude = self.get_coordinates(results)
+            formatted_text = MarkdownPlaceHistoryFormatter().format(
+                results, place_history_request_data
+            )
+            GObject.idle_add(
+                self.signal_emitter.emit, "place-history-fetched", formatted_text
+            )
+            return
+
+
         """Refreshes the section displaying the historical administrative data for a place."""
         if self._ai_provider == AIProviders.DISABLED.value:
             self.update_message_in_ai_notes(_("AI provider is disabled"))
@@ -437,7 +453,7 @@ class WebSearch(Gramplet):
 
     def make_directories(self):
         """Creates necessary directories for storing configurations and user data."""
-        for directory in [DATA_DIR, CONFIGS_DIR, USER_DATA_CSV_DIR, USER_DATA_JSON_DIR]:
+        for directory in [DATA_DIR, CONFIGS_DIR, USER_DATA_CSV_DIR, USER_DATA_JSON_DIR, ADMINISTRATIVE_DIVISIONS_DIR]:
             if not os.path.exists(directory):
                 os.makedirs(directory, exist_ok=True)
 
@@ -463,15 +479,18 @@ class WebSearch(Gramplet):
             prompt_builder = PlaceHistoryPromptBuilder()
             request = PlaceHistoryRequest(place_history_request_data, prompt_builder)
             results = self.finder.request(request)
+            if results and results != {}:
+                request_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                results['request_time'] = request_time
+                PlaceHistoryStorage().save_results_to_file(place_history_request_data, results)
+                self._context.active_place_latitude, self._context.active_place_longitude = self.get_coordinates(results)
 
-            self._context.active_place_latitude, self._context.active_place_longitude = self.get_coordinates(results)
-
-            formatted_text = MarkdownPlaceHistoryFormatter().format(
-                results, place_history_request_data
-            )
-            GObject.idle_add(
-                self.signal_emitter.emit, "place-history-fetched", formatted_text
-            )
+                formatted_text = MarkdownPlaceHistoryFormatter().format(
+                    results, place_history_request_data
+                )
+                GObject.idle_add(
+                    self.signal_emitter.emit, "place-history-fetched", formatted_text
+                )
 
         except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"❌ Error fetching place history: {e}", file=sys.stderr)
@@ -853,6 +872,8 @@ class WebSearch(Gramplet):
                 language=self._custom_country_code_for_ai_notes or place_data["locale"],
                 latitude=place_data["latitude"],
                 longitude=place_data["longitude"],
+                handle=handle,
+                gramps_id=place.get_gramps_id()
             )
         )
 

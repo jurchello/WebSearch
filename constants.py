@@ -364,6 +364,7 @@ FLAGS_DIR = os.path.join(ICONS_DIR, "flags")
 USER_DATA_BASE_DIR = os.path.join(USER_DATA, "WebSearch")
 USER_DATA_CSV_DIR = os.path.join(USER_DATA_BASE_DIR, "csv")
 USER_DATA_JSON_DIR = os.path.join(USER_DATA_BASE_DIR, "json")
+ADMINISTRATIVE_DIVISIONS_DIR = os.path.join(DATA_DIR, "administrative_divisions")
 
 INTERFACE_FILE_PATH = os.path.join(os.path.dirname(__file__), "interface.xml")
 CONFIG_FILE_PATH = os.path.join(CONFIGS_DIR, "config.ini")

@@ -85,3 +85,5 @@ class PlaceHistoryRequestData:
     language: str
     latitude: Optional[str]
     longitude: Optional[str]
+    handle: str
+    gramps_id: str
