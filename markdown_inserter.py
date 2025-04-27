@@ -54,7 +54,6 @@ Notes:
 """
 
 import re
-import webbrowser
 
 # --------------------------
 # Third-party libraries
@@ -244,37 +243,13 @@ class MarkdownInserter:
             link_text (str): The display text for the link.
             url (str): The URL to open when the link is clicked.
         """
+        link_id = hash(url)
         start_iter = self.buffer.get_end_iter()
-
         link_tag = self.link_tag_template
         setattr(link_tag, "url", url)
+        setattr(link_tag, "link_id", link_id)
 
         self.buffer.insert_with_tags(start_iter, link_text, link_tag)
-
-    def on_event(self, textview, event):
-        """
-        Handle mouse click events on the textview to open hyperlinks.
-
-        Args:
-            textview (Gtk.TextView): The textview receiving the event.
-            event (Gdk.Event): The mouse event.
-
-        Returns:
-            bool: True if a link was clicked and opened, False otherwise.
-        """
-        if event.type == Gdk.EventType.BUTTON_RELEASE:
-            x, y = int(event.x), int(event.y)
-            success, text_iter = textview.get_iter_at_location(x, y)
-            if not success:
-                return False
-
-            tags = text_iter.get_tags()
-            for tag in tags:
-                url = getattr(tag, "url", None)
-                if url:
-                    webbrowser.open(url)
-                    return True
-        return False
 
     def on_hover_link(self, widget, event):
         """
