@@ -205,8 +205,8 @@
 
     </object>
 
-    <!-- Context menu -->
-    <object class="GtkMenu" id="context_menu">
+    <!-- Main Context menu -->
+    <object class="GtkMenu" id="main_context_menu">
         <child>
             <object class="GtkMenuItem" id="add_note">
                 <property name="label">Add link to note</property>
@@ -243,5 +243,5 @@
                 <signal name="activate" handler="on_hide_link_for_all_items"/>
             </object>
         </child>
-    </object>
+    </object>  
 </interface>

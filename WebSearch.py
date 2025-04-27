@@ -197,6 +197,8 @@ class WebSearch(Gramplet):
             last_active_entity_type=None,
             previous_ai_site_provider=None,
             previous_ai_place_history_provider=None,
+            active_place_latitude=None,
+            active_place_longitude=None,
         )
         self.system_locale = get_system_locale()
         self.gui = gui
@@ -215,14 +217,18 @@ class WebSearch(Gramplet):
                 "ai_recommendations_label"
             ),
             tree_view=self.builder.get_object("treeview"),
-            context_menu=self.builder.get_object("context_menu"),
-            context_menu_items=SimpleNamespace(
-                add_note=self.builder.get_object("add_note"),
-                add_attribute=self.builder.get_object("add_attribute"),
-                show_qr=self.builder.get_object("show_qr"),
-                copy_link=self.builder.get_object("copy_link"),
-                hide_selected=self.builder.get_object("hide_selected"),
-                hide_all=self.builder.get_object("hide_all"),
+            context_menus=SimpleNamespace(
+                main=SimpleNamespace(
+                    menu=self.builder.get_object("main_context_menu"),
+                    items=SimpleNamespace(
+                        add_note=self.builder.get_object("add_note"),
+                        add_attribute=self.builder.get_object("add_attribute"),
+                        show_qr=self.builder.get_object("show_qr"),
+                        copy_link=self.builder.get_object("copy_link"),
+                        hide_selected=self.builder.get_object("hide_selected"),
+                        hide_all=self.builder.get_object("hide_all"),
+                    ),
+                ),
             ),
             text_renderers=SimpleNamespace(
                 file_identifier=self.builder.get_object(
@@ -301,12 +307,51 @@ class WebSearch(Gramplet):
         self.ui.notes_textview.set_bottom_margin(5)
 
         self.markdown_inserter = MarkdownInserter(self.ui.notes_textview)
-        self.ui.notes_textview.connect("event-after", self.markdown_inserter.on_event)
+        self.ui.notes_textview.connect("event-after", self.on_textview_click)
         self.ui.notes_textview.connect(
             "motion-notify-event", self.markdown_inserter.on_hover_link
         )
+        self.ui.notes_textview.connect("populate-popup", self.on_populate_popup, None)  # передаємо `None` або будь-які дані в user_data
+
 
         self.refresh_ai_section()
+
+    def on_populate_popup(self, widget, popup, user_data):
+        """Handle the populate-popup signal to add custom menu items."""
+        if isinstance(popup, Gtk.Menu):
+            save_coordinates_item = Gtk.MenuItem(label=_('Save Coordinates to the Place'))
+            save_coordinates_item.connect("activate", self.on_save_coordinates_to_place)
+            popup.append(save_coordinates_item)
+            save_coordinates_item.show()
+
+
+    def on_textview_click(self, widget, event):
+        """Handle mouse click events on the textview"""
+        if event.type == Gdk.EventType.BUTTON_RELEASE:
+            x, y = int(event.x), int(event.y)
+            success, text_iter = widget.get_iter_at_location(x, y)
+            
+            if not success:
+                return False
+
+            tags = text_iter.get_tags()
+            for tag in tags:
+                url = getattr(tag, "url", None)
+                if url:
+                    if event.button.button == 1:
+                        webbrowser.open(url)
+                        return True
+        return False
+
+    def on_save_coordinates_to_place(self, widget):
+        """
+        Save the coordinates of the selected place (URL) to the place data.
+        """
+        if self._context.active_place_latitude and self._context.active_place_longitude and self._context.place:
+            with DbTxn("Save coordinates to place", self.dbstate.db) as trans:
+                self._context.place.set_latitude(self._context.active_place_latitude)
+                self._context.place.set_longitude(self._context.active_place_longitude)
+                self.dbstate.db.commit_place(self._context.place, trans)
 
     def refresh_ai_section(self):
         """Updates AI provider settings and fetches AI-recommended sites if necessary."""
@@ -418,6 +463,9 @@ class WebSearch(Gramplet):
             prompt_builder = PlaceHistoryPromptBuilder()
             request = PlaceHistoryRequest(place_history_request_data, prompt_builder)
             results = self.finder.request(request)
+
+            self._context.active_place_latitude, self._context.active_place_longitude = self.get_coordinates(results)
+
             formatted_text = MarkdownPlaceHistoryFormatter().format(
                 results, place_history_request_data
             )
@@ -432,6 +480,25 @@ class WebSearch(Gramplet):
                 "place-history-fetched",
                 "⚠ Error while generating AI content.",
             )
+
+    def get_coordinates(self, data):
+        """
+        Extracts latitude and longitude from the provided data.
+        """
+        location_info = data.get('location_info', None)
+
+        if location_info is None:
+            return None, None
+
+        latitude = location_info.get('latitude')
+        longitude = location_info.get('longitude')
+
+        if latitude in [None, ""]:
+            latitude = None
+        if longitude in [None, ""]:
+            longitude = None
+
+        return latitude, longitude
 
     def on_place_history_fetched(self, unused_gramplet, text: str):
         """
@@ -647,7 +714,7 @@ class WebSearch(Gramplet):
         """Handles updates when the active person changes in the GUI."""
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Person"
-        self.close_context_menu()
+        self.close_main_context_menu()
 
         if handle is None:
             self.model.clear()
@@ -669,7 +736,7 @@ class WebSearch(Gramplet):
         """Handles updates when the active event changes in the GUI."""
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Event"
-        self.close_context_menu()
+        self.close_main_context_menu()
 
         if handle is None:
             self.model.clear()
@@ -688,7 +755,7 @@ class WebSearch(Gramplet):
         """Handles updates when the active citation changes in the GUI."""
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Citation"
-        self.close_context_menu()
+        self.close_main_context_menu()
 
         if handle is None:
             self.model.clear()
@@ -707,7 +774,7 @@ class WebSearch(Gramplet):
         """Handles updates when the active media changes in the GUI."""
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Media"
-        self.close_context_menu()
+        self.close_main_context_menu()
 
         if handle is None:
             self.model.clear()
@@ -726,7 +793,7 @@ class WebSearch(Gramplet):
         """Handles updates when the active note changes in the GUI."""
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Note"
-        self.close_context_menu()
+        self.close_main_context_menu()
 
         if handle is None:
             self.model.clear()
@@ -745,7 +812,7 @@ class WebSearch(Gramplet):
         """Handles updates when the active repository changes in the GUI."""
         self._context.last_active_entity_handle = handle
         self._context.last_active_entity_type = "Repository"
-        self.close_context_menu()
+        self.close_main_context_menu()
 
         if handle is None:
             self.model.clear()
@@ -827,10 +894,10 @@ class WebSearch(Gramplet):
         self.populate_links(family_data, {}, SupportedNavTypes.FAMILIES.value, family)
         self.update()
 
-    def close_context_menu(self):
-        """Closes the context menu if it is currently visible."""
-        if self.ui.context_menu and self.ui.context_menu.get_visible():
-            self.ui.context_menu.hide()
+    def close_main_context_menu(self):
+        """Closes the main context menu if it is currently visible."""
+        if self.ui.context_menus.main.menu and self.ui.context_menus.main.menu.get_visible():
+            self.ui.context_menus.main.menu.hide()
 
     def build_gui(self):
         """Constructs and returns the full GTK UI for the WebSearch Gramplet."""
@@ -1012,14 +1079,14 @@ class WebSearch(Gramplet):
         self.ui.columns.url.set_title(_("Website URL"))
         self.ui.columns.comment.set_title(_("Comment"))
 
-        self.ui.context_menu_items.add_note.set_label(_("Add link to note"))
-        self.ui.context_menu_items.add_attribute.set_label(_("Add link to attribute"))
-        self.ui.context_menu_items.show_qr.set_label(_("Show QR-code"))
-        self.ui.context_menu_items.copy_link.set_label(_("Copy link to clipboard"))
-        self.ui.context_menu_items.hide_selected.set_label(
+        self.ui.context_menus.main.items.add_note.set_label(_("Add link to note"))
+        self.ui.context_menus.main.items.add_attribute.set_label(_("Add link to attribute"))
+        self.ui.context_menus.main.items.show_qr.set_label(_("Show QR-code"))
+        self.ui.context_menus.main.items.copy_link.set_label(_("Copy link to clipboard"))
+        self.ui.context_menus.main.items.hide_selected.set_label(
             _("Hide link for selected item")
         )
-        self.ui.context_menu_items.hide_all.set_label(_("Hide link for all items"))
+        self.ui.context_menus.main.items.hide_all.set_label(_("Hide link for all items"))
 
         self.ui.ai_recommendations_label.set_text(_("🔍 AI Suggestions"))
 
@@ -1123,7 +1190,7 @@ class WebSearch(Gramplet):
 
                 self._context.active_tree_path = path
                 self._context.active_url = url
-                self.ui.context_menu.show_all()
+                self.ui.context_menus.main.menu.show_all()
 
                 if (
                     nav_type
@@ -1140,9 +1207,9 @@ class WebSearch(Gramplet):
                     and source_type != SourceTypes.NOTE.value
                     and not saved_icon_visible
                 ):
-                    self.ui.context_menu_items.add_note.show()
+                    self.ui.context_menus.main.items.add_note.show()
                 else:
-                    self.ui.context_menu_items.add_note.hide()
+                    self.ui.context_menus.main.items.add_note.hide()
 
                 if (
                     nav_type
@@ -1157,11 +1224,11 @@ class WebSearch(Gramplet):
                     and source_type != SourceTypes.ATTRIBUTE.value
                     and not saved_icon_visible
                 ):
-                    self.ui.context_menu_items.add_attribute.show()
+                    self.ui.context_menus.main.items.add_attribute.show()
                 else:
-                    self.ui.context_menu_items.add_attribute.hide()
+                    self.ui.context_menus.main.items.add_attribute.hide()
 
-                self.ui.context_menu.popup_at_pointer(event)
+                self.ui.context_menus.main.menu.popup_at_pointer(event)
 
     def on_add_note(self, unused_widget):
         """Adds the current selected URL as a note to the person record."""
