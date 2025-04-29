@@ -228,6 +228,20 @@ class SourceTypes(Enum):
     FORUM = "FORUM"
 
 
+class DuplicateHandlingMode(Enum):
+    """Mode for handling duplicates during bulk operations."""
+
+    THROW_ERROR = "error"
+    IGNORE_DUPLICATES = "ignore"
+
+
+class DBFileTables(Enum):
+    """Enumeration of database table filenames."""
+
+    PLACE_HISTORY_REQUESTS = "place_history_requests.json"
+    MIGRATIONS = "migrations.json"
+
+
 SUPPORTED_SOURCE_TYPE_VALUES = {st.value for st in SourceTypes}
 
 
@@ -358,6 +372,7 @@ ALL_ICONS_LOCALIZED = {
 CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
+DB_FILE_TABLE_DIR = os.path.join(os.path.dirname(__file__), "db")
 CSV_DIR = os.path.join(ASSETS_DIR, "csv")
 ICONS_DIR = os.path.join(ASSETS_DIR, "icons")
 FLAGS_DIR = os.path.join(ICONS_DIR, "flags")
@@ -365,6 +380,7 @@ USER_DATA_BASE_DIR = os.path.join(USER_DATA, "WebSearch")
 USER_DATA_CSV_DIR = os.path.join(USER_DATA_BASE_DIR, "csv")
 USER_DATA_JSON_DIR = os.path.join(USER_DATA_BASE_DIR, "json")
 ADMINISTRATIVE_DIVISIONS_DIR = os.path.join(DATA_DIR, "administrative_divisions")
+MIGRATIONS_DIR = os.path.join(DB_FILE_TABLE_DIR, "migrations")
 
 INTERFACE_FILE_PATH = os.path.join(os.path.dirname(__file__), "interface.xml")
 CONFIG_FILE_PATH = os.path.join(CONFIGS_DIR, "config.ini")
@@ -372,6 +388,7 @@ ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(CONFIGS_DIR, "attribute_mapping.json"
 VISITED_HASH_FILE_PATH = os.path.join(DATA_DIR, "visited_links.txt")
 SAVED_HASH_FILE_PATH = os.path.join(DATA_DIR, "saved_links.txt")
 HIDDEN_HASH_FILE_PATH = os.path.join(DATA_DIR, "hidden_links.txt")
+MIGRATIONS_FILE_PATH = os.path.join(DB_FILE_TABLE_DIR, "migrations.json")
 SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(
     DATA_DIR, "skipped_domain_suggestions.txt"
 )

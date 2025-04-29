@@ -41,7 +41,6 @@ import urllib.parse
 import webbrowser
 from enum import IntEnum
 from types import SimpleNamespace
-from datetime import datetime
 
 
 # --------------------------
@@ -105,6 +104,13 @@ from constants import (
     SupportedNavTypes,
     URLCompactnessLevel,
     SourceTypes,
+    DBFileTables,
+)
+from models import (
+    LinkContext,
+    AIDomainData,
+    PlaceHistoryRequestData,
+    DBFileTableConfig,
 )
 from entity_data_builder import EntityDataBuilder
 from helpers import get_system_locale
@@ -119,7 +125,6 @@ from url_formatter import UrlFormatter
 from website_loader import WebsiteLoader
 from gramplet_version_extractor import GrampletVersionExtractor
 from translation_helper import _
-from models import LinkContext, AIDomainData, PlaceHistoryRequestData
 from ai.openai_ai_client import OpenaiAIClient
 from ai.mistral_ai_client import MistralAIClient
 from ai.site_prompt_builder import SitePromptBuilder
@@ -129,6 +134,8 @@ from ai.place_history_request import PlaceHistoryRequest
 from markdown_inserter import MarkdownInserter
 from markdown_place_history_formatter import MarkdownPlaceHistoryFormatter
 from place_history_storage import PlaceHistoryStorage
+from db_file_table import DBFileTable
+from migration_manager import MigrationManager
 
 MODEL_SCHEMA = [
     ("icon_name", str),
@@ -188,7 +195,23 @@ class WebSearch(Gramplet):
         Also initializes the Gramplet GUI and internal context for tracking active Gramps objects.
         """
 
+        MigrationManager().migrate()
         self.version = GrampletVersionExtractor().get()
+        self.place_history_table = DBFileTable(
+            DBFileTableConfig(
+                filename=DBFileTables.PLACE_HISTORY_REQUESTS.value,
+                cache_fields=None,
+                unique_fields=["id"],
+                required_fields=[
+                    "event_gramps_id",
+                    "event_handle",
+                    "file_path",
+                    "place_name",
+                    "place_type",
+                ],
+                timestamps=True,
+            )
+        )
         self._context = SimpleNamespace(
             person=None,
             family=None,
@@ -314,26 +337,28 @@ class WebSearch(Gramplet):
         self.ui.notes_textview.connect(
             "motion-notify-event", self.markdown_inserter.on_hover_link
         )
-        self.ui.notes_textview.connect("populate-popup", self.on_populate_popup, None)  # передаємо `None` або будь-які дані в user_data
-
+        self.ui.notes_textview.connect(
+            "populate-popup", self.on_populate_popup, None
+        )  # передаємо `None` або будь-які дані в user_data
 
         self.refresh_ai_section()
 
-    def on_populate_popup(self, widget, popup, user_data):
+    def on_populate_popup(self, _widget, popup, _user_data):
         """Handle the populate-popup signal to add custom menu items."""
         if isinstance(popup, Gtk.Menu):
-            save_coordinates_item = Gtk.MenuItem(label=_('Save Coordinates to the Place'))
+            save_coordinates_item = Gtk.MenuItem(
+                label=_("Save Coordinates to the Place")
+            )
             save_coordinates_item.connect("activate", self.on_save_coordinates_to_place)
             popup.append(save_coordinates_item)
             save_coordinates_item.show()
-
 
     def on_textview_click(self, widget, event):
         """Handle mouse click events on the textview"""
         if event.type == Gdk.EventType.BUTTON_RELEASE:
             x, y = int(event.x), int(event.y)
             success, text_iter = widget.get_iter_at_location(x, y)
-            
+
             if not success:
                 return False
 
@@ -346,11 +371,15 @@ class WebSearch(Gramplet):
                         return True
         return False
 
-    def on_save_coordinates_to_place(self, widget):
+    def on_save_coordinates_to_place(self, _widget):
         """
         Save the coordinates of the selected place (URL) to the place data.
         """
-        if self._context.active_place_latitude and self._context.active_place_longitude and self._context.place:
+        if (
+            self._context.active_place_latitude
+            and self._context.active_place_longitude
+            and self._context.place
+        ):
             with DbTxn("Save coordinates to place", self.dbstate.db) as trans:
                 self._context.place.set_latitude(self._context.active_place_latitude)
                 self._context.place.set_longitude(self._context.active_place_longitude)
@@ -388,20 +417,26 @@ class WebSearch(Gramplet):
         ).start()
 
     def refresh_place_history_section(self, place_history_request_data):
-
-        results = PlaceHistoryStorage().load_results_from_file(place_history_request_data)  
-        if results and results != {}:
-            self._context.active_place_latitude, self._context.active_place_longitude = self.get_coordinates(results)
-            formatted_text = MarkdownPlaceHistoryFormatter().format(
-                results, place_history_request_data
-            )
-            GObject.idle_add(
-                self.signal_emitter.emit, "place-history-fetched", formatted_text
-            )
-            return
-
-
         """Refreshes the section displaying the historical administrative data for a place."""
+
+        place_history_record = self.place_history_table.first_by_field(
+            "event_handle", place_history_request_data.handle
+        )
+        if place_history_record:
+            results = PlaceHistoryStorage().load_results_from_file(place_history_record)
+            if results and results != {}:
+                (
+                    self._context.active_place_latitude,
+                    self._context.active_place_longitude,
+                ) = self.get_coordinates(results)
+                formatted_text = MarkdownPlaceHistoryFormatter().format(
+                    results, place_history_request_data, place_history_record
+                )
+                GObject.idle_add(
+                    self.signal_emitter.emit, "place-history-fetched", formatted_text
+                )
+                return
+
         if self._ai_provider == AIProviders.DISABLED.value:
             self.update_message_in_ai_notes(_("AI provider is disabled"))
             return
@@ -453,7 +488,13 @@ class WebSearch(Gramplet):
 
     def make_directories(self):
         """Creates necessary directories for storing configurations and user data."""
-        for directory in [DATA_DIR, CONFIGS_DIR, USER_DATA_CSV_DIR, USER_DATA_JSON_DIR, ADMINISTRATIVE_DIVISIONS_DIR]:
+        for directory in [
+            DATA_DIR,
+            CONFIGS_DIR,
+            USER_DATA_CSV_DIR,
+            USER_DATA_JSON_DIR,
+            ADMINISTRATIVE_DIVISIONS_DIR,
+        ]:
             if not os.path.exists(directory):
                 os.makedirs(directory, exist_ok=True)
 
@@ -480,13 +521,34 @@ class WebSearch(Gramplet):
             request = PlaceHistoryRequest(place_history_request_data, prompt_builder)
             results = self.finder.request(request)
             if results and results != {}:
-                request_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                results['request_time'] = request_time
-                PlaceHistoryStorage().save_results_to_file(place_history_request_data, results)
-                self._context.active_place_latitude, self._context.active_place_longitude = self.get_coordinates(results)
 
+                (
+                    self._context.active_place_latitude,
+                    self._context.active_place_longitude,
+                ) = self.get_coordinates(results)
+                filename = (
+                    f"{place_history_request_data.gramps_id}_"
+                    f"{place_history_request_data.handle}.json"
+                )
+                place_history_record = self.place_history_table.create(
+                    {
+                        "event_gramps_id": place_history_request_data.gramps_id,
+                        "event_handle": place_history_request_data.handle,
+                        "file_path": os.path.join(
+                            ADMINISTRATIVE_DIVISIONS_DIR, filename
+                        ),
+                        "place_name": place_history_request_data.name,
+                        "place_type": results.get("place_type", None),
+                        "latitude": self._context.active_place_latitude,
+                        "longitude": self._context.active_place_longitude,
+                    }
+                )
+
+                PlaceHistoryStorage().save_results_to_file(
+                    place_history_record, results
+                )
                 formatted_text = MarkdownPlaceHistoryFormatter().format(
-                    results, place_history_request_data
+                    results, place_history_request_data, place_history_record
                 )
                 GObject.idle_add(
                     self.signal_emitter.emit, "place-history-fetched", formatted_text
@@ -500,17 +562,17 @@ class WebSearch(Gramplet):
                 "⚠ Error while generating AI content.",
             )
 
-    def get_coordinates(self, data):
+    def get_coordinates(self, results):
         """
-        Extracts latitude and longitude from the provided data.
+        Extracts latitude and longitude from the provided results.
         """
-        location_info = data.get('location_info', None)
+        location_info = results.get("location_info", None)
 
         if location_info is None:
             return None, None
 
-        latitude = location_info.get('latitude')
-        longitude = location_info.get('longitude')
+        latitude = location_info.get("latitude")
+        longitude = location_info.get("longitude")
 
         if latitude in [None, ""]:
             latitude = None
@@ -873,7 +935,7 @@ class WebSearch(Gramplet):
                 latitude=place_data["latitude"],
                 longitude=place_data["longitude"],
                 handle=handle,
-                gramps_id=place.get_gramps_id()
+                gramps_id=place.get_gramps_id(),
             )
         )
 
@@ -917,7 +979,10 @@ class WebSearch(Gramplet):
 
     def close_main_context_menu(self):
         """Closes the main context menu if it is currently visible."""
-        if self.ui.context_menus.main.menu and self.ui.context_menus.main.menu.get_visible():
+        if (
+            self.ui.context_menus.main.menu
+            and self.ui.context_menus.main.menu.get_visible()
+        ):
             self.ui.context_menus.main.menu.hide()
 
     def build_gui(self):
@@ -1101,13 +1166,19 @@ class WebSearch(Gramplet):
         self.ui.columns.comment.set_title(_("Comment"))
 
         self.ui.context_menus.main.items.add_note.set_label(_("Add link to note"))
-        self.ui.context_menus.main.items.add_attribute.set_label(_("Add link to attribute"))
+        self.ui.context_menus.main.items.add_attribute.set_label(
+            _("Add link to attribute")
+        )
         self.ui.context_menus.main.items.show_qr.set_label(_("Show QR-code"))
-        self.ui.context_menus.main.items.copy_link.set_label(_("Copy link to clipboard"))
+        self.ui.context_menus.main.items.copy_link.set_label(
+            _("Copy link to clipboard")
+        )
         self.ui.context_menus.main.items.hide_selected.set_label(
             _("Hide link for selected item")
         )
-        self.ui.context_menus.main.items.hide_all.set_label(_("Hide link for all items"))
+        self.ui.context_menus.main.items.hide_all.set_label(
+            _("Hide link for all items")
+        )
 
         self.ui.ai_recommendations_label.set_text(_("🔍 AI Suggestions"))
 

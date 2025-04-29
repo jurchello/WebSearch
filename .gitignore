@@ -5,3 +5,5 @@ data
 locale
 scripts
 pyproject.toml
+db/*
+!db/migrations

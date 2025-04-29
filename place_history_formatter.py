@@ -40,14 +40,17 @@ class PlaceHistoryFormatter(ABC):
     """
 
     @abstractmethod
-    def format(self, results, data) -> str:
+    def format(self, results, data, place_history_record) -> str:
         """
         Method to format historical administrative divisions information for a place.
 
         Args:
-            results (dict): Historical data to be formatted.
-            place_data (PlaceData): Place-related data containing metadata.
-
-        Returns:
-            str: Formatted string of place history.
+            results (dict):
+                Historical data containing foundation information, location,
+                administrative periods, and other metadata.
+            data (PlaceHistoryRequestData):
+                Basic information about the place, such as name, language, coordinates, etc.
+            place_history_record (dict):
+                Record from the database containing file path, event identifiers,
+                timestamps, and potentially additional metadata linked to the place.
         """
