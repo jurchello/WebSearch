@@ -59,6 +59,7 @@ from gramps.gen.lib import Attribute, Note, NoteType, SrcAttribute
 from gramps.gen.plug import Gramplet
 from gramps.gui.display import display_url
 from gramps.gui.editors import EditObject
+from gramps.gen.errors import HandleError
 
 # --------------------------
 # Own project imports
@@ -1794,8 +1795,16 @@ class WebSearch(Gramplet):
         entity_type = self._context.last_active_entity_type.lower()
         method_name = f"active_{entity_type}_changed"
         method = getattr(self, method_name, None)
+        if self._context.last_active_entity_handle is None:
+            print(f"⚠ last_active_entity_handle is empty")
+            return
         if method is not None and callable(method):
-            method(self._context.last_active_entity_handle)  # pylint: disable=E1102
+            try:
+                method(self._context.last_active_entity_handle)  # pylint: disable=E1102
+            except HandleError:
+                print(f"⚠ Warning: {e}")
+            except Exception as e: # pylint: disable=broad-exception-caught
+                print(f"❌ Error: {e}", file=sys.stderr)
         else:
             print(f"❌ Method '{method_name}' not found or not callable")
 
