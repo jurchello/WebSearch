@@ -56,6 +56,7 @@ class InternetLinksLoader:
                         url_pattern=UrlUtils.clean_url(url),
                         comment=(url_obj.get_description() or "").strip(),
                         is_custom_file=False,
+                        source_file_path=None,
                     )
                 )
 

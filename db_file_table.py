@@ -91,12 +91,13 @@ Example usage:
 
 import json
 import os
-import uuid
 import shutil
 from datetime import datetime, timezone
+from collections import OrderedDict
 
 from models import DBFileTableConfig
 from constants import DuplicateHandlingMode, DB_FILE_TABLE_DIR
+from record_query import RecordQuery
 
 
 class DBFileTable:
@@ -104,7 +105,11 @@ class DBFileTable:
 
     def __init__(self, config: DBFileTableConfig):
         """Initialize DBFileTable with file path, optional caching and backup settings."""
+
         self.config = config
+        self._meta = {"record_count": 0, "last_id": 0}
+        self._data = []
+        self._update_config()
         self.filepath = os.path.join(DB_FILE_TABLE_DIR, self.config.filename)
         self._indexes = {field: {} for field in self.config.cache_fields}
 
@@ -113,6 +118,10 @@ class DBFileTable:
 
         if self.config.cache_fields:
             self._build_indexes()
+
+    def _update_config(self):
+        if "id" not in self.config.required_fields:
+            self.config.required_fields.append("id")
 
     def _ensure_directory_exists(self):
         """Ensure the directory for the file exists."""
@@ -129,26 +138,57 @@ class DBFileTable:
                 self._save_data([])
 
     def _load_data(self):
-        """Load data from the file."""
+        """
+        Load data and meta from the file.
+        Use only in read-only methods. Write methods must use self._data directly!
+        """
         with open(self.filepath, "r", encoding="utf-8") as f:
-            return json.load(f)
+            content = json.load(f)
+            if isinstance(content, list):  # legacy format
+                self._data = content
+                self._meta = {
+                    "record_count": len(content),
+                    "last_id": max(
+                        (
+                            r.get("id", 0)
+                            for r in content
+                            if isinstance(r.get("id"), int)
+                        ),
+                        default=0,
+                    ),
+                }
+            else:
+                self._meta = content.get("meta", {})
+                self._data = content.get("data", [])
+        return self._data
 
     def _save_data(self, data):
-        """Save data to the file."""
+        """Save data and meta to the file."""
+        self._update_records_count()
         with open(self.filepath, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+            json.dump(
+                {"meta": self._meta, "data": data}, f, ensure_ascii=False, indent=2
+            )
         if self.config.cache_fields:
             self._build_indexes()
 
     def _build_indexes(self):
         """Build indexes for cached fields."""
         self._indexes = {field: {} for field in self.config.cache_fields}
-        data = self._load_data()
+        data = self._data
         for record in data:
             for field in self.config.cache_fields:
                 value = record.get(field)
                 if value is not None:
                     self._indexes[field][value] = record
+
+    def _update_records_count(self):
+        """Update the record count in meta."""
+        self._meta["record_count"] = len(self._data)
+
+    def _get_max_id(self):
+        """Get and return the max ID, update if necessary."""
+        return self._meta.get("last_id", 0)
 
     def _restore_from_backup(self):
         """Restore the file from backup if available."""
@@ -159,7 +199,7 @@ class DBFileTable:
 
     def _check_unique_fields(self, record, exclude_id=None):
         """Check that unique fields do not conflict with existing records."""
-        data = self._load_data()
+        data = self._data
         for field in self.config.unique_fields:
             value = record.get(field)
             if value is not None and any(
@@ -170,13 +210,12 @@ class DBFileTable:
                 raise DuplicateEntryError(field, value)
 
     def _set_timestamps(self, record, is_new=True):
-        """Set created_at and updated_at timestamps if enabled."""
-        if not self.config.timestamps:
-            return
+        """Set created_at and/or updated_at timestamps based on config and is_new flag."""
         now = datetime.now(timezone.utc).isoformat()
-        if is_new:
+        if is_new and self.config.set_created_at:
             record["created_at"] = now
-        record["updated_at"] = now
+        if self.config.set_updated_at:
+            record["updated_at"] = now
 
     def _check_required_fields(self, record):
         """Check that all required fields are present and not None."""
@@ -184,19 +223,31 @@ class DBFileTable:
             if field not in record or record[field] is None:
                 raise MissingRequiredFieldError(field)
 
+    def _set_id(self, record):
+        record_id = self._get_max_id() + 1
+        record["id"] = record_id
+        self._meta["last_id"] = record_id
+        return record_id
+
+    def _move_id_first(self, record):
+        """Ensure 'id' is the first field in the record."""
+        return OrderedDict(
+            [("id", record["id"])] + [(k, v) for k, v in record.items() if k != "id"]
+        )
+
     def create(self, record):
         """Create a new record with unique ID and enforce unique and required fields."""
+
+        if "id" in record:
+            print("⚠️  Warning: external 'id' will be ignored in create()")
+
+        record_id = self._set_id(record)
+        self._set_timestamps(record, is_new=True)
         self._check_unique_fields(record)
         self._check_required_fields(record)
-
-        data = self._load_data()
-        record_id = str(uuid.uuid4())
-        record["id"] = record_id
-
-        self._set_timestamps(record, is_new=True)
-
-        data.append(record)
-        self._save_data(data)
+        record = self._move_id_first(record)
+        self._data.append(record)
+        self._save_data(self._data)
         return self.read_by_id(record_id)
 
     def bulk_create(self, records):
@@ -220,10 +271,9 @@ class DBFileTable:
 
     def update(self, record_id, updates):
         """Update a record by its ID with optional unique and required field enforcement."""
-        data = self._load_data()
         updated = False
 
-        for record in data:
+        for i, record in enumerate(self._data):
             if record.get("id") == record_id:
                 temp_record = record.copy()
                 temp_record.update(updates)
@@ -235,12 +285,12 @@ class DBFileTable:
                     record[key] = value
 
                 self._set_timestamps(record, is_new=False)
-
+                self._data[i] = self._move_id_first(record)
                 updated = True
                 break
 
         if updated:
-            self._save_data(data)
+            self._save_data(self._data)
         return updated
 
     def read_by_id(self, record_id):
@@ -264,19 +314,19 @@ class DBFileTable:
 
     def delete(self, record_id):
         """Delete a record by its unique ID."""
-        data = self._load_data()
-        new_data = [record for record in data if record.get("id") != record_id]
-        if len(new_data) != len(data):
-            self._save_data(new_data)
+        new_data = [record for record in self._data if record.get("id") != record_id]
+        if len(new_data) != len(self._data):
+            self._data = new_data
+            self._save_data(self._data)
             return True
         return False
 
     def delete_by_field(self, field_name, value):
         """Delete records by a specific field."""
-        data = self._load_data()
-        new_data = [record for record in data if record.get(field_name) != value]
-        if len(new_data) != len(data):
-            self._save_data(new_data)
+        new_data = [record for record in self._data if record.get(field_name) != value]
+        if len(new_data) != len(self._data):
+            self._data = new_data
+            self._save_data(self._data)
             return True
         return False
 
@@ -321,7 +371,7 @@ class DBFileTable:
 
     def all(self):
         """Return all records from the table."""
-        return self._load_data()
+        return self._data
 
     def backup(self):
         """Create a backup of the current file."""
@@ -332,6 +382,12 @@ class DBFileTable:
             os.makedirs(directory, exist_ok=True)
         if os.path.exists(self.filepath):
             shutil.copy2(self.filepath, self.config.backup_path)
+
+    def query(self):
+        """Start a new query chain from all records."""
+        if not self._data:
+            self._load_data()
+        return RecordQuery(self._data)
 
 
 class FileTableError(Exception):

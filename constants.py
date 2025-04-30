@@ -240,6 +240,23 @@ class DBFileTables(Enum):
 
     PLACE_HISTORY_REQUESTS = "place_history_requests.json"
     MIGRATIONS = "migrations.json"
+    VISITS = "visits.json"
+    SAVES = "saves.json"
+    HIDDEN_LINKS = "hidden_links.json"
+
+
+class HiddenLinksScope(Enum):
+    """Possible values of the 'scope' key in the 'hidden_links' table."""
+
+    ALL = "all"
+    OBJECT = "object"
+
+
+class SavedTo(Enum):
+    """Possible values of the 'saved_to' key in the 'saves' table."""
+
+    NOTE = "note"
+    ATTRIBUTE = "attribute"
 
 
 SUPPORTED_SOURCE_TYPE_VALUES = {st.value for st in SourceTypes}

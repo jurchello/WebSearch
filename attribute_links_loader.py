@@ -69,10 +69,11 @@ class AttributeLinksLoader:
                         country_code=None,
                         source_type=SourceTypes.ATTRIBUTE.value,
                         title=(attr_name or "").strip(),
-                        is_enabled=True,
+                        is_enabled=True,  # pylint: disable=duplicate-code
                         url_pattern=UrlUtils.clean_url(url),
                         comment=None,
                         is_custom_file=False,
+                        source_file_path=None,
                     )
                 )
 

@@ -211,6 +211,7 @@ class WebsiteLoader:
                                 url_pattern=url,
                                 comment=comment,
                                 is_custom_file=is_custom_file,
+                                source_file_path=selected_file_path,
                             )
                         )
 

@@ -85,7 +85,6 @@ from constants import (
     DEFAULT_URL_PREFIX_REPLACEMENT,
     DEFAULT_ENABLED_PLACE_HISTORY,
     DEFAULT_CUSTOM_COUNTRY_CODE_FOR_AI_NOTES,
-    HIDDEN_HASH_FILE_PATH,
     ICON_SAVED_PATH,
     ICON_SIZE,
     ICON_VISITED_PATH,
@@ -105,6 +104,8 @@ from constants import (
     URLCompactnessLevel,
     SourceTypes,
     DBFileTables,
+    HiddenLinksScope,
+    SavedTo,
 )
 from models import (
     LinkContext,
@@ -151,6 +152,7 @@ MODEL_SCHEMA = [
     ("visited_icon_visible", bool),
     ("saved_icon_visible", bool),
     ("obj_handle", str),
+    ("obj_gramps_id", str),
     ("replaced_keys_count", int),
     ("total_keys_count", int),
     ("keys_color", str),
@@ -164,6 +166,7 @@ MODEL_SCHEMA = [
     ("file_identifier_sort", str),
     ("source_type", str),
     ("country_code", str),
+    ("source_file_path", str),
 ]
 
 ModelColumns = IntEnum(
@@ -197,21 +200,7 @@ class WebSearch(Gramplet):
 
         MigrationManager().migrate()
         self.version = GrampletVersionExtractor().get()
-        self.place_history_table = DBFileTable(
-            DBFileTableConfig(
-                filename=DBFileTables.PLACE_HISTORY_REQUESTS.value,
-                cache_fields=None,
-                unique_fields=["id"],
-                required_fields=[
-                    "event_gramps_id",
-                    "event_handle",
-                    "file_path",
-                    "place_name",
-                    "place_type",
-                ],
-                timestamps=True,
-            )
-        )
+        self.init_database_models()
         self._context = SimpleNamespace(
             person=None,
             family=None,
@@ -306,6 +295,58 @@ class WebSearch(Gramplet):
         self.website_loader = WebsiteLoader()
         self.url_formatter = UrlFormatter(self.config_ini_manager)
         Gramplet.__init__(self, gui)
+
+    def init_database_models(self):
+        """Init database models"""
+        self.place_history_model = DBFileTable(
+            DBFileTableConfig(
+                filename=DBFileTables.PLACE_HISTORY_REQUESTS.value,
+                unique_fields=["id"],
+                required_fields=[
+                    "event_gramps_id",
+                    "event_handle",
+                    "file_path",
+                    "place_name",
+                    "place_type",
+                ],
+                set_updated_at=False,
+            )
+        )
+        self.visits_model = DBFileTable(
+            DBFileTableConfig(
+                filename=DBFileTables.VISITS.value,
+                unique_fields=["id"],
+                required_fields=[
+                    "link",
+                    "nav_type",
+                    "obj_handle",
+                    "obj_gramps_id",
+                    "source_file_path",
+                ],
+            )
+        )
+        self.saves_model = DBFileTable(
+            DBFileTableConfig(
+                filename=DBFileTables.SAVES.value,
+                unique_fields=["id"],
+                required_fields=[
+                    "link",
+                    "nav_type",
+                    "obj_handle",
+                    "obj_gramps_id",
+                    "source_file_path",
+                    "saved_to",
+                ],
+            )
+        )
+
+        self.hidden_links_model = DBFileTable(
+            DBFileTableConfig(
+                filename=DBFileTables.HIDDEN_LINKS.value,
+                unique_fields=["id"],
+                required_fields=["url_pattern", "nav_type", "scope"],
+            )
+        )
 
     def init(self):
         """Initializes and attaches the main GTK interface to the gramplet container."""
@@ -419,7 +460,7 @@ class WebSearch(Gramplet):
     def refresh_place_history_section(self, place_history_request_data):
         """Refreshes the section displaying the historical administrative data for a place."""
 
-        place_history_record = self.place_history_table.first_by_field(
+        place_history_record = self.place_history_model.first_by_field(
             "event_handle", place_history_request_data.handle
         )
         if place_history_record:
@@ -530,7 +571,7 @@ class WebSearch(Gramplet):
                     f"{place_history_request_data.gramps_id}_"
                     f"{place_history_request_data.handle}.json"
                 )
-                place_history_record = self.place_history_table.create(
+                place_history_record = self.place_history_model.create(
                     {
                         "event_gramps_id": place_history_request_data.gramps_id,
                         "event_handle": place_history_request_data.handle,
@@ -623,6 +664,9 @@ class WebSearch(Gramplet):
                 url_formatter=self.url_formatter,
                 attribute_loader=self.attribute_loader,
                 config_ini_manager=self.config_ini_manager,
+                visits_model=self.visits_model,
+                saves_model=self.saves_model,
+                hidden_links_model=self.hidden_links_model,
             )
         )
         self.note_links_loader = NoteLinksLoader(self.dbstate.db)
@@ -755,6 +799,8 @@ class WebSearch(Gramplet):
                 tree_iter=tree_iter,
                 model_icon_pos=ModelColumns.VISITED_ICON.value,
                 model_visibility_pos=ModelColumns.VISITED_ICON_VISIBLE.value,
+                model=self.visits_model,
+                saved_to=None,
             )
         )
 
@@ -769,16 +815,51 @@ class WebSearch(Gramplet):
 
     def add_icon_event(self, settings):
         """Adds a visual icon to the model and saves the hash when a link is clicked."""
-        file_path = settings.file_path
         icon_path = settings.icon_path
         tree_iter = settings.tree_iter
+        model = settings.model
         model_icon_pos = settings.model_icon_pos
         model_visibility_pos = settings.model_visibility_pos
+        saved_to = settings.saved_to
         url = self.model.get_value(tree_iter, ModelColumns.FINAL_URL.value)
+        nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
         obj_handle = self.model.get_value(tree_iter, ModelColumns.OBJ_HANDLE.value)
-        hash_value = self.website_loader.generate_hash(f"{url}|{obj_handle}")
-        if not self.website_loader.has_hash_in_file(hash_value, file_path):
-            self.website_loader.save_hash_to_file(hash_value, file_path)
+        obj_gramps_id = self.model.get_value(
+            tree_iter, ModelColumns.OBJ_GRAMPS_ID.value
+        )
+        source_file_path = self.model.get_value(
+            tree_iter, ModelColumns.SOURCE_FILE_PATH.value
+        )
+
+        if (
+            not model.query()
+            .where("link", url)
+            .where("obj_handle", obj_handle)
+            .exists()
+        ):
+
+            if saved_to:
+                model.create(
+                    {
+                        "link": url,
+                        "nav_type": nav_type,
+                        "obj_handle": obj_handle,
+                        "obj_gramps_id": obj_gramps_id,
+                        "source_file_path": source_file_path,
+                        "saved_to": saved_to,
+                    }
+                )
+            else:
+                model.create(
+                    {
+                        "link": url,
+                        "nav_type": nav_type,
+                        "obj_handle": obj_handle,
+                        "obj_gramps_id": obj_gramps_id,
+                        "source_file_path": source_file_path,
+                    }
+                )
+
             try:
                 pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(
                     icon_path, ICON_SIZE, ICON_SIZE
@@ -1405,6 +1486,8 @@ class WebSearch(Gramplet):
                 tree_iter=tree_iter,
                 model_icon_pos=ModelColumns.SAVED_ICON.value,
                 model_visibility_pos=ModelColumns.SAVED_ICON_VISIBLE.value,
+                model=self.saves_model,
+                saved_to=SavedTo.NOTE.value,
             )
         )
 
@@ -1448,11 +1531,21 @@ class WebSearch(Gramplet):
             url_pattern = model[tree_iter][ModelColumns.URL_PATTERN.value]
             obj_handle = model[tree_iter][ModelColumns.OBJ_HANDLE.value]
             nav_type = model[tree_iter][ModelColumns.NAV_TYPE.value]
-            if not self.website_loader.has_string_in_file(
-                f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH
+            if not ( # pylint: disable=duplicate-code
+                self.hidden_links_model.query()
+                .where("url_pattern", url_pattern)
+                .where("obj_handle", obj_handle)
+                .where("nav_type", nav_type)
+                .where("scope", HiddenLinksScope.OBJECT.value)
+                .exists()
             ):
-                self.website_loader.save_string_to_file(
-                    f"{url_pattern}|{obj_handle}|{nav_type}", HIDDEN_HASH_FILE_PATH
+                self.hidden_links_model.create(
+                    {
+                        "url_pattern": url_pattern,
+                        "obj_handle": obj_handle,
+                        "nav_type": nav_type,
+                        "scope": HiddenLinksScope.OBJECT.value,
+                    }
                 )
             model.remove(tree_iter)
 
@@ -1463,11 +1556,20 @@ class WebSearch(Gramplet):
         if tree_iter is not None:
             url_pattern = model[tree_iter][ModelColumns.URL_PATTERN.value]
             nav_type = model[tree_iter][ModelColumns.NAV_TYPE.value]
-            if not self.website_loader.has_string_in_file(
-                f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH
+            if not ( # pylint: disable=duplicate-code
+                self.hidden_links_model.query()
+                .where("url_pattern", url_pattern)
+                .where("nav_type", nav_type)
+                .where("scope", HiddenLinksScope.ALL.value)
+                .exists()
             ):
-                self.website_loader.save_string_to_file(
-                    f"{url_pattern}|{nav_type}", HIDDEN_HASH_FILE_PATH
+                self.hidden_links_model.create(
+                    {
+                        "url_pattern": url_pattern,
+                        "obj_handle": None,
+                        "nav_type": nav_type,
+                        "scope": HiddenLinksScope.ALL.value,
+                    }
                 )
             model.remove(tree_iter)
 
@@ -1552,6 +1654,8 @@ class WebSearch(Gramplet):
                 tree_iter=tree_iter,
                 model_icon_pos=ModelColumns.SAVED_ICON.value,
                 model_visibility_pos=ModelColumns.SAVED_ICON_VISIBLE.value,
+                model=self.saves_model,
+                saved_to=SavedTo.ATTRIBUTE.value,
             )
         )
 

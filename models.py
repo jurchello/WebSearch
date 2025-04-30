@@ -53,6 +53,7 @@ class WebsiteEntry:
     url_pattern: str
     comment: Optional[str]
     is_custom_file: bool
+    source_file_path: Optional[str]
 
 
 @dataclass
@@ -99,7 +100,8 @@ class DBFileTableConfig:
     backup_path: Optional[str] = None
     unique_fields: Optional[List[str]] = None
     on_bulk_duplicate: str = DuplicateHandlingMode.THROW_ERROR.value
-    timestamps: bool = True
+    set_created_at: bool = True
+    set_updated_at: bool = False
     required_fields: Optional[List[str]] = None
 
     def __post_init__(self):
