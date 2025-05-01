@@ -73,6 +73,7 @@ from constants import (
     ALL_ICONS_LOCALIZED,
     CONFIGS_DIR,
     DATA_DIR,
+    DB_FILE_TABLE_DIR,
     DEFAULT_AI_PROVIDER,
     DEFAULT_COLUMNS_ORDER,
     DEFAULT_DISPLAY_COLUMNS,
@@ -91,6 +92,7 @@ from constants import (
     ICON_SIZE,
     ICON_VISITED_PATH,
     INTERFACE_FILE_PATH,
+    MIGRATIONS_DIR,
     RIGHT_MOUSE_BUTTON,
     SAVED_HASH_FILE_PATH,
     STYLE_CSS_PATH,
@@ -207,6 +209,7 @@ class WebSearch(Gramplet):
         self._display_columns = []
         MigrationManager().migrate()
         self.version = GrampletVersionExtractor().get()
+        self.make_directories()
         self.init_database_models()
         self._context = SimpleNamespace(
             person=None,
@@ -303,8 +306,6 @@ class WebSearch(Gramplet):
         self._columns_order = []
 
         self.model = Gtk.ListStore(*MODEL_TYPES)
-
-        self.make_directories()
         self.signal_emitter = WebSearchSignalEmitter()
         self.attribute_loader = AttributeMappingLoader()
         self.attribute_links_loader = AttributeLinksLoader()
@@ -397,9 +398,7 @@ class WebSearch(Gramplet):
         self.ui.notes_textview.connect(
             "motion-notify-event", self.markdown_inserter.on_hover_link
         )
-        self.ui.notes_textview.connect(
-            "populate-popup", self.on_populate_popup, None
-        )  # передаємо `None` або будь-які дані в user_data
+        self.ui.notes_textview.connect("populate-popup", self.on_populate_popup, None)
 
         self.ui.info_textview.connect("event-after", self.on_textview_click)
 
@@ -567,6 +566,9 @@ class WebSearch(Gramplet):
             CONFIGS_DIR,
             USER_DATA_CSV_DIR,
             USER_DATA_JSON_DIR,
+            ADMINISTRATIVE_DIVISIONS_DIR,
+            DB_FILE_TABLE_DIR,
+            MIGRATIONS_DIR,
             ADMINISTRATIVE_DIVISIONS_DIR,
         ]:
             if not os.path.exists(directory):

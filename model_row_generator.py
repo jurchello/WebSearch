@@ -418,17 +418,6 @@ class ModelRowGenerator:
 
         if not self.display_icon("visited"):
             return visited_icon, visited_icon_visible
-
-        print("-------")
-        print(final_url)
-        print(obj_handle)
-        print(
-            self.visits_model.query()
-            .where("link", final_url)
-            .where("obj_handle", obj_handle)
-            .exists()
-        )
-        print("--------")
         if (
             self.visits_model.query()
             .where("link", final_url)
