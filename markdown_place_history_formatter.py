@@ -34,6 +34,7 @@ human-readable way.
 from models import PlaceHistoryRequestData
 from place_history_formatter import PlaceHistoryFormatter
 from translation_helper import _
+from helpers import format_iso_datetime
 
 
 class MarkdownPlaceHistoryFormatter(PlaceHistoryFormatter):
@@ -41,7 +42,9 @@ class MarkdownPlaceHistoryFormatter(PlaceHistoryFormatter):
     Concrete implementation of PlaceHistoryFormatter that formats data into Markdown.
     """
 
-    def format(self, results, data: PlaceHistoryRequestData) -> str:
+    def format(
+        self, results, data: PlaceHistoryRequestData, place_history_record
+    ) -> str:
         """
         Format the historical administrative divisions information for a place in Markdown format.
         """
@@ -62,6 +65,8 @@ class MarkdownPlaceHistoryFormatter(PlaceHistoryFormatter):
         language_label = _("Language")
         latitude_label = _("Latitude")
         longitude_label = _("Longitude")
+        place_type_label = _("Place Type:")
+        request_time_label = _("Last Retrieved At:")
 
         # Title
         place_name = data.name
@@ -87,6 +92,14 @@ class MarkdownPlaceHistoryFormatter(PlaceHistoryFormatter):
                 f"📍 {coordinates_label} [{latitude}, {longitude}]({map_link})"
             )
 
+        place_type = results.get(
+            "place_type", "Unknown"
+        )  # Default to 'Unknown' if not found
+        parts.append(f"🔠 **{place_type_label}** {place_type}")
+        formatted_updated_at = format_iso_datetime(
+            place_history_record.get("updated_at")
+        )
+        parts.append(f"⏰ **{request_time_label}** {formatted_updated_at}")
         parts.append("")
         parts.append(f"## 🗺 {admin_history_label}")
         parts.append("")

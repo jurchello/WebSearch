@@ -182,7 +182,7 @@
 
                 </child>        
 
-                <!-- Second tab: Textarea -->
+                <!-- Second Textarea tab: Object Details -->
                 <child>
                     <object class="GtkScrolledWindow" id="textarea_container">
                         <property name="hexpand">True</property>
@@ -197,6 +197,67 @@
                     </object>
                     <packing>
                         <property name="tab-label">AI Notes</property>
+                    </packing>
+                </child>
+
+                <!-- Third tab: Activity Log -->
+                <child>
+                    <object class="GtkScrolledWindow" id="activity_container">
+                        <property name="hexpand">True</property>
+                        <property name="vexpand">True</property>
+                        <child>
+                            <object class="GtkTreeView" id="activity_treeview">
+                                <property name="headers-visible">True</property>
+
+                                <child>
+                                    <object class="GtkTreeViewColumn" id="activity_type_column">
+                                        <property name="title">Activity</property>
+                                        <child>
+                                            <object class="GtkCellRendererText" id="activity_type_renderer"/>
+                                        </child>
+                                    </object>
+                                </child>
+
+                                <child>
+                                    <object class="GtkTreeViewColumn" id="activity_date_column">
+                                        <property name="title">Date</property>
+                                        <child>
+                                            <object class="GtkCellRendererText" id="activity_date_renderer"/>
+                                        </child>
+                                    </object>
+                                </child>
+
+                                <child>
+                                    <object class="GtkTreeViewColumn" id="activity_details_column">
+                                        <property name="title">Details</property>
+                                        <child>
+                                            <object class="GtkCellRendererText" id="activity_details_renderer"/>
+                                        </child>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                    </object>
+                    <packing>
+                        <property name="tab-label">Activity Log</property>
+                    </packing>
+                </child>
+
+                <!-- Forth Textarea tab: Info -->
+                <child>
+                    <object class="GtkScrolledWindow" id="textarea_container_info">
+                        <property name="hexpand">True</property>
+                        <property name="vexpand">True</property>
+                        <child>
+                            <object class="GtkTextView" id="info_textview">
+                                <property name="wrap-mode">word</property>
+                                <property name="editable">True</property>
+                                <property name="cursor-visible">True</property>
+                            </object>
+                        </child>
+                    </object>
+                    <packing>
+                        <property name="tab-label">Info</property>
                     </packing>
                 </child>
             </object>  

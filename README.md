@@ -509,6 +509,10 @@ Selecting this option generates and displays a **QR code** for the selected link
 
 ![QR](assets/img/qr.png)
 
+If the required qrcode library is not installed, a window will still open, but it will display a message indicating that the dependency is missing.
+
+![QR](assets/img/missing_qrcode.jpg)
+
 ### **5.3 Copy link to clipboard**
 This option copies the selected link to the clipboard, allowing the user to easily paste it into another application, browser, or document. This is useful for quickly sharing or storing links outside of Gramps.
 

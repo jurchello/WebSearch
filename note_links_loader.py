@@ -66,10 +66,11 @@ class NoteLinksLoader:
                     country_code=None,
                     source_type=SourceTypes.NOTE.value,
                     title="Note Link (parsed)",
-                    is_enabled=True,
+                    is_enabled=True,  # pylint: disable=duplicate-code
                     url_pattern=UrlUtils.clean_url(url),
                     comment=None,
                     is_custom_file=False,
+                    source_file_path=None,
                 )
                 links.append(link_data)
                 existing_links.add(url)
@@ -133,4 +134,5 @@ class NoteLinksLoader:
             url_pattern=UrlUtils.clean_url(url),
             comment=None,
             is_custom_file=False,
+            source_file_path=None,
         )

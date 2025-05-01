@@ -228,6 +228,51 @@ class SourceTypes(Enum):
     FORUM = "FORUM"
 
 
+class DuplicateHandlingMode(Enum):
+    """Mode for handling duplicates during bulk operations."""
+
+    THROW_ERROR = "error"
+    IGNORE_DUPLICATES = "ignore"
+
+
+class DBFileTables(Enum):
+    """Enumeration of database table filenames."""
+
+    PLACE_HISTORY_REQUESTS = "place_history_requests.json"
+    MIGRATIONS = "migrations.json"
+    VISITS = "visits.json"
+    SAVES = "saves.json"
+    HIDDEN_LINKS = "hidden_links.json"
+    SKIPPED_DOMAIN_SUGGESTIONS = "skipped_domain_suggestions.json"
+    ACTIVITIES = "activities.json"
+
+
+class HiddenLinksScope(Enum):
+    """Possible values of the 'scope' key in the 'hidden_links' table."""
+
+    ALL = "all"
+    OBJECT = "object"
+
+
+class ActivityType(Enum):
+    """Enumeration of supported activity types for WebSearch activity logging."""
+
+    LINK_VISIT = "link_visit"
+    LINK_SAVE_TO_NOTE = "link_save_to_note"
+    LINK_SAVE_TO_ATTRIBUTE = "link_save_to_attribute"
+    PLACE_HISTORY_LOAD = "place_history_load"
+    DOMAIN_SKIP = "domain_skip"
+    HIDE_LINK_FOR_OBJECT = "hide_link_for_object"
+    HIDE_LINK_FOR_ALL = "hide_link_for_all"
+
+
+class SavedTo(Enum):
+    """Possible values of the 'saved_to' key in the 'saves' table."""
+
+    NOTE = "note"
+    ATTRIBUTE = "attribute"
+
+
 SUPPORTED_SOURCE_TYPE_VALUES = {st.value for st in SourceTypes}
 
 
@@ -356,7 +401,6 @@ ALL_ICONS_LOCALIZED = {
 }
 
 CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
 CSV_DIR = os.path.join(ASSETS_DIR, "csv")
 ICONS_DIR = os.path.join(ASSETS_DIR, "icons")
@@ -364,16 +408,17 @@ FLAGS_DIR = os.path.join(ICONS_DIR, "flags")
 USER_DATA_BASE_DIR = os.path.join(USER_DATA, "WebSearch")
 USER_DATA_CSV_DIR = os.path.join(USER_DATA_BASE_DIR, "csv")
 USER_DATA_JSON_DIR = os.path.join(USER_DATA_BASE_DIR, "json")
+USER_DATA_DATA_DIR = os.path.join(USER_DATA_BASE_DIR, "data")
+ADMINISTRATIVE_DIVISIONS_DIR = os.path.join(
+    USER_DATA_DATA_DIR, "administrative_divisions"
+)
+DB_FILE_TABLE_DIR = os.path.join(USER_DATA_BASE_DIR, "database")
+MIGRATIONS_DIR = os.path.join(os.path.dirname(__file__), "migrations")
 
 INTERFACE_FILE_PATH = os.path.join(os.path.dirname(__file__), "interface.xml")
 CONFIG_FILE_PATH = os.path.join(CONFIGS_DIR, "config.ini")
 ATTRIBUTE_MAPPING_FILE_PATH = os.path.join(CONFIGS_DIR, "attribute_mapping.json")
-VISITED_HASH_FILE_PATH = os.path.join(DATA_DIR, "visited_links.txt")
-SAVED_HASH_FILE_PATH = os.path.join(DATA_DIR, "saved_links.txt")
-HIDDEN_HASH_FILE_PATH = os.path.join(DATA_DIR, "hidden_links.txt")
-SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH = os.path.join(
-    DATA_DIR, "skipped_domain_suggestions.txt"
-)
+MIGRATIONS_FILE_PATH = os.path.join(DB_FILE_TABLE_DIR, "migrations.json")
 ICON_VISITED_PATH = os.path.join(ICONS_DIR, "emblem-default.png")
 ICON_SAVED_PATH = os.path.join(ICONS_DIR, "media-floppy.png")
 ICON_UID_PATH = os.path.join(ICONS_DIR, "uid.png")
