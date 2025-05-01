@@ -278,7 +278,7 @@ class MarkdownInserter:
         if dir_tag is None:
             dir_tag = self.buffer.create_tag(
                 tag_name,
-                foreground="purple",  # або синій як у лінка
+                foreground="purple",
                 underline=Pango.Underline.SINGLE,
             )
             setattr(dir_tag, "url", url)

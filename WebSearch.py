@@ -107,6 +107,7 @@ from constants import (
     DBFileTables,
     HiddenLinksScope,
     SavedTo,
+    ActivityType,
 )
 from models import (
     LinkContext,
@@ -139,6 +140,7 @@ from place_history_storage import PlaceHistoryStorage
 from db_file_table import DBFileTable
 from migration_manager import MigrationManager
 from info_panel import InfoPanel
+from activity_row_generator import ActivityRowGenerator
 
 MODEL_SCHEMA = [
     ("icon_name", str),
@@ -175,6 +177,18 @@ ModelColumns = IntEnum(
     "ModelColumns", {name.upper(): idx for idx, (name, _) in enumerate(MODEL_SCHEMA)}
 )
 MODEL_TYPES = [type_ for _, type_ in MODEL_SCHEMA]
+
+ACTIVITY_MODEL_SCHEMA = [
+    ("activity_type", str),
+    ("created_at", str),
+    ("details", str),
+]
+
+ActivityColumns = IntEnum(
+    "ActivityColumns",
+    {name.upper(): idx for idx, (name, _) in enumerate(ACTIVITY_MODEL_SCHEMA)},
+)
+ACTIVITY_MODEL_TYPES = [type_ for _, type_ in ACTIVITY_MODEL_SCHEMA]
 
 
 class WebSearch(Gramplet):
@@ -239,6 +253,7 @@ class WebSearch(Gramplet):
                 "ai_recommendations_label"
             ),
             tree_view=self.builder.get_object("treeview"),
+            activity_treeview=self.builder.get_object("activity_treeview"),
             context_menus=SimpleNamespace(
                 main=SimpleNamespace(
                     menu=self.builder.get_object("main_context_menu"),
@@ -262,6 +277,9 @@ class WebSearch(Gramplet):
                 title=self.builder.get_object("title_renderer"),
                 url=self.builder.get_object("url_renderer"),
                 comment=self.builder.get_object("comment_renderer"),
+                activity_type=self.builder.get_object("activity_type_renderer"),
+                activity_date=self.builder.get_object("activity_date_renderer"),
+                activity_details=self.builder.get_object("activity_details_renderer"),
             ),
             icon_renderers=SimpleNamespace(
                 category=self.builder.get_object("category_icon_renderer"),
@@ -279,6 +297,9 @@ class WebSearch(Gramplet):
                 title=self.builder.get_object("title_column"),
                 url=self.builder.get_object("url_column"),
                 comment=self.builder.get_object("comment_column"),
+                activity_type=self.builder.get_object("activity_type_column"),
+                activity_date=self.builder.get_object("activity_date_column"),
+                activity_details=self.builder.get_object("activity_details_column"),
             ),
             notebook=self.builder.get_object("notebook"),
             notes_textview=self.builder.get_object("notes_textview"),
@@ -286,6 +307,7 @@ class WebSearch(Gramplet):
             pages=SimpleNamespace(
                 treeview_page=self.builder.get_object("treeview_page"),
                 textarea_container=self.builder.get_object("textarea_container"),
+                activity_container=self.builder.get_object("activity_container"),
                 textarea_container_info=self.builder.get_object(
                     "textarea_container_info"
                 ),
@@ -303,6 +325,7 @@ class WebSearch(Gramplet):
         self._columns_order = []
 
         self.model = Gtk.ListStore(*MODEL_TYPES)
+        self.activity_model = Gtk.ListStore(*ACTIVITY_MODEL_TYPES)
         self.signal_emitter = WebSearchSignalEmitter()
         self.attribute_loader = AttributeMappingLoader()
         self.attribute_links_loader = AttributeLinksLoader()
@@ -312,6 +335,8 @@ class WebSearch(Gramplet):
         self.website_loader = WebsiteLoader()
         self.url_formatter = UrlFormatter(self.config_ini_manager)
         Gramplet.__init__(self, gui)
+        self.activity_row_generator = ActivityRowGenerator(self.activities_model)
+        self.populate_activities()
 
     def init_database_models(self):
         """Init database models"""
@@ -371,6 +396,14 @@ class WebSearch(Gramplet):
                 unique_fields=["id"],
                 required_fields=["domain"],
                 set_updated_at=False,
+            )
+        )
+
+        self.activities_model = DBFileTable(
+            DBFileTableConfig(
+                filename=DBFileTables.ACTIVITIES.value,
+                unique_fields=["id"],
+                required_fields=["activity_type"],
             )
         )
 
@@ -626,6 +659,18 @@ class WebSearch(Gramplet):
                     }
                 )
 
+                self.activities_model.create(
+                    {
+                        "event_gramps_id": place_history_request_data.gramps_id,
+                        "event_handle": place_history_request_data.handle,
+                        "file_path": os.path.join(
+                            ADMINISTRATIVE_DIVISIONS_DIR, filename
+                        ),
+                        "activity_type": ActivityType.PLACE_HISTORY_LOAD.value,
+                    }
+                )
+                self.populate_activities()
+
                 PlaceHistoryStorage().save_results_to_file(
                     place_history_record, results
                 )
@@ -790,6 +835,20 @@ class WebSearch(Gramplet):
         websites = self.collect_all_websites(context)
         self.insert_websites_into_model(websites, context)
 
+        websites = self.collect_all_websites(context)
+        self.insert_websites_into_model(websites, context)
+
+    def populate_activities(self):
+        """Populates the activity log model with the latest 1000 activity records."""
+        self.activity_model.clear()
+
+        records = self.activity_row_generator.generate_rows()
+        for model_row in records:
+            if model_row:
+                self.activity_model.append(
+                    [model_row[name] for name, _ in ACTIVITY_MODEL_SCHEMA]
+                )
+
     def collect_all_websites(self, ctx):
         """Returns a combined list of all applicable websites for the given entity context."""
         websites = self.website_loader.load_websites(self.config_ini_manager)
@@ -879,6 +938,7 @@ class WebSearch(Gramplet):
         ):
 
             if saved_to:
+
                 model.create(
                     {
                         "link": url,
@@ -889,6 +949,26 @@ class WebSearch(Gramplet):
                         "saved_to": saved_to,
                     }
                 )
+
+                if saved_to == SavedTo.NOTE.value:
+                    activity_type = ActivityType.LINK_SAVE_TO_NOTE.value
+                elif saved_to == SavedTo.ATTRIBUTE.value:
+                    activity_type = ActivityType.LINK_SAVE_TO_ATTRIBUTE.value
+                else:
+                    activity_type = None
+
+                self.activities_model.create(
+                    {
+                        "link": url,
+                        "nav_type": nav_type,
+                        "obj_handle": obj_handle,
+                        "obj_gramps_id": obj_gramps_id,
+                        "activity_type": activity_type,
+                        "saved_to": saved_to,
+                    }
+                )
+                self.populate_activities()
+
             else:
                 model.create(
                     {
@@ -899,6 +979,17 @@ class WebSearch(Gramplet):
                         "source_file_path": source_file_path,
                     }
                 )
+
+                self.activities_model.create(
+                    {
+                        "link": url,
+                        "nav_type": nav_type,
+                        "obj_handle": obj_handle,
+                        "obj_gramps_id": obj_gramps_id,
+                        "activity_type": ActivityType.LINK_VISIT.value,
+                    }
+                )
+                self.populate_activities()
 
             try:
                 pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(
@@ -1234,6 +1325,28 @@ class WebSearch(Gramplet):
         self.update_columns_visibility()
         self.reorder_columns()
 
+        # Setup activity log view
+        self.ui.activity_treeview.set_model(self.activity_model)
+        self.ui.activity_treeview.set_headers_visible(True)
+
+        self.ui.columns.activity_type.add_attribute(
+            self.ui.text_renderers.activity_type,
+            "text",
+            ActivityColumns.ACTIVITY_TYPE.value,
+        )
+        self.ui.columns.activity_date.add_attribute(
+            self.ui.text_renderers.activity_date,
+            "text",
+            ActivityColumns.CREATED_AT.value,
+        )
+        self.ui.columns.activity_details.add_attribute(
+            self.ui.text_renderers.activity_details,
+            "text",
+            ActivityColumns.DETAILS.value,
+        )
+
+        self.ui.notebook.set_tab_label_text(self.ui.pages.activity_container, "📜")
+
         return self.ui.boxes.main
 
     def reorder_columns(self):
@@ -1380,6 +1493,13 @@ class WebSearch(Gramplet):
                         break
         if domain_label:
             self.skipped_domain_suggestions_model.create({"domain": domain_label})
+            self.activities_model.create(
+                {
+                    "domain": domain_label,
+                    "activity_type": ActivityType.DOMAIN_SKIP.value,
+                }
+            )
+            self.populate_activities()
         self.ui.boxes.badges.container.remove(badge)
 
     def on_button_press(self, widget, event):
@@ -1568,6 +1688,7 @@ class WebSearch(Gramplet):
         if tree_iter is not None:
             url_pattern = model[tree_iter][ModelColumns.URL_PATTERN.value]
             obj_handle = model[tree_iter][ModelColumns.OBJ_HANDLE.value]
+            obj_gramps_id = model[tree_iter][ModelColumns.OBJ_GRAMPS_ID.value]
             nav_type = model[tree_iter][ModelColumns.NAV_TYPE.value]
             if not (  # pylint: disable=duplicate-code
                 self.hidden_links_model.query()
@@ -1581,10 +1702,21 @@ class WebSearch(Gramplet):
                     {
                         "url_pattern": url_pattern,
                         "obj_handle": obj_handle,
+                        "obj_gramps_id": obj_gramps_id,
                         "nav_type": nav_type,
                         "scope": HiddenLinksScope.OBJECT.value,
                     }
                 )
+                self.activities_model.create(
+                    {
+                        "url_pattern": url_pattern,
+                        "nav_type": nav_type,
+                        "obj_handle": obj_handle,
+                        "obj_gramps_id": obj_gramps_id,
+                        "activity_type": ActivityType.HIDE_LINK_FOR_OBJECT.value,
+                    }
+                )
+                self.populate_activities()
             model.remove(tree_iter)
 
     def on_hide_link_for_all_items(self, unused_widget):
@@ -1609,6 +1741,14 @@ class WebSearch(Gramplet):
                         "scope": HiddenLinksScope.ALL.value,
                     }
                 )
+                self.activities_model.create(
+                    {
+                        "url_pattern": url_pattern,
+                        "nav_type": nav_type,
+                        "activity_type": ActivityType.HIDE_LINK_FOR_ALL.value,
+                    }
+                )
+                self.populate_activities()
             model.remove(tree_iter)
 
     def show_notification(self, message):

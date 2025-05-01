@@ -22,23 +22,20 @@
 
 """
 Module for managing file-based table operations with support for caching, uniqueness enforcement,
-backup, and timestamps. This module provides simple data manipulation operations such as:
+and timestamps. This module provides simple data manipulation operations such as:
 
 - Creating, updating, reading, and deleting records (CRUD operations).
 - Ensuring unique fields across records and enforcing required fields.
 - Adding automatic timestamps (`created_at`, `updated_at`) when enabled.
-- Creating backups of the data file.
 - Managing indexes for faster search operations based on cache fields.
 - Handling bulk record creation with duplicate handling strategies.
 
 Classes:
     DBFileTable: A class that encapsulates operations on a file-based table
-    (using JSON as storage), including support for uniqueness checks, required fields, timestamps,
-    and backup.
+    (using JSON as storage), including support for uniqueness checks, required fields, timestamps.
     FileTableError: Base class for exceptions raised by `DBFileTable`.
     DuplicateEntryError: Raised when an attempt is made to insert a duplicate value in a unique
     field.
-    BackupRestoreError: Raised when there is an error during backup restoration.
     MissingRequiredFieldError: Raised when a required field is missing from a record.
 
 Example usage:
@@ -91,7 +88,6 @@ Example usage:
 
 import json
 import os
-import shutil
 from datetime import datetime, timezone
 from collections import OrderedDict
 
@@ -101,23 +97,21 @@ from record_query import RecordQuery
 
 
 class DBFileTable:
-    """A simple file-based table with optional caching, uniqueness, and backup support."""
+    """A simple file-based table with optional caching, uniqueness support."""
 
     def __init__(self, config: DBFileTableConfig):
-        """Initialize DBFileTable with file path, optional caching and backup settings."""
+        """Initialize DBFileTable with file path, optional caching settings."""
 
         self.config = config
         self._meta = {"record_count": 0, "last_id": 0}
-        self._data = []
         self._update_config()
         self.filepath = os.path.join(DB_FILE_TABLE_DIR, self.config.filename)
         self._indexes = {field: {} for field in self.config.cache_fields}
 
+        self._data = []
         self._ensure_directory_exists()
         self._initialize_data()
-
-        if self.config.cache_fields:
-            self._build_indexes()
+        self._data = self._load_data()
 
     def _update_config(self):
         if "id" not in self.config.required_fields:
@@ -130,12 +124,9 @@ class DBFileTable:
             os.makedirs(directory, exist_ok=True)
 
     def _initialize_data(self):
-        """Check if the file exists, restore from backup if necessary, or initialize empty data."""
+        """Check if the file exists, initialize empty data."""
         if not os.path.exists(self.filepath):
-            if self.config.backup_path and os.path.exists(self.config.backup_path):
-                self._restore_from_backup()
-            else:
-                self._save_data([])
+            self._save_data([])
 
     def _load_data(self):
         """
@@ -189,13 +180,6 @@ class DBFileTable:
     def _get_max_id(self):
         """Get and return the max ID, update if necessary."""
         return self._meta.get("last_id", 0)
-
-    def _restore_from_backup(self):
-        """Restore the file from backup if available."""
-        directory = os.path.dirname(self.filepath)
-        if directory and not os.path.exists(directory):
-            os.makedirs(directory, exist_ok=True)
-        shutil.copy2(self.config.backup_path, self.filepath)
 
     def _check_unique_fields(self, record, exclude_id=None):
         """Check that unique fields do not conflict with existing records."""
@@ -371,24 +355,10 @@ class DBFileTable:
 
     def all(self):
         """Return all records from the table."""
-        if not self._data:
-            self._load_data()
         return self._data
-
-    def backup(self):
-        """Create a backup of the current file."""
-        if not self.config.backup_path:
-            return
-        directory = os.path.dirname(self.config.backup_path)
-        if directory and not os.path.exists(directory):
-            os.makedirs(directory, exist_ok=True)
-        if os.path.exists(self.filepath):
-            shutil.copy2(self.filepath, self.config.backup_path)
 
     def query(self):
         """Start a new query chain from all records."""
-        if not self._data:
-            self._load_data()
         return RecordQuery(self._data)
 
 
@@ -403,10 +373,6 @@ class DuplicateEntryError(FileTableError):
         super().__init__(f"Duplicate value for unique field '{field}': {value}")
         self.field = field
         self.value = value
-
-
-class BackupRestoreError(FileTableError):
-    """Raised when there is an error restoring from backup."""
 
 
 class MissingRequiredFieldError(FileTableError):

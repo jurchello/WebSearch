@@ -244,6 +244,7 @@ class DBFileTables(Enum):
     SAVES = "saves.json"
     HIDDEN_LINKS = "hidden_links.json"
     SKIPPED_DOMAIN_SUGGESTIONS = "skipped_domain_suggestions.json"
+    ACTIVITIES = "activities.json"
 
 
 class HiddenLinksScope(Enum):
@@ -251,6 +252,18 @@ class HiddenLinksScope(Enum):
 
     ALL = "all"
     OBJECT = "object"
+
+
+class ActivityType(Enum):
+    """Enumeration of supported activity types for WebSearch activity logging."""
+
+    LINK_VISIT = "link_visit"
+    LINK_SAVE_TO_NOTE = "link_save_to_note"
+    LINK_SAVE_TO_ATTRIBUTE = "link_save_to_attribute"
+    PLACE_HISTORY_LOAD = "place_history_load"
+    DOMAIN_SKIP = "domain_skip"
+    HIDE_LINK_FOR_OBJECT = "hide_link_for_object"
+    HIDE_LINK_FOR_ALL = "hide_link_for_all"
 
 
 class SavedTo(Enum):
