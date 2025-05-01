@@ -109,50 +109,53 @@ class InfoPanel:
         markdown_parts.append("")
 
         # --- System info
-        markdown_parts.append("## ⚙️ System Information")
+        if not QR_AVAILABLE or not OPENAI_AVAILABLE or not not REQUESTS_AVAILABLE:
+            markdown_parts.append("## ⚙️ System Information")
 
-        if not QR_AVAILABLE:
-            markdown_parts.append("🔻 **Missing:** `qrcode`")
-            markdown_parts.append(
-                "ℹ️ This Python library is not available in your system."
-            )
-            markdown_parts.append("Without it, QR code generation will not work.")
-            markdown_parts.append(
-                "💡 Usually installed with: `pip install qrcode[pil]`"
-            )
-            markdown_parts.append(
-                "*Note: Some operating systems or environments may require alternative "
-                "installation methods.*"
-            )
-            markdown_parts.append("")
+            if not QR_AVAILABLE:
+                markdown_parts.append("🔻 **Missing:** `qrcode`")
+                markdown_parts.append(
+                    "ℹ️ This Python library is not available in your system."
+                )
+                markdown_parts.append("Without it, QR code generation will not work.")
+                markdown_parts.append(
+                    "💡 Usually installed with: `pip install qrcode[pil]`"
+                )
+                markdown_parts.append(
+                    "*Note: Some operating systems or environments may require alternative "
+                    "installation methods.*"
+                )
+                markdown_parts.append("")
 
-        if not OPENAI_AVAILABLE:
-            markdown_parts.append("🔻 **Missing:** `openai`")
-            markdown_parts.append(
-                "ℹ️ This library is required for accessing OpenAI-based features."
-            )
-            markdown_parts.append(
-                "Without it, AI-generated site suggestions and place history will be disabled."
-            )
-            markdown_parts.append("💡 Usually installed with: `pip install openai`")
-            markdown_parts.append(
-                "*Note: If the command fails, check Python version or use a virtual environment.*"
-            )
-            markdown_parts.append("")
+            if not OPENAI_AVAILABLE:
+                markdown_parts.append("🔻 **Missing:** `openai`")
+                markdown_parts.append(
+                    "ℹ️ This library is required for accessing OpenAI-based features."
+                )
+                markdown_parts.append(
+                    "Without it, AI-generated site suggestions and place history will be disabled."
+                )
+                markdown_parts.append("💡 Usually installed with: `pip install openai`")
+                markdown_parts.append(
+                    "*Note: Some operating systems or environments may require alternative "
+                    "installation methods.*"
+                )
+                markdown_parts.append("")
 
-        if not REQUESTS_AVAILABLE:
-            markdown_parts.append("🔻 **Missing:** `requests`")
-            markdown_parts.append(
-                "ℹ️ This library is used to communicate with web APIs."
-            )
-            markdown_parts.append(
-                "Without it, external data sources may not be accessible."
-            )
-            markdown_parts.append("💡 Usually installed with: `pip install requests`")
-            markdown_parts.append(
-                "*Note: Some Linux distributions include it by default; if not, use pip.*"
-            )
-            markdown_parts.append("")
+            if not REQUESTS_AVAILABLE:
+                markdown_parts.append("🔻 **Missing:** `requests`")
+                markdown_parts.append(
+                    "ℹ️ This library is used to communicate with web APIs."
+                )
+                markdown_parts.append(
+                    "Without it, external data sources may not be accessible."
+                )
+                markdown_parts.append("💡 Usually installed with: `pip install requests`")
+                markdown_parts.append(
+                    "*Note: Some operating systems or environments may require alternative "
+                    "installation methods.*"
+                )
+                markdown_parts.append("")
 
         # --- User data section
         markdown_parts.append("## 📁 User Data")
