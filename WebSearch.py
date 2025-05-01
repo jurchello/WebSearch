@@ -363,7 +363,6 @@ class WebSearch(Gramplet):
                     "nav_type",
                     "obj_handle",
                     "obj_gramps_id",
-                    "source_file_path",
                 ],
             )
         )
@@ -376,7 +375,6 @@ class WebSearch(Gramplet):
                     "nav_type",
                     "obj_handle",
                     "obj_gramps_id",
-                    "source_file_path",
                     "saved_to",
                 ],
             )
