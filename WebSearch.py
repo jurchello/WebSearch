@@ -35,6 +35,7 @@ with customizable URL templates.
 # --------------------------
 import json
 import os
+import subprocess
 import sys
 import threading
 import urllib.parse
@@ -138,6 +139,7 @@ from markdown_place_history_formatter import MarkdownPlaceHistoryFormatter
 from place_history_storage import PlaceHistoryStorage
 from db_file_table import DBFileTable
 from migration_manager import MigrationManager
+from info_panel import InfoPanel
 
 MODEL_SCHEMA = [
     ("icon_name", str),
@@ -198,7 +200,11 @@ class WebSearch(Gramplet):
         Sets up all required components, directories, signal emitters, and configuration managers.
         Also initializes the Gramplet GUI and internal context for tracking active Gramps objects.
         """
-
+        self.finder = None
+        self.entity_data_builder = None
+        self.model_row_generator = None
+        self.note_links_loader = None
+        self._display_columns = []
         MigrationManager().migrate()
         self.version = GrampletVersionExtractor().get()
         self.init_database_models()
@@ -276,10 +282,22 @@ class WebSearch(Gramplet):
             ),
             notebook=self.builder.get_object("notebook"),
             notes_textview=self.builder.get_object("notes_textview"),
+            info_textview=self.builder.get_object("info_textview"),
             pages=SimpleNamespace(
                 treeview_page=self.builder.get_object("treeview_page"),
                 textarea_container=self.builder.get_object("textarea_container"),
+                textarea_container_info=self.builder.get_object(
+                    "textarea_container_info"
+                ),
             ),
+        )
+        InfoPanel(
+            SimpleNamespace(
+                notebook=self.ui.notebook,
+                info_textview=self.ui.info_textview,
+                textarea_container_info=self.ui.pages.textarea_container_info,
+            ),
+            self.version,
         )
 
         self._columns_order = []
@@ -383,6 +401,8 @@ class WebSearch(Gramplet):
             "populate-popup", self.on_populate_popup, None
         )  # передаємо `None` або будь-які дані в user_data
 
+        self.ui.info_textview.connect("event-after", self.on_textview_click)
+
         self.refresh_ai_section()
 
     def on_populate_popup(self, _widget, popup, _user_data):
@@ -409,9 +429,21 @@ class WebSearch(Gramplet):
                 url = getattr(tag, "url", None)
                 if url:
                     if event.button.button == 1:
-                        webbrowser.open(url)
+                        if url.startswith("file://"):
+                            self.open_dir(url[7:])
+                        else:
+                            webbrowser.open(url)
                         return True
         return False
+
+    def open_dir(self, path):
+        """Open a directory in the default file manager based on the OS."""
+        if sys.platform == "win32":
+            os.startfile(path)
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", path])  # pylint: disable=consider-using-with
+        else:
+            subprocess.Popen(["xdg-open", path])  # pylint: disable=consider-using-with
 
     def on_save_coordinates_to_place(self, _widget):
         """
@@ -1532,7 +1564,7 @@ class WebSearch(Gramplet):
             url_pattern = model[tree_iter][ModelColumns.URL_PATTERN.value]
             obj_handle = model[tree_iter][ModelColumns.OBJ_HANDLE.value]
             nav_type = model[tree_iter][ModelColumns.NAV_TYPE.value]
-            if not ( # pylint: disable=duplicate-code
+            if not (  # pylint: disable=duplicate-code
                 self.hidden_links_model.query()
                 .where("url_pattern", url_pattern)
                 .where("obj_handle", obj_handle)
@@ -1557,7 +1589,7 @@ class WebSearch(Gramplet):
         if tree_iter is not None:
             url_pattern = model[tree_iter][ModelColumns.URL_PATTERN.value]
             nav_type = model[tree_iter][ModelColumns.NAV_TYPE.value]
-            if not ( # pylint: disable=duplicate-code
+            if not (  # pylint: disable=duplicate-code
                 self.hidden_links_model.query()
                 .where("url_pattern", url_pattern)
                 .where("nav_type", nav_type)
@@ -1796,14 +1828,14 @@ class WebSearch(Gramplet):
         method_name = f"active_{entity_type}_changed"
         method = getattr(self, method_name, None)
         if self._context.last_active_entity_handle is None:
-            print(f"⚠ last_active_entity_handle is empty")
+            print("⚠ last_active_entity_handle is empty")
             return
         if method is not None and callable(method):
             try:
                 method(self._context.last_active_entity_handle)  # pylint: disable=E1102
-            except HandleError:
+            except HandleError as e:
                 print(f"⚠ Warning: {e}")
-            except Exception as e: # pylint: disable=broad-exception-caught
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 print(f"❌ Error: {e}", file=sys.stderr)
         else:
             print(f"❌ Method '{method_name}' not found or not callable")

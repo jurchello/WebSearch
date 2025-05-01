@@ -152,6 +152,7 @@ class MarkdownInserter:
             (re.compile(r"^# (.+)", re.MULTILINE), "h1"),
             (re.compile(r"\*\*(.+?)\*\*", re.DOTALL), "bold"),
             (re.compile(r"__(.+?)__", re.DOTALL), "underline"),
+            (re.compile(r"\{dir\|(.+?)\}", re.DOTALL), "dir"),
             (re.compile(r"\{small_bold\|(.+?)\}", re.DOTALL), "small_bold"),
             (re.compile(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", re.DOTALL), "italic"),
             (
@@ -162,7 +163,7 @@ class MarkdownInserter:
                 "color",
             ),
             (re.compile(r"\{small\|(.+?)\}", re.DOTALL), "small"),
-            (re.compile(r"\[(.+?)\]\((https?://[^\s]+)\)", re.DOTALL), "link"),
+            (re.compile(r"\[([^\[\]]+?)\]\((https?://[^\s)]+)\)", re.DOTALL), "link"),
         ]
 
         matches = []
@@ -222,6 +223,11 @@ class MarkdownInserter:
                 if link_text and link_url:
                     self.insert_link(link_text, link_url)
 
+            elif tag == "dir":
+                path = match.group(1).strip()
+                if path:
+                    self.insert_directory_link(path)
+
             else:
                 content = match.group(1).strip()
                 if content:
@@ -243,35 +249,56 @@ class MarkdownInserter:
             link_text (str): The display text for the link.
             url (str): The URL to open when the link is clicked.
         """
-        link_id = hash(url)
-        start_iter = self.buffer.get_end_iter()
-        link_tag = self.link_tag_template
-        setattr(link_tag, "url", url)
-        setattr(link_tag, "link_id", link_id)
+        tag_name = f"link_{abs(hash(url))}"
 
+        # Create a new tag only if one with the same name does not already exist
+        tag_table = self.buffer.get_tag_table()
+        link_tag = tag_table.lookup(tag_name)
+        if link_tag is None:
+            link_tag = self.buffer.create_tag(
+                tag_name,
+                foreground="blue",
+                underline=Pango.Underline.SINGLE,
+            )
+            setattr(link_tag, "url", url)
+            setattr(link_tag, "link_id", hash(url))
+
+        start_iter = self.buffer.get_end_iter()
         self.buffer.insert_with_tags(start_iter, link_text, link_tag)
+
+    def insert_directory_link(self, path):
+        """
+        Insert a clickable directory path into the buffer.
+        """
+        url = f"file://{path}"
+        tag_name = f"dir_{abs(hash(url))}"
+
+        tag_table = self.buffer.get_tag_table()
+        dir_tag = tag_table.lookup(tag_name)
+        if dir_tag is None:
+            dir_tag = self.buffer.create_tag(
+                tag_name,
+                foreground="purple",  # або синій як у лінка
+                underline=Pango.Underline.SINGLE,
+            )
+            setattr(dir_tag, "url", url)
+            setattr(dir_tag, "link_id", hash(url))
+            setattr(dir_tag, "dir", True)
+
+        self.buffer.insert_with_tags(self.buffer.get_end_iter(), path, dir_tag)
 
     def on_hover_link(self, widget, event):
         """
         Handles the hover event on a link in a Gtk.TextView. Changes the cursor to a "pointer"
         when hovering over a link and modifies the link color to green. Restores the normal cursor
         and removes color changes when the cursor is no longer over the link.
-
-        Arguments:
-            widget (Gtk.TextView): The Gtk.TextView widget where the hover event occurs.
-            event (Gdk.Event): The hover event containing the (x, y) coordinates of the hover.
-
-        Returns:
-            None
         """
         x, y = event.x, event.y
         success, iter_ = widget.get_iter_at_location(x, y)
         if success:
             tags = iter_.get_tags()
             for tag in tags:
-                tag_name = tag.get_property("name")
-
-                if tag_name == "link":
+                if hasattr(tag, "url"):
                     widget.get_window(Gtk.TextWindowType.TEXT).set_cursor(
                         Gdk.Cursor.new(Gdk.CursorType.HAND1)
                     )

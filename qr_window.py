@@ -42,6 +42,7 @@ except ImportError:
 
 try:
     import qrcode
+
     QR_AVAILABLE = True
 except ImportError:
     QR_AVAILABLE = False
@@ -115,10 +116,10 @@ class QRCodeWindow(Gtk.Window):
         """
 
         if not QR_AVAILABLE:
-            return None, _("⚠ Missing dependency \"qrcode\"")
-        
+            return None, _('⚠ Missing dependency "qrcode"')
+
         if not hasattr(qrcode, "make"):
-            return None, _("⚠ Missing dependency \"qrcode\"")
+            return None, _('⚠ Missing dependency "qrcode"')
 
         try:
             qr = qrcode.make(url)

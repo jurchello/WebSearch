@@ -82,6 +82,7 @@ class ModelRowGenerator:
         self.visits_model = deps.visits_model
         self.saves_model = deps.saves_model
         self.hidden_links_model = deps.hidden_links_model
+        self._display_icons = []
 
     def generate(self, link_context: LinkContext, website_data: WebsiteEntry):
         """Generates a structured data row for the ListStore model."""
