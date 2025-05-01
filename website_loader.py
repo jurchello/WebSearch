@@ -37,7 +37,6 @@ import sys
 from constants import (
     CSV_DIR,
     DEFAULT_ENABLED_FILES,
-    SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH,
     USER_DATA_CSV_DIR,
     SUPPORTED_NAV_TYPE_VALUES,
     SUPPORTED_SOURCE_TYPE_VALUES,
@@ -128,20 +127,6 @@ class WebsiteLoader:
         if not WebsiteLoader.has_string_in_file(string_value, file_path):
             with open(file_path, "a", encoding="utf-8") as file:
                 file.write(string_value + "\n")
-
-    @staticmethod
-    def load_skipped_domains() -> set:
-        """Loads and returns a set of skipped domain names from file."""
-        if not os.path.exists(SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH):
-            return set()
-        with open(SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH, "r", encoding="utf-8") as file:
-            return {line.strip() for line in file if line.strip()}
-
-    @staticmethod
-    def save_skipped_domain(domain: str):
-        """Saves a domain name to the skipped domains file."""
-        with open(SKIPPED_DOMAIN_SUGGESTIONS_FILE_PATH, "a", encoding="utf-8") as file:
-            file.write(domain + "\n")
 
     @classmethod
     def load_websites(cls, config_ini_manager):

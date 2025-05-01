@@ -82,3 +82,11 @@ class RecordQuery:
         """Return the first matching record from the query"""
         results = self.get()
         return results[0] if results else None
+
+    def values_list(self, field):
+        """Return a list of values for a single field from filtered records."""
+        return [r[field] for r in self.get() if field in r]
+
+    def all_values_list(self, field):
+        """Return a list of values for a single field from all records."""
+        return [r[field] for r in self._records if field in r]

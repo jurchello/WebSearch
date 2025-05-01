@@ -109,7 +109,7 @@ class InfoPanel:
         markdown_parts.append("")
 
         # --- System info
-        if not QR_AVAILABLE or not OPENAI_AVAILABLE or not not REQUESTS_AVAILABLE:
+        if not QR_AVAILABLE or not OPENAI_AVAILABLE or not REQUESTS_AVAILABLE:
             markdown_parts.append("## ⚙️ System Information")
 
             if not QR_AVAILABLE:
@@ -150,7 +150,9 @@ class InfoPanel:
                 markdown_parts.append(
                     "Without it, external data sources may not be accessible."
                 )
-                markdown_parts.append("💡 Usually installed with: `pip install requests`")
+                markdown_parts.append(
+                    "💡 Usually installed with: `pip install requests`"
+                )
                 markdown_parts.append(
                     "*Note: Some operating systems or environments may require alternative "
                     "installation methods.*"

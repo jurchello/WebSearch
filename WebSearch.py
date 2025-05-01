@@ -72,7 +72,6 @@ from constants import (
     ALL_COLUMNS_LOCALIZED,
     ALL_ICONS_LOCALIZED,
     CONFIGS_DIR,
-    DATA_DIR,
     DB_FILE_TABLE_DIR,
     DEFAULT_AI_PROVIDER,
     DEFAULT_COLUMNS_ORDER,
@@ -94,14 +93,12 @@ from constants import (
     INTERFACE_FILE_PATH,
     MIGRATIONS_DIR,
     RIGHT_MOUSE_BUTTON,
-    SAVED_HASH_FILE_PATH,
     STYLE_CSS_PATH,
     URL_SAFE_CHARS,
     USER_DATA_CSV_DIR,
     USER_DATA_JSON_DIR,
     ADMINISTRATIVE_DIVISIONS_DIR,
     VIEW_IDS_MAPPING,
-    VISITED_HASH_FILE_PATH,
     AIProviders,
     MiddleNameHandling,
     SupportedNavTypes,
@@ -368,6 +365,15 @@ class WebSearch(Gramplet):
             )
         )
 
+        self.skipped_domain_suggestions_model = DBFileTable(
+            DBFileTableConfig(
+                filename=DBFileTables.SKIPPED_DOMAIN_SUGGESTIONS.value,
+                unique_fields=["id"],
+                required_fields=["domain"],
+                set_updated_at=False,
+            )
+        )
+
     def init(self):
         """Initializes and attaches the main GTK interface to the gramplet container."""
         self.gui.WIDGET = self.build_gui()
@@ -562,7 +568,6 @@ class WebSearch(Gramplet):
     def make_directories(self):
         """Creates necessary directories for storing configurations and user data."""
         for directory in [
-            DATA_DIR,
             CONFIGS_DIR,
             USER_DATA_CSV_DIR,
             USER_DATA_JSON_DIR,
@@ -576,9 +581,10 @@ class WebSearch(Gramplet):
 
     def fetch_sites_in_background(self, ai_domain_data: AIDomainData):
         """Fetches AI-recommended genealogy sites in a background thread."""
-        ai_domain_data.skipped_domains = self.website_loader.load_skipped_domains()
+        ai_domain_data.skipped_domains = set(
+            self.skipped_domain_suggestions_model.query().all_values_list("domain")
+        )
         try:
-
             prompt_builder = SitePromptBuilder()
             request = SitePromptRequest(ai_domain_data, prompt_builder)
             results = self.finder.request(request)
@@ -829,7 +835,6 @@ class WebSearch(Gramplet):
 
         self.add_icon_event(
             SimpleNamespace(
-                file_path=VISITED_HASH_FILE_PATH,
                 icon_path=ICON_VISITED_PATH,
                 tree_iter=tree_iter,
                 model_icon_pos=ModelColumns.VISITED_ICON.value,
@@ -1374,8 +1379,7 @@ class WebSearch(Gramplet):
                         domain_label = sub_child.get_text().strip()
                         break
         if domain_label:
-            self.website_loader.save_skipped_domain(domain_label)
-
+            self.skipped_domain_suggestions_model.create({"domain": domain_label})
         self.ui.boxes.badges.container.remove(badge)
 
     def on_button_press(self, widget, event):
@@ -1516,7 +1520,6 @@ class WebSearch(Gramplet):
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
         self.add_icon_event(
             SimpleNamespace(
-                file_path=SAVED_HASH_FILE_PATH,
                 icon_path=ICON_SAVED_PATH,
                 tree_iter=tree_iter,
                 model_icon_pos=ModelColumns.SAVED_ICON.value,
@@ -1684,7 +1687,6 @@ class WebSearch(Gramplet):
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
         self.add_icon_event(
             SimpleNamespace(
-                file_path=SAVED_HASH_FILE_PATH,
                 icon_path=ICON_SAVED_PATH,
                 tree_iter=tree_iter,
                 model_icon_pos=ModelColumns.SAVED_ICON.value,

@@ -371,6 +371,8 @@ class DBFileTable:
 
     def all(self):
         """Return all records from the table."""
+        if not self._data:
+            self._load_data()
         return self._data
 
     def backup(self):

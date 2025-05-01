@@ -270,6 +270,24 @@ class TestDBFileTable(unittest.TestCase):
         self.assertEqual(results_desc[0]["name"], "John")
         self.assertEqual(results_desc[1]["name"], "Alice")
 
+    def test_values_list(self):
+        """Test values_list returns correct field values from filtered records."""
+        self.db.create({"name": "John", "email": "john@example.com"})
+        self.db.create({"name": "Alice", "email": "alice@example.com"})
+        self.db.create({"name": "Bob", "email": "bob@example.com"})
+
+        result = self.db.query().where("name", "Alice").values_list("email")
+        self.assertEqual(result, ["alice@example.com"])
+
+    def test_all_values_list(self):
+        """Test all_values_list returns correct field values from all records."""
+        self.db.create({"name": "John", "email": "john@example.com"})
+        self.db.create({"name": "Alice", "email": "alice@example.com"})
+        self.db.create({"name": "Bob", "email": "bob@example.com"})
+
+        result = self.db.query().all_values_list("name")
+        self.assertEqual(set(result), {"John", "Alice", "Bob"})
+
 
 if __name__ == "__main__":
     unittest.main()
