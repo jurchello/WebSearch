@@ -865,9 +865,6 @@ class WebSearch(Gramplet):
         websites = self.collect_all_websites(context)
         self.insert_websites_into_model(websites, context)
 
-        websites = self.collect_all_websites(context)
-        self.insert_websites_into_model(websites, context)
-
     def refresh_activities_tab(self):
         """Refreshes the activity log model with the latest 1000 activity records."""
         self.activity_model.clear()
