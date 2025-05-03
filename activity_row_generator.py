@@ -37,7 +37,6 @@ Key features:
 
 
 import os
-import sys
 
 from gettext import gettext as _
 from helpers import format_iso_datetime
@@ -63,6 +62,7 @@ class ActivityRowGenerator:
             ActivityType.HIDE_LINK_FOR_OBJECT.value: self._build_hide_link_for_object_details,
             ActivityType.HIDE_LINK_FOR_ALL.value: self._build_hide_link_for_all_details,
             ActivityType.ATTRIBUTE_EDIT.value: self._build_attribute_edit_details,
+            ActivityType.NOTE_EDIT.value: self._build_note_edit_details,
         }
 
     def generate_rows(self):
@@ -74,22 +74,22 @@ class ActivityRowGenerator:
         rows = []
 
         for record in records:
-            try:
-                activity_type = (
-                    self.get_activity_label(record.get("activity_type", "")) + "   "
-                )
-                raw_date = record.get("created_at", "")
-                created_at = format_iso_datetime(raw_date) + "   " if raw_date else ""
-                details = self.build_details(record)
+            # try:
+            activity_type = (
+                self.get_activity_label(record.get("activity_type", "")) + "   "
+            )
+            raw_date = record.get("created_at", "")
+            created_at = format_iso_datetime(raw_date) + "   " if raw_date else ""
+            details = self.build_details(record)
 
-                row = {
-                    "activity_type": activity_type,
-                    "created_at": created_at,
-                    "details": details,
-                }
-                rows.append(row)
-            except Exception as e:  # pylint: disable=broad-exception-caught
-                print(f"❌ Error generating activity row: {e}", file=sys.stderr)
+            row = {
+                "activity_type": activity_type,
+                "created_at": created_at,
+                "details": details,
+            }
+            rows.append(row)
+            # except Exception as e:  # pylint: disable=broad-exception-caught
+            #    print(f"❌ Error generating activity row: {e}", file=sys.stderr)
 
         return rows
 
@@ -133,6 +133,9 @@ class ActivityRowGenerator:
     def _build_hide_link_for_all_details(self, record):
         return f"Pattern: {record.get('url_pattern', '')}"
 
+    def _build_note_edit_details(self, record):
+        return f"Object Gramps ID: {record.get('obj_gramps_id', '')} "
+
     def _build_attribute_edit_details(self, record):
         return (
             f"{record.get('old_attr_name', '')}: {record.get('old_attr_value', '')} "
@@ -150,5 +153,6 @@ class ActivityRowGenerator:
             ActivityType.HIDE_LINK_FOR_OBJECT.value: _("Link hidden for object"),
             ActivityType.HIDE_LINK_FOR_ALL.value: _("Link hidden for all objects"),
             ActivityType.ATTRIBUTE_EDIT.value: _("Attribute updated"),
+            ActivityType.NOTE_EDIT.value: _("Note updated"),
         }
         return labels.get(activity_type, "")

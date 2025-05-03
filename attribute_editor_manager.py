@@ -23,7 +23,7 @@ from types import SimpleNamespace
 from gramps.gui.editors.editattribute import EditAttribute
 from gramps.gen.db import DbTxn
 from constants import ActivityType
-from helpers import get_attribute_name
+from helpers import get_attribute_name, get_handle_lookup
 
 
 class AttributeEditorManager:
@@ -50,7 +50,7 @@ class AttributeEditorManager:
             return False
         matches = self._find_attributes_by_name(obj, ctx.attr_type, ctx.attr_value)
         for index, attr_obj in matches:
-            self._edit(ctx, obj, attr_obj, index)
+            self._edit(ctx, obj, attr_obj, index)  # pylint: disable=duplicate-code
         return True
 
     def edit_by_obj_handle_and_attr_obj(self, ctx: SimpleNamespace, attr_obj):
@@ -85,19 +85,7 @@ class AttributeEditorManager:
 
     def _get_object_by_handle(self, nav_type, obj_handle):
         """Resolve the Gramps object by navigation type and obj_handle."""
-        lookup = {
-            "People": self.dbstate.db.get_person_from_handle,
-            "Families": self.dbstate.db.get_family_from_handle,
-            "Events": self.dbstate.db.get_event_from_handle,
-            "Media": self.dbstate.db.get_media_from_handle,
-            "Sources": self.dbstate.db.get_source_from_handle,
-            "Citations": self.dbstate.db.get_citation_from_handle,
-            "Person": self.dbstate.db.get_person_from_handle,
-            "Family": self.dbstate.db.get_family_from_handle,
-            "Event": self.dbstate.db.get_event_from_handle,
-            "Source": self.dbstate.db.get_source_from_handle,
-            "Citation": self.dbstate.db.get_citation_from_handle,
-        }
+        lookup = get_handle_lookup(self.dbstate.db)
         if nav_type not in lookup:
             raise ValueError(f"Unsupported nav_type: {nav_type}")
         return lookup[nav_type](obj_handle)

@@ -70,3 +70,29 @@ def get_attribute_name(attr_type):
     if isinstance(attr_type, SrcAttributeType):
         return attr_type.string
     return None
+
+
+def get_handle_lookup(db):
+    """
+    Return a dictionary mapping navigation types to their corresponding
+    get_*_from_handle methods from the database.
+    """
+    return {
+        "People": db.get_person_from_handle,
+        "Families": db.get_family_from_handle,
+        "Events": db.get_event_from_handle,
+        "Media": db.get_media_from_handle,
+        "Sources": db.get_source_from_handle,
+        "Citations": db.get_citation_from_handle,
+        "Repositories": db.get_repository_from_handle,
+        "Places": db.get_place_from_handle,
+        "Notes": db.get_note_from_handle,
+        "Person": db.get_person_from_handle,
+        "Family": db.get_family_from_handle,
+        "Event": db.get_event_from_handle,
+        "Source": db.get_source_from_handle,
+        "Citation": db.get_citation_from_handle,
+        "Repository": db.get_repository_from_handle,
+        "Place": db.get_place_from_handle,
+        "Note": db.get_note_from_handle,
+    }

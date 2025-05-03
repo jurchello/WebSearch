@@ -306,8 +306,14 @@
         </child>
         <child>
             <object class="GtkMenuItem" id="edit_attribute">
-                <property name="label">Edit Link in Attribute</property>
+                <property name="label">Edit Attribute with the Link</property>
                 <signal name="activate" handler="on_edit_attribute"/>
+            </object>
+        </child>
+        <child>
+            <object class="GtkMenuItem" id="edit_note">
+                <property name="label">Edit Note with the Link</property>
+                <signal name="activate" handler="on_edit_note"/>
             </object>
         </child>
     </object>  

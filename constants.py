@@ -265,6 +265,7 @@ class ActivityType(Enum):
     HIDE_LINK_FOR_OBJECT = "hide_link_for_object"
     HIDE_LINK_FOR_ALL = "hide_link_for_all"
     ATTRIBUTE_EDIT = "attribute_edit"
+    NOTE_EDIT = "note_edit"
 
 
 class SavedTo(Enum):

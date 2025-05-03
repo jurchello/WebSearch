@@ -143,6 +143,7 @@ from migration_manager import MigrationManager
 from info_panel import InfoPanel
 from activity_row_generator import ActivityRowGenerator
 from attribute_editor_manager import AttributeEditorManager, AttributeNotFoundError
+from note_editor_manager import NoteEditorManager, NoteNotFoundError
 
 MODEL_SCHEMA = [
     ("icon_name", str),
@@ -176,6 +177,7 @@ MODEL_SCHEMA = [
     ("saved_record_id", int),
     ("saved_attribute_type", str),
     ("saved_attribute_value", str),
+    ("saved_to", str),
     ("visited_record_id", int),
 ]
 
@@ -225,6 +227,7 @@ class WebSearch(Gramplet):
         self.note_links_loader = None
         self._display_columns = []
         self.attribute_editor_manager = None
+        self.note_editor_manager = None
         MigrationManager().migrate()
         self.version = GrampletVersionExtractor().get()
         self.make_directories()
@@ -272,6 +275,7 @@ class WebSearch(Gramplet):
                         hide_selected=self.builder.get_object("hide_selected"),
                         hide_all=self.builder.get_object("hide_all"),
                         edit_attribute=self.builder.get_object("edit_attribute"),
+                        edit_note=self.builder.get_object("edit_note"),
                     ),
                 ),
             ),
@@ -750,6 +754,9 @@ class WebSearch(Gramplet):
         self.attribute_editor_manager = AttributeEditorManager(
             self.dbstate, self.gui.uistate, self.activities_model
         )
+        self.note_editor_manager = NoteEditorManager(
+            self.dbstate, self.gui.uistate, self.activities_model
+        )
         self.entity_data_builder = EntityDataBuilder(
             self.dbstate, self.config_ini_manager
         )
@@ -977,6 +984,10 @@ class WebSearch(Gramplet):
                     activity_data["activity_type"] = (
                         ActivityType.LINK_SAVE_TO_NOTE.value
                     )
+                    activity_data["note_gramps_id"] = settings.note_gramps_id
+                    activity_data["note_handle"] = settings.note_handle
+                    data["note_gramps_id"] = settings.note_gramps_id
+                    data["note_handle"] = settings.note_handle
                 elif saved_to == SavedTo.ATTRIBUTE.value:
                     activity_data["activity_type"] = (
                         ActivityType.LINK_SAVE_TO_ATTRIBUTE.value
@@ -1423,7 +1434,11 @@ class WebSearch(Gramplet):
         )
 
         self.ui.context_menus.main.items.edit_attribute.set_label(
-            _("Edit link in attribute")
+            _("Edit Attribute with the Link")
+        )
+
+        self.ui.context_menus.main.items.edit_note.set_label(
+            _("Edit Note with the Link")
         )
 
         self.ui.ai_recommendations_label.set_text(_("🔍 AI Suggestions"))
@@ -1572,6 +1587,7 @@ class WebSearch(Gramplet):
                 else:
                     self.ui.context_menus.main.items.add_attribute.hide()
 
+                # attributes
                 saved_type = self.model.get_value(
                     tree_iter, ModelColumns.SAVED_ATTRIBUTE_TYPE.value
                 )
@@ -1582,6 +1598,13 @@ class WebSearch(Gramplet):
                     self.ui.context_menus.main.items.edit_attribute.show()
                 else:
                     self.ui.context_menus.main.items.edit_attribute.hide()
+
+                # notes
+                saved_to = self.model.get_value(tree_iter, ModelColumns.SAVED_TO.value)
+                if saved_to == SavedTo.NOTE.value:
+                    self.ui.context_menus.main.items.edit_note.show()
+                else:
+                    self.ui.context_menus.main.items.edit_note.hide()
 
                 self.ui.context_menus.main.menu.popup_at_pointer(event)
 
@@ -1633,6 +1656,46 @@ class WebSearch(Gramplet):
             nav_type = record.get("nav_type")
             obj_handle = record.get("obj_handle")
             self.refresh_main_treeview_tab(nav_type, obj_handle)
+            self.refresh_activities_tab()
+
+    def on_edit_note(self, unused_widget):
+        """Opens the note editor for the saved note."""
+        path = self._context.active_tree_path
+        tree_iter = self.get_active_tree_iter(path)
+        nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
+        obj_handle = self.model.get_value(tree_iter, ModelColumns.OBJ_HANDLE.value)
+        saved_record_id = self.model.get_value(
+            tree_iter, ModelColumns.SAVED_RECORD_ID.value
+        )
+        record = self.saves_model.read_by_id(saved_record_id)
+        if not record:
+            return
+        try:
+            self.note_editor_manager.edit_by_obj_handle_and_note_handle(
+                SimpleNamespace(
+                    nav_type=nav_type,
+                    obj_handle=obj_handle,
+                    note_handle=record.get("note_handle", ""),
+                    callback=partial(
+                        self.on_note_updated_via_editor_manager, saved_record_id
+                    ),
+                )
+            )
+        except NoteNotFoundError:
+            self.show_notification(
+                _("Note no longer exists. The extra icon is removed")
+            )
+            if saved_record_id:
+                self.saves_model.query().where("id", saved_record_id).delete()
+            self.refresh_main_treeview_tab(nav_type, obj_handle)
+
+    def on_note_updated_via_editor_manager(self, saved_record_id):
+        """
+        Callback method invoked after the note editor is closed and a note is updated.
+        """
+        if saved_record_id:
+            record = self.saves_model.read_by_id(saved_record_id)
+            self.saves_model.update(saved_record_id, record)
             self.refresh_activities_tab()
 
     def on_add_note(self, unused_widget):
@@ -1718,9 +1781,14 @@ class WebSearch(Gramplet):
                 model_icon_pos=ModelColumns.SAVED_ICON.value,
                 model_visibility_pos=ModelColumns.SAVED_ICON_VISIBLE.value,
                 model=self.saves_model,
+                note_handle=note_handle,
+                note_gramps_id=note.get_gramps_id(),
                 saved_to=SavedTo.NOTE.value,
             )
         )
+
+        handle = self.model.get_value(tree_iter, ModelColumns.OBJ_HANDLE.value)
+        self.refresh_main_treeview_tab(nav_type, handle)
 
         try:
             note_obj = self.dbstate.db.get_note_from_handle(note_handle)

@@ -141,6 +141,7 @@ class ModelRowGenerator:
                 saved_record_id,
                 saved_attribute_type,
                 saved_attribute_value,
+                saved_to,
             ) = self.get_saved_icon_data(final_url, obj_handle)
             user_data_icon, user_data_icon_visible = self.get_user_data_icon_data(
                 website_data.is_custom_file
@@ -193,6 +194,7 @@ class ModelRowGenerator:
                 "saved_record_id": saved_record_id,
                 "saved_attribute_type": saved_attribute_type,
                 "saved_attribute_value": saved_attribute_value,
+                "saved_to": saved_to,
                 "visited_record_id": visited_record_id,
             }
         except Exception:  # pylint: disable=broad-exception-caught
@@ -454,6 +456,7 @@ class ModelRowGenerator:
         saved_record_id = None
         attribute_type = None
         attribute_value = None
+        saved_to = None
 
         if not self.display_icon("saved"):
             return (
@@ -462,6 +465,7 @@ class ModelRowGenerator:
                 saved_record_id,
                 attribute_type,
                 attribute_value,
+                saved_to,
             )
 
         record = (
@@ -475,6 +479,7 @@ class ModelRowGenerator:
             saved_record_id = record.get("id", None)
             attribute_type = record.get("attribute_type", None)
             attribute_value = record.get("attribute_value", None)
+            saved_to = record.get("saved_to", None)
             try:
                 saved_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
                     ICON_SAVED_PATH, ICON_SIZE, ICON_SIZE
@@ -488,6 +493,7 @@ class ModelRowGenerator:
             saved_record_id,
             attribute_type,
             attribute_value,
+            saved_to,
         )
 
     def display_icon(self, icon_name):
