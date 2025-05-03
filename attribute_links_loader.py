@@ -22,12 +22,10 @@
 
 """Extracts web links from attributes of Gramps objects for the WebSearch Gramplet."""
 
-from gramps.gen.lib import AttributeType
-from gramps.gen.lib.srcattrtype import SrcAttributeType
-
 from url_utils import UrlUtils
 from constants import SourceTypes
 from models import WebsiteEntry
+from helpers import get_attribute_name
 
 
 # pylint: disable=too-few-public-methods
@@ -53,7 +51,7 @@ class AttributeLinksLoader:
 
         for attr in obj.get_attribute_list():
 
-            attr_name = self.get_attribute_name(attr.get_type())
+            attr_name = get_attribute_name(attr.get_type())
             if not attr_name:
                 continue
 
@@ -78,11 +76,3 @@ class AttributeLinksLoader:
                 )
 
         return links
-
-    def get_attribute_name(self, attr_type):
-        """Returns the name of the attribute type or None if unsupported."""
-        if isinstance(attr_type, AttributeType):
-            return attr_type.type2base()
-        if isinstance(attr_type, SrcAttributeType):
-            return attr_type.string
-        return None

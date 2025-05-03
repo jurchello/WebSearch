@@ -32,6 +32,9 @@ from datetime import datetime
 
 from gramps.gen.const import GRAMPS_LOCALE as glocale
 
+from gramps.gen.lib import AttributeType
+from gramps.gen.lib.srcattrtype import SrcAttributeType
+
 
 def is_true(value: str) -> bool:
     """
@@ -58,3 +61,12 @@ def format_iso_datetime(iso_string: str) -> str:
         return dt.strftime("%Y-%m-%d %H:%M")
     except (ValueError, TypeError):
         return ""
+
+
+def get_attribute_name(attr_type):
+    """Returns the name of the attribute type or None if unsupported."""
+    if isinstance(attr_type, AttributeType):
+        return attr_type.type2base()
+    if isinstance(attr_type, SrcAttributeType):
+        return attr_type.string
+    return None

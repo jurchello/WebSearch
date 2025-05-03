@@ -82,6 +82,7 @@ class ModelRowGenerator:
         self.visits_model = deps.visits_model
         self.saves_model = deps.saves_model
         self.hidden_links_model = deps.hidden_links_model
+        self.activities_model = deps.activities_model
         self._display_icons = []
 
     def generate(self, link_context: LinkContext, website_data: WebsiteEntry):
@@ -131,12 +132,16 @@ class ModelRowGenerator:
                     return None
 
             icon_name = CATEGORY_ICON.get(link_context.nav_type, DEFAULT_CATEGORY_ICON)
-            visited_icon, visited_icon_visible = self.get_visited_icon_data(
-                final_url, obj_handle
+            visited_icon, visited_icon_visible, visited_record_id = (
+                self.get_visited_icon_data(final_url, obj_handle)
             )
-            saved_icon, saved_icon_visible = self.get_saved_icon_data(
-                final_url, obj_handle
-            )
+            (
+                saved_icon,
+                saved_icon_visible,
+                saved_record_id,
+                saved_attribute_type,
+                saved_attribute_value,
+            ) = self.get_saved_icon_data(final_url, obj_handle)
             user_data_icon, user_data_icon_visible = self.get_user_data_icon_data(
                 website_data.is_custom_file
             )
@@ -185,6 +190,10 @@ class ModelRowGenerator:
                 "source_type": website_data.source_type,
                 "country_code": website_data.country_code,
                 "source_file_path": website_data.source_file_path,
+                "saved_record_id": saved_record_id,
+                "saved_attribute_type": saved_attribute_type,
+                "saved_attribute_value": saved_attribute_value,
+                "visited_record_id": visited_record_id,
             }
         except Exception:  # pylint: disable=broad-exception-caught
             print(traceback.format_exc(), file=sys.stderr)
@@ -415,15 +424,20 @@ class ModelRowGenerator:
         """Returns the visited icon if the URL hash exists in the visited list."""
         visited_icon = None
         visited_icon_visible = False
+        visited_record_id = None
 
         if not self.display_icon("visited"):
-            return visited_icon, visited_icon_visible
-        if (
+            return visited_icon, visited_icon_visible, visited_record_id
+
+        record = (
             self.visits_model.query()
             .where("link", final_url)
             .where("obj_handle", obj_handle)
-            .exists()
-        ):
+            .first()
+        )
+
+        if record:
+            visited_record_id = record.get("id", None)
             try:
                 visited_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
                     ICON_VISITED_PATH, ICON_SIZE, ICON_SIZE
@@ -431,22 +445,36 @@ class ModelRowGenerator:
                 visited_icon_visible = True
             except Exception as e:  # pylint: disable=broad-exception-caught
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
-        return visited_icon, visited_icon_visible
+        return visited_icon, visited_icon_visible, visited_record_id
 
     def get_saved_icon_data(self, final_url, obj_handle):
         """Returns the saved icon if the URL hash exists in the saved list."""
         saved_icon = None
         saved_icon_visible = False
+        saved_record_id = None
+        attribute_type = None
+        attribute_value = None
 
         if not self.display_icon("saved"):
-            return saved_icon, saved_icon_visible
+            return (
+                saved_icon,
+                saved_icon_visible,
+                saved_record_id,
+                attribute_type,
+                attribute_value,
+            )
 
-        if (
+        record = (
             self.saves_model.query()
             .where("link", final_url)
             .where("obj_handle", obj_handle)
-            .exists()
-        ):
+            .first()
+        )
+
+        if record:
+            saved_record_id = record.get("id", None)
+            attribute_type = record.get("attribute_type", None)
+            attribute_value = record.get("attribute_value", None)
             try:
                 saved_icon = GdkPixbuf.Pixbuf.new_from_file_at_size(
                     ICON_SAVED_PATH, ICON_SIZE, ICON_SIZE
@@ -454,7 +482,13 @@ class ModelRowGenerator:
                 saved_icon_visible = True
             except Exception as e:  # pylint: disable=broad-exception-caught
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
-        return saved_icon, saved_icon_visible
+        return (
+            saved_icon,
+            saved_icon_visible,
+            saved_record_id,
+            attribute_type,
+            attribute_value,
+        )
 
     def display_icon(self, icon_name):
         """Check if the given icon is in the list of display icons."""

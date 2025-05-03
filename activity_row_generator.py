@@ -54,6 +54,16 @@ class ActivityRowGenerator:
     def __init__(self, activities_model):
         """Initialize the ActivityRowGenerator with the activities DB model."""
         self.activities_model = activities_model
+        self._detail_builders = {
+            ActivityType.LINK_VISIT.value: self._build_link_visit_details,
+            ActivityType.LINK_SAVE_TO_NOTE.value: self._build_link_save_details,
+            ActivityType.LINK_SAVE_TO_ATTRIBUTE.value: self._build_link_save_details,
+            ActivityType.PLACE_HISTORY_LOAD.value: self._build_place_history_details,
+            ActivityType.DOMAIN_SKIP.value: self._build_domain_skip_details,
+            ActivityType.HIDE_LINK_FOR_OBJECT.value: self._build_hide_link_for_object_details,
+            ActivityType.HIDE_LINK_FOR_ALL.value: self._build_hide_link_for_all_details,
+            ActivityType.ATTRIBUTE_EDIT.value: self._build_attribute_edit_details,
+        }
 
     def generate_rows(self):
         """
@@ -89,22 +99,45 @@ class ActivityRowGenerator:
 
     def build_details(self, record):
         """
-        Constructs a human-readable details string by joining available fields.
+        Builds a formatted detail string based on the activity_type.
+        Raises KeyError if handler not implemented for this type.
         """
-        parts = []
+        activity_type = record.get("activity_type", "")
+        return self._detail_builders[activity_type](record)
 
-        if "link" in record:
-            parts.append(f"Link: {record['link']}")
-        if "url_pattern" in record:
-            parts.append(f"Pattern: {record['url_pattern']}")
-        if "domain" in record:
-            parts.append(f"Domain: {record['domain']}")
-        if "file_path" in record:
-            parts.append(f"File: {os.path.basename(record['file_path'])}")
-        if "obj_gramps_id" in record:
-            parts.append(f"Gramps ID: {record['obj_gramps_id']}")
+    def _build_link_visit_details(self, record):
 
+        return f"Visited: {record.get('link', '')}"
+
+    def _build_link_save_details(self, record):
+        parts = [f"Link: {record.get('link', '')}"]
+        if "attribute_type" in record:
+            parts.append(f"Attribute: {record['attribute_type']}")
+        if "attribute_value" in record:
+            parts.append(f"Value: {record['attribute_value']}")
         return " | ".join(parts)
+
+    def _build_place_history_details(self, record):
+        file_path = os.path.basename(record.get("file_path", ""))
+        return f"Loaded from file: {file_path}"
+
+    def _build_domain_skip_details(self, record):
+        return f"Domain: {record.get('domain', '')}"
+
+    def _build_hide_link_for_object_details(self, record):
+        parts = [f"Link: {record.get('link', '')}"]
+        if "obj_gramps_id" in record:
+            parts.append(f"Object: {record['obj_gramps_id']}")
+        return " | ".join(parts)
+
+    def _build_hide_link_for_all_details(self, record):
+        return f"Pattern: {record.get('url_pattern', '')}"
+
+    def _build_attribute_edit_details(self, record):
+        return (
+            f"{record.get('old_attr_name', '')}: {record.get('old_attr_value', '')} "
+            f"→ {record.get('updated_attr_name', '')}: {record.get('updated_attr_value', '')}"
+        )
 
     def get_activity_label(self, activity_type: str) -> str:
         """Return a localized, human-readable label for the given activity type."""
@@ -116,5 +149,6 @@ class ActivityRowGenerator:
             ActivityType.DOMAIN_SKIP.value: _("Domain skipped"),
             ActivityType.HIDE_LINK_FOR_OBJECT.value: _("Link hidden for object"),
             ActivityType.HIDE_LINK_FOR_ALL.value: _("Link hidden for all objects"),
+            ActivityType.ATTRIBUTE_EDIT.value: _("Attribute updated"),
         }
         return labels.get(activity_type, "")

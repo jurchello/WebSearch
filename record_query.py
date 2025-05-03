@@ -37,12 +37,13 @@ Example usage:
 class RecordQuery:
     """Chainable query builder for filtering in-memory list of record dictionaries."""
 
-    def __init__(self, records: list):
+    def __init__(self, records: list, dbtable):
         """Initialize the RecordQuery with a list of record dictionaries."""
         self._records = records
         self._conditions = []
         self._order_by_key = None
         self._reverse = False
+        self._dbtable = dbtable
 
     def where(self, *args, **kwargs):
         """Add one or more filtering conditions to the query."""
@@ -90,3 +91,11 @@ class RecordQuery:
     def all_values_list(self, field):
         """Return a list of values for a single field from all records."""
         return [r[field] for r in self._records if field in r]
+
+    def delete(self):
+        """Remove matching records from the original record list and save changes."""
+        to_delete = set(id(r) for r in self.get())
+        self._records[:] = [r for r in self._records if id(r) not in to_delete]
+        if self._dbtable:
+            self._dbtable.save_data(self._records)
+        return self

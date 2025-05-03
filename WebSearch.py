@@ -33,6 +33,7 @@ with customizable URL templates.
 # --------------------------
 # Standard Python libraries
 # --------------------------
+from functools import partial
 import json
 import os
 import subprocess
@@ -141,6 +142,7 @@ from db_file_table import DBFileTable
 from migration_manager import MigrationManager
 from info_panel import InfoPanel
 from activity_row_generator import ActivityRowGenerator
+from attribute_editor_manager import AttributeEditorManager, AttributeNotFoundError
 
 MODEL_SCHEMA = [
     ("icon_name", str),
@@ -171,6 +173,10 @@ MODEL_SCHEMA = [
     ("source_type", str),
     ("country_code", str),
     ("source_file_path", str),
+    ("saved_record_id", int),
+    ("saved_attribute_type", str),
+    ("saved_attribute_value", str),
+    ("visited_record_id", int),
 ]
 
 ModelColumns = IntEnum(
@@ -218,6 +224,7 @@ class WebSearch(Gramplet):
         self.model_row_generator = None
         self.note_links_loader = None
         self._display_columns = []
+        self.attribute_editor_manager = None
         MigrationManager().migrate()
         self.version = GrampletVersionExtractor().get()
         self.make_directories()
@@ -264,6 +271,7 @@ class WebSearch(Gramplet):
                         copy_link=self.builder.get_object("copy_link"),
                         hide_selected=self.builder.get_object("hide_selected"),
                         hide_all=self.builder.get_object("hide_all"),
+                        edit_attribute=self.builder.get_object("edit_attribute"),
                     ),
                 ),
             ),
@@ -336,7 +344,7 @@ class WebSearch(Gramplet):
         self.url_formatter = UrlFormatter(self.config_ini_manager)
         Gramplet.__init__(self, gui)
         self.activity_row_generator = ActivityRowGenerator(self.activities_model)
-        self.populate_activities()
+        self.refresh_activities_tab()
 
     def init_database_models(self):
         """Init database models"""
@@ -667,7 +675,7 @@ class WebSearch(Gramplet):
                         "activity_type": ActivityType.PLACE_HISTORY_LOAD.value,
                     }
                 )
-                self.populate_activities()
+                self.refresh_activities_tab()
 
                 PlaceHistoryStorage().save_results_to_file(
                     place_history_record, results
@@ -739,6 +747,9 @@ class WebSearch(Gramplet):
 
     def db_changed(self):
         """Responds to changes in the database and updates the active context accordingly."""
+        self.attribute_editor_manager = AttributeEditorManager(
+            self.dbstate, self.gui.uistate, self.activities_model
+        )
         self.entity_data_builder = EntityDataBuilder(
             self.dbstate, self.config_ini_manager
         )
@@ -751,52 +762,66 @@ class WebSearch(Gramplet):
                 visits_model=self.visits_model,
                 saves_model=self.saves_model,
                 hidden_links_model=self.hidden_links_model,
+                activities_model=self.activities_model,
             )
         )
         self.note_links_loader = NoteLinksLoader(self.dbstate.db)
 
-        self.connect_signal("Person", self.active_person_changed)
-        self.connect_signal("Place", self.active_place_changed)
-        self.connect_signal("Source", self.active_source_changed)
-        self.connect_signal("Family", self.active_family_changed)
-        self.connect_signal("Event", self.active_event_changed)
-        self.connect_signal("Citation", self.active_citation_changed)
-        self.connect_signal("Media", self.active_media_changed)
-        self.connect_signal("Note", self.active_note_changed)
-        self.connect_signal("Repository", self.active_repository_changed)
+        # Connect signals for all supported types
+        for key, handler in {
+            "Person": self.active_person_changed,
+            "Place": self.active_place_changed,
+            "Source": self.active_source_changed,
+            "Family": self.active_family_changed,
+            "Event": self.active_event_changed,
+            "Citation": self.active_citation_changed,
+            "Media": self.active_media_changed,
+            "Note": self.active_note_changed,
+            "Repository": self.active_repository_changed,
+        }.items():
+            self.connect_signal(key, handler)
 
-        active_person_handle = self.gui.uistate.get_active("Person")
-        active_place_handle = self.gui.uistate.get_active("Place")
-        active_source_handle = self.gui.uistate.get_active("Source")
-        active_family_handle = self.gui.uistate.get_active("Family")
-        active_event_handle = self.gui.uistate.get_active("Event")
-        active_citation_handle = self.gui.uistate.get_active("Citation")
-        active_media_handle = self.gui.uistate.get_active("Media")
-        active_note_handle = self.gui.uistate.get_active("Note")
-        active_repository_handle = self.gui.uistate.get_active("Repository")
+        # Determine which handle is currently active
+        handle_map = {
+            SupportedNavTypes.PEOPLE.value: self.gui.uistate.get_active("Person"),
+            SupportedNavTypes.PLACES.value: self.gui.uistate.get_active("Place"),
+            SupportedNavTypes.SOURCES.value: self.gui.uistate.get_active("Source"),
+            SupportedNavTypes.FAMILIES.value: self.gui.uistate.get_active("Family"),
+            SupportedNavTypes.EVENTS.value: self.gui.uistate.get_active("Event"),
+            SupportedNavTypes.CITATIONS.value: self.gui.uistate.get_active("Citation"),
+            SupportedNavTypes.MEDIA.value: self.gui.uistate.get_active("Media"),
+            SupportedNavTypes.NOTES.value: self.gui.uistate.get_active("Note"),
+            SupportedNavTypes.REPOSITORIES.value: self.gui.uistate.get_active(
+                "Repository"
+            ),
+        }
 
-        if active_person_handle:
-            self.active_person_changed(active_person_handle)
-        elif active_place_handle:
-            self.active_place_changed(active_place_handle)
-        elif active_source_handle:
-            self.active_source_changed(active_source_handle)
-        elif active_family_handle:
-            self.active_family_changed(active_family_handle)
-        elif active_event_handle:
-            self.active_event_changed(active_event_handle)
-        elif active_citation_handle:
-            self.active_citation_changed(active_citation_handle)
-        elif active_media_handle:
-            self.active_media_changed(active_media_handle)
-        elif active_note_handle:
-            self.active_note_changed(active_note_handle)
-        elif active_repository_handle:
-            self.active_repository_changed(active_repository_handle)
+        for nav_type, handle in handle_map.items():
+            if handle:
+                self.refresh_main_treeview_tab(nav_type, handle)
+                break
 
         notebook = self.gui.uistate.viewmanager.notebook
         if notebook:
             notebook.connect("switch-page", self.on_category_changed)
+
+    def refresh_main_treeview_tab(self, nav_type, obj_handle):
+        """Dispatch refresh logic depending on entity type."""
+        dispatcher = {
+            SupportedNavTypes.PEOPLE.value: self.active_person_changed,
+            SupportedNavTypes.PLACES.value: self.active_place_changed,
+            SupportedNavTypes.SOURCES.value: self.active_source_changed,
+            SupportedNavTypes.FAMILIES.value: self.active_family_changed,
+            SupportedNavTypes.EVENTS.value: self.active_event_changed,
+            SupportedNavTypes.CITATIONS.value: self.active_citation_changed,
+            SupportedNavTypes.MEDIA.value: self.active_media_changed,
+            SupportedNavTypes.NOTES.value: self.active_note_changed,
+            SupportedNavTypes.REPOSITORIES.value: self.active_repository_changed,
+        }
+
+        handler = dispatcher.get(nav_type)
+        if handler:
+            handler(obj_handle)
 
     def on_category_changed(self, unused_notebook, unused_page, page_num, *unused_args):
         """Handle changes in the selected category and update the context."""
@@ -836,8 +861,8 @@ class WebSearch(Gramplet):
         websites = self.collect_all_websites(context)
         self.insert_websites_into_model(websites, context)
 
-    def populate_activities(self):
-        """Populates the activity log model with the latest 1000 activity records."""
+    def refresh_activities_tab(self):
+        """Refreshes the activity log model with the latest 1000 activity records."""
         self.activity_model.clear()
 
         records = self.activity_row_generator.generate_rows()
@@ -935,59 +960,44 @@ class WebSearch(Gramplet):
             .exists()
         ):
 
+            data = {
+                "link": url,
+                "nav_type": nav_type,
+                "obj_handle": obj_handle,
+                "obj_gramps_id": obj_gramps_id,
+                "source_file_path": source_file_path,
+            }
+
             if saved_to:
 
-                model.create(
-                    {
-                        "link": url,
-                        "nav_type": nav_type,
-                        "obj_handle": obj_handle,
-                        "obj_gramps_id": obj_gramps_id,
-                        "source_file_path": source_file_path,
-                        "saved_to": saved_to,
-                    }
-                )
+                activity_data = dict(data)
+                data["saved_to"] = saved_to
 
                 if saved_to == SavedTo.NOTE.value:
-                    activity_type = ActivityType.LINK_SAVE_TO_NOTE.value
+                    activity_data["activity_type"] = (
+                        ActivityType.LINK_SAVE_TO_NOTE.value
+                    )
                 elif saved_to == SavedTo.ATTRIBUTE.value:
-                    activity_type = ActivityType.LINK_SAVE_TO_ATTRIBUTE.value
-                else:
-                    activity_type = None
+                    activity_data["activity_type"] = (
+                        ActivityType.LINK_SAVE_TO_ATTRIBUTE.value
+                    )
+                    data["attribute_type"] = settings.attribute_type
+                    data["attribute_value"] = settings.attribute_value
+                    activity_data["attribute_type"] = settings.attribute_type
+                    activity_data["attribute_value"] = settings.attribute_value
 
-                self.activities_model.create(
-                    {
-                        "link": url,
-                        "nav_type": nav_type,
-                        "obj_handle": obj_handle,
-                        "obj_gramps_id": obj_gramps_id,
-                        "activity_type": activity_type,
-                        "saved_to": saved_to,
-                    }
-                )
-                self.populate_activities()
+                record = model.create(data)
+                activity_data["saves_record_id"] = record.get("id")
+                self.activities_model.create(activity_data)
+                self.refresh_activities_tab()
 
             else:
-                model.create(
-                    {
-                        "link": url,
-                        "nav_type": nav_type,
-                        "obj_handle": obj_handle,
-                        "obj_gramps_id": obj_gramps_id,
-                        "source_file_path": source_file_path,
-                    }
-                )
-
-                self.activities_model.create(
-                    {
-                        "link": url,
-                        "nav_type": nav_type,
-                        "obj_handle": obj_handle,
-                        "obj_gramps_id": obj_gramps_id,
-                        "activity_type": ActivityType.LINK_VISIT.value,
-                    }
-                )
-                self.populate_activities()
+                record = model.create(data)
+                activity_data = dict(data)
+                activity_data["activity_type"] = ActivityType.LINK_VISIT.value
+                activity_data["visits_record_id"] = record.get("id")
+                self.activities_model.create(activity_data)
+                self.refresh_activities_tab()
 
             try:
                 pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(
@@ -1412,6 +1422,10 @@ class WebSearch(Gramplet):
             _("Hide link for all items")
         )
 
+        self.ui.context_menus.main.items.edit_attribute.set_label(
+            _("Edit link in attribute")
+        )
+
         self.ui.ai_recommendations_label.set_text(_("🔍 AI Suggestions"))
 
     def toggle_badges_visibility(self):
@@ -1497,7 +1511,7 @@ class WebSearch(Gramplet):
                     "activity_type": ActivityType.DOMAIN_SKIP.value,
                 }
             )
-            self.populate_activities()
+            self.refresh_activities_tab()
         self.ui.boxes.badges.container.remove(badge)
 
     def on_button_press(self, widget, event):
@@ -1558,7 +1572,68 @@ class WebSearch(Gramplet):
                 else:
                     self.ui.context_menus.main.items.add_attribute.hide()
 
+                saved_type = self.model.get_value(
+                    tree_iter, ModelColumns.SAVED_ATTRIBUTE_TYPE.value
+                )
+                saved_value = self.model.get_value(
+                    tree_iter, ModelColumns.SAVED_ATTRIBUTE_VALUE.value
+                )
+                if saved_type and saved_value:
+                    self.ui.context_menus.main.items.edit_attribute.show()
+                else:
+                    self.ui.context_menus.main.items.edit_attribute.hide()
+
                 self.ui.context_menus.main.menu.popup_at_pointer(event)
+
+    def on_edit_attribute(self, unused_widget):
+        """Opens the attribute editor for the saved attribute."""
+        path = self._context.active_tree_path
+        tree_iter = self.get_active_tree_iter(path)
+        nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
+        obj_handle = self.model.get_value(tree_iter, ModelColumns.OBJ_HANDLE.value)
+        saved_record_id = self.model.get_value(
+            tree_iter, ModelColumns.SAVED_RECORD_ID.value
+        )
+        attr_type = self.model.get_value(
+            tree_iter, ModelColumns.SAVED_ATTRIBUTE_TYPE.value
+        )
+        attr_value = self.model.get_value(
+            tree_iter, ModelColumns.SAVED_ATTRIBUTE_VALUE.value
+        )
+        try:
+            self.attribute_editor_manager.edit_by_obj_handle_and_attr_name(
+                SimpleNamespace(
+                    nav_type=nav_type,
+                    obj_handle=obj_handle,
+                    attr_type=attr_type,
+                    attr_value=attr_value,
+                    callback=partial(
+                        self.on_attribute_updated_via_editor_manager, saved_record_id
+                    ),
+                )
+            )
+        except AttributeNotFoundError:
+            self.show_notification(
+                _("Attribute no longer exists. The extra icon is removed")
+            )
+            if saved_record_id:
+                self.saves_model.query().where("id", saved_record_id).delete()
+            self.refresh_main_treeview_tab(nav_type, obj_handle)
+
+    def on_attribute_updated_via_editor_manager(self, saved_record_id, result):
+        """
+        Callback method invoked after the attribute editor is closed and an attribute is updated.
+        """
+        unused_attr_obj, name, value = result
+        if saved_record_id:
+            record = self.saves_model.read_by_id(saved_record_id)
+            record["attribute_type"] = name
+            record["attribute_value"] = value
+            self.saves_model.update(saved_record_id, record)
+            nav_type = record.get("nav_type")
+            obj_handle = record.get("obj_handle")
+            self.refresh_main_treeview_tab(nav_type, obj_handle)
+            self.refresh_activities_tab()
 
     def on_add_note(self, unused_widget):
         """Adds the current selected URL as a note to the person record."""
@@ -1650,13 +1725,11 @@ class WebSearch(Gramplet):
         try:
             note_obj = self.dbstate.db.get_note_from_handle(note_handle)
             note_gramps_id = note_obj.get_gramps_id()
-            notification = self.show_notification(
+            self.show_notification(
                 _("Note #%(id)s has been successfully added") % {"id": note_gramps_id}
             )
-            notification.show_all()
         except Exception:  # pylint: disable=broad-exception-caught
-            notification = self.show_notification(_("Error creating note"))
-            notification.show_all()
+            self.show_notification(_("Error creating note"))
 
     def on_show_qr_code(self, unused_widget):
         """Opens a window showing the QR code for the selected URL."""
@@ -1676,8 +1749,7 @@ class WebSearch(Gramplet):
             clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
             clipboard.set_text(url, -1)
             clipboard.store()
-            notification = self.show_notification(_("URL is copied to the Clipboard"))
-            notification.show_all()
+            self.show_notification(_("URL is copied to the Clipboard"))
 
     def on_hide_link_for_selected_item(self, unused_widget):
         """Hides the selected link only for the current Gramps object."""
@@ -1714,7 +1786,7 @@ class WebSearch(Gramplet):
                         "activity_type": ActivityType.HIDE_LINK_FOR_OBJECT.value,
                     }
                 )
-                self.populate_activities()
+                self.refresh_activities_tab()
             model.remove(tree_iter)
 
     def on_hide_link_for_all_items(self, unused_widget):
@@ -1746,7 +1818,7 @@ class WebSearch(Gramplet):
                         "activity_type": ActivityType.HIDE_LINK_FOR_ALL.value,
                     }
                 )
-                self.populate_activities()
+                self.refresh_activities_tab()
             model.remove(tree_iter)
 
     def show_notification(self, message):
@@ -1796,8 +1868,10 @@ class WebSearch(Gramplet):
         if not attribute:
             return
 
-        attribute.set_type(_("WebSearch Link"))
-        attribute.set_value(self._context.active_url)
+        attribute_type = _("WebSearch Link")
+        attribute_value = self._context.active_url
+        attribute.set_type(attribute_type)
+        attribute.set_value(attribute_value)
         attribute.set_privacy(True)
 
         with DbTxn("Add Web Link Attribute", self.dbstate.db) as trans:
@@ -1831,13 +1905,15 @@ class WebSearch(Gramplet):
                 model_visibility_pos=ModelColumns.SAVED_ICON_VISIBLE.value,
                 model=self.saves_model,
                 saved_to=SavedTo.ATTRIBUTE.value,
+                attribute_type=attribute_type,
+                attribute_value=attribute_value,
             )
         )
 
-        notification = self.show_notification(
-            _("Attribute has been successfully added")
-        )
-        notification.show_all()
+        self.show_notification(_("Attribute has been successfully added"))
+
+        handle = self.model.get_value(tree_iter, ModelColumns.OBJ_HANDLE.value)
+        self.refresh_main_treeview_tab(nav_type, handle)
 
     def on_query_tooltip(self, widget, x, y, unused_keyboard_mode, tooltip):
         """Displays a tooltip with key and comment information."""

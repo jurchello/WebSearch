@@ -304,5 +304,11 @@
                 <signal name="activate" handler="on_hide_link_for_all_items"/>
             </object>
         </child>
+        <child>
+            <object class="GtkMenuItem" id="edit_attribute">
+                <property name="label">Edit Link in Attribute</property>
+                <signal name="activate" handler="on_edit_attribute"/>
+            </object>
+        </child>
     </object>  
 </interface>
