@@ -334,7 +334,7 @@ class EntityDataBuilder:
         """Extracts structured place data such as name, coordinates, and type."""
         place_name = root_place_name = latitude = longitude = place_type = None
         try:
-            place_name = PlaceDataExtractor.get_place_name(place)
+            place_name = PlaceDataExtractor.get_place_name(place) or ""
             root_place_name = PlaceDataExtractor.get_root_place_name(self.db, place)
             place_title = PlaceDataExtractor.get_place_title(self.db, place)
             latitude = PlaceDataExtractor.get_place_latitude(place)
@@ -344,13 +344,14 @@ class EntityDataBuilder:
             print(traceback.format_exc(), file=sys.stderr)
 
         place_data = {
-            PlaceDataKeys.PLACE.value: place_name or "",
+            PlaceDataKeys.PLACE.value: place_name,
             PlaceDataKeys.ROOT_PLACE.value: root_place_name or "",
             PlaceDataKeys.LATITUDE.value: latitude or "",
             PlaceDataKeys.LONGITUDE.value: longitude or "",
             PlaceDataKeys.TYPE.value: place_type or "",
             PlaceDataKeys.TITLE.value: place_title or "",
             PlaceDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
+            PlaceDataKeys.UNDERSCORED_PLACE.value: place_name.strip().replace(" ", "_"),
         }
 
         return place_data

@@ -61,6 +61,7 @@ These **Navigation Types** support dynamic URL generation based on real entity d
 - `longitude`: The longitude of the place, if available.
 - `type`: The type of the place (e.g., city, village, region, etc.).
 - `title`: The hierarchical title representation of the place.
+- `underscored_place`: Place in format like this: New_York. Similar formats are often used in urls.
 - `locale`: The system locale detected in Gramps. Some examples of locale values: `en`, `de`, `fr`, `uk`, `es`, `it`, `pl`, `nl`, ...
 
 #### 2.1.3. **Keys** for the "Families" **Navigation Type**:

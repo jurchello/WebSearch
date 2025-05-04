@@ -190,6 +190,7 @@ class PlaceDataKeys(Enum):
     LONGITUDE = "longitude"
     TYPE = "type"
     TITLE = "title"
+    UNDERSCORED_PLACE = "underscored_place"
     SYSTEM_LOCALE = "locale"
 
 
