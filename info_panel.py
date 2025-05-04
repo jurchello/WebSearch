@@ -30,7 +30,12 @@ This module creates a Markdown-based info panel in the Gramplet that reports:
 - support and contact information.
 """
 
-from constants import CONFIGS_DIR, CSV_DIR, USER_DATA_BASE_DIR
+from constants import (
+    CONFIGS_DIR,
+    CSV_DIR,
+    USER_DATA_CSV_DIR,
+    USER_DATA_JSON_DIR,
+)
 from markdown_inserter import MarkdownInserter
 
 # Dependency flags
@@ -159,29 +164,45 @@ class InfoPanel:
                 )
                 markdown_parts.append("")
 
-        # --- User data section
-        markdown_parts.append("## 📁 User Data")
+        # --- File paths section
+        markdown_parts.append("## 📂 Data File Locations")
         markdown_parts.append(
-            "This is the directory where **user-specific data** is stored."
+            "Below are the paths to system and user-defined data files used by WebSearch."
         )
         markdown_parts.append("")
-        markdown_parts.append(f"  📂 {{dir|{USER_DATA_BASE_DIR}}}")
+        markdown_parts.append("#### CSV File Paths")
         markdown_parts.append(
-            "  💡 *Tip: click the path above to open it in your file manager.*"
+            "- **System path:** `{dir|"
+            + CSV_DIR
+            + "}` – contains the built-in CSV files"
+        )
+        markdown_parts.append(
+            "- **User-defined path:** `{dir|"
+            + USER_DATA_CSV_DIR
+            + "}` – for custom user-defined CSV files"
+        )
+        markdown_parts.append("")
+        markdown_parts.append("#### JSON File Paths")
+        markdown_parts.append(
+            "- **System path:** `{dir|"
+            + CONFIGS_DIR
+            + "}` – contains the built-in attribute_mapping.json file"
+        )
+        markdown_parts.append(
+            "- **User-defined path:** `{dir|"
+            + USER_DATA_JSON_DIR
+            + "}` – for custom user-defined attribute_mapping.json file"
         )
         markdown_parts.append("")
         markdown_parts.append(
-            f"You can create your own CSV files here or copy and customize those from "
-            f"{{dir|{CSV_DIR}}}."
+            "  💡 *Tip: click any path above to open it in your file manager.*"
         )
         markdown_parts.append(
-            f"You may also copy the file `attribute_mapping.json` from "
-            f"{{dir|{CONFIGS_DIR}}} into this location."
-        )
-        markdown_parts.append("")
-        markdown_parts.append(
-            "🛡️ Files in this directory **will not be overwritten** during future WebSearch "
-            "Gramplet updates."
+            "📖 View detailed usage in: "
+            "[Section 3.2. attribute_mapping.json](https://github.com/jurchello/WebSearch/"
+            "blob/main/README.md#32-attributemappingjson--attribute-mapping-rules), "
+            "[Section 6.2. User-defined CSV Files](https://github.com/jurchello/WebSearch/"
+            "blob/main/README.md#62-user-defined-csv-files)"
         )
         markdown_parts.append("")
 

@@ -50,7 +50,7 @@ class AttributeEditorManager:
             return False
         matches = self._find_attributes_by_name(obj, ctx.attr_type, ctx.attr_value)
         for index, attr_obj in matches:
-            self._edit(ctx, obj, attr_obj, index)  # pylint: disable=duplicate-code
+            self._edit(ctx, obj, attr_obj, index)
         return True
 
     def edit_by_obj_handle_and_attr_obj(self, ctx: SimpleNamespace, attr_obj):

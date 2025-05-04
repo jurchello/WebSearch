@@ -66,7 +66,7 @@ class NoteEditorManager:
             print(f"Warning. Note by handle '{ctx.note_handle}' not found")
             raise NoteNotFoundError(f"Note with handle: '{ctx.note_handle}'  not found")
 
-        self._edit(ctx, ctx.obj, note_obj)  # pylint: disable=duplicate-code
+        self._edit(ctx, ctx.obj, note_obj)
         return True
 
     def edit_by_obj_handle_and_note_obj(self, ctx: SimpleNamespace):

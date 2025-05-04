@@ -233,20 +233,43 @@ For details on how OpenAI is used, the costs associated with it, and what data i
 
 ### 3.2. attribute_mapping.json – Attribute Mapping Rules
 
-### 3.2.1. Where is attribute_mapping.json located
-
 📁 By default, the `attribute_mapping.json` file is loaded from the `configs/` directory inside the Gramplet.
 
 However, users can create their own custom `attribute_mapping.json` file and place it in a special directory that is preserved across updates and reinstallations. 
-For example, the file should be located in Ubuntu here: 
 
-```
-/home/<username>/.local/share/gramps/WebSearch/json/attribute_mapping.json
-```
+### 3.2.1. User-defined `attribute_mapping.json` File
 
-If a user-defined file exists in this location, it will automatically override the default version. This allows you to make personalized adjustments to how Gramps attributes are converted into WebSearch **Keys** without risking loss during upgrades.
+#### 3.2.1.1. Purpose and Protection from Data Loss
 
-This folder is created automatically when the WebSearch Gramplet is first launched.
+WebSearch supports a user-defined `attribute_mapping.json` file stored in a special system-specific location that is protected from being lost during updates or reinstallation.
+
+🛡️ This file is never overwritten or deleted, which makes it the recommended location for storing your personalized UID settings.
+
+If the `json` directory does not yet exist, it will be created automatically the first time WebSearch is launched. This helps users quickly understand where to copy or create the `attribute_mapping.json` file.
+
+In addition to JSON files, the user can also copy or create CSV files in another user-defined directory (read more about CSV [here](#62-user-defined-csv-files)).
+
+The behavior of the user-defined `attribute_mapping.json` file is as follows:
+
+- If the file exists, it overrides the default.
+- Changes persist after updates.
+- Allows customization for your own attributes.
+
+#### 3.2.1.2. Copy Example:
+
+- Step 1: Copy from the system path: `{path to gramplet}/configs/attribute_mapping.json`
+- Step 2: Paste to the user-defined path: `{path to user directory}/json/attribute_mapping.json`
+
+#### 3.2.1.3. Directory Information Panel
+
+To help users navigate these locations, the Gramplet provides a dedicated information tab with clickable links to:
+
+- System directories with default files
+- User-specific directories
+
+In the image below, the highlighted links correspond to the paths mentioned in [**3.2.1.2. Copy Example**](#3212-copy-example), showing both the system and user-defined directories.
+
+![info_panel_json.png](assets/img/info_panel_json.jpg)
 
 ### 3.2.2. Attribute Mapping Rules
 
@@ -535,23 +558,53 @@ The Gramplet will automatically load these files and display the URLs based on t
 
 **Is Enabled**: This column in the CSV file allows the user to enable or disable individual links without deleting them. This provides flexibility to manage which links are active while keeping all the available URLs in the file.
 
-### 6.2. User-defined CSV files
-In addition to the built-in CSV files stored in the `assets/csv/` directory, the Gramplet supports custom user-defined CSV files stored in a special system-specific location that is safe from data loss during upgrades or reinstalls.
+### 6.2. User-defined CSV Files
 
-🛡️ These user CSV files are never overwritten or deleted, making them the preferred location for your personalized links.
-For example, on Ubuntu, this folder is:
+#### 6.2.1. Purpose and Protection from Data Loss
 
-```
-/home/<username>/.local/share/gramps/WebSearch
-```
+WebSearch supports user-defined CSV files stored in a special system-specific location that is protected from being lost during updates or reinstallation.
 
-This folder is created automatically when the WebSearch Gramplet is first run, so you only need to place your .csv files there.
+🛡️ These files are never overwritten or deleted, which makes them the recommended location for storing your personalized links.
 
-If a CSV file with the same name exists in both the system and user directory, the Gramplet prioritizes the user's version and ignores the default one.
+To help you distinguish such links, a spreadsheet icon ![](assets/icons/user-file.png) is displayed next to websites loaded from user-defined files.
 
-To help you distinguish such links, a spreadsheet icon ![Settings](assets/icons/user-file.png) is displayed next to websites loaded from user-defined files.
+If the directory does not yet exist, it will be created automatically the first time WebSearch is launched. This helps users quickly understand where to copy or create their own files.
 
-You can disable this icon in the settings via the “Show User Data Icon” option.
+#### 6.2.2. Usage Options
+
+The user can:
+
+- **Copy existing CSV files** from the system directory to the user-defined directory and edit them freely.  
+  ⚠️ **Note:** If the file names match, WebSearch will always prioritize the user-defined version. In this case, new links added to the default files during updates will not be applied.
+
+- **Create new CSV files** — either with new names or using the supported file names hardcoded in the plugin.
+
+#### 6.2.3. Supported CSV File Names
+
+- `common-links.csv` – Global links for all regions with automatic value substitution
+- `uid-links.csv` – Links with substituted values from person attributes
+- `static-links.csv` – Static links you want to keep at hand (recommended to copy into the user directory)
+- `cross-links.csv` – Transregional links to websites with value substitution
+- `{country_code}-links.csv` – Regional resources (e.g. `ua-links.csv`, `fr-links.csv`)
+- `{country_code}-archive-links.csv` – Regional archives
+- `{country_code}-community-links.csv` – Facebook/Telegram communities and more
+- `{country_code}-forum-links.csv` – Regional forums
+
+#### 6.2.4. Copy Example
+
+- Step 1: Copy from the system path: `{path to gramplet}/assets/csv/static-links.csv`
+- Step 2: Paste to the user-defined path: `{path to user directory}/csv/static-links.csv`
+
+#### 6.2.5. Directory Information Panel
+
+To help users navigate these locations, the Gramplet provides a dedicated information tab with clickable links to:
+
+- System directories with default files
+- User-specific directories
+
+In the image below, the highlighted links correspond to the paths mentioned in [**6.2.4. Copy Example**](#624-copy-example), showing both the system and user-defined directories.
+
+![info_panel_csv.png](assets/img/info_panel_csv.jpg)
 
 ### 6.3. Enabling Files
 You can select which CSV files to use by enabling or disabling them in the Gramplet's settings.
