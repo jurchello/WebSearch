@@ -262,6 +262,13 @@ class DomainSuggestionValidationStatus(Enum):
     INVALID = "invalid"
 
 
+class DomainType(Enum):
+    """Enum representing the type of domain suggested by the AI."""
+
+    RESOURCE = "resource"
+    COMMUNITY = "community"
+
+
 class HiddenLinksScope(Enum):
     """Possible values of the 'scope' key in the 'hidden_links' table."""
 

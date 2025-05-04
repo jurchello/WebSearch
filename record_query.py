@@ -89,8 +89,8 @@ class RecordQuery:
         return [r[field] for r in self.get() if field in r]
 
     def all_values_list(self, field):
-        """Return a list of values for a single field from all records."""
-        return [r[field] for r in self._records if field in r]
+        """Return a list of values for a single field from filtered records (respects where())."""
+        return [r[field] for r in self.get() if field in r]
 
     def delete(self):
         """Remove matching records from the original record list and save changes."""

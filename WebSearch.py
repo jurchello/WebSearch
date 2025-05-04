@@ -112,8 +112,10 @@ from constants import (
     ActivityType,
     DomainSuggestionStatus,
     DomainSuggestionValidationStatus,
+    DomainType,
 )
 from models import (
+    AIUrlData,
     LinkContext,
     AIDomainData,
     PlaceHistoryRequestData,
@@ -132,12 +134,6 @@ from url_formatter import UrlFormatter
 from website_loader import WebsiteLoader
 from gramplet_version_extractor import GrampletVersionExtractor
 from translation_helper import _
-from ai.openai_ai_client import OpenaiAIClient
-from ai.mistral_ai_client import MistralAIClient
-from ai.site_prompt_builder import SitePromptBuilder
-from ai.site_prompt_request import SitePromptRequest
-from ai.place_history_prompt_builder import PlaceHistoryPromptBuilder
-from ai.place_history_request import PlaceHistoryRequest
 from markdown_inserter import MarkdownInserter
 from markdown_place_history_formatter import MarkdownPlaceHistoryFormatter
 from place_history_storage import PlaceHistoryStorage
@@ -147,6 +143,16 @@ from info_panel import InfoPanel
 from activity_row_generator import ActivityRowGenerator
 from attribute_editor_manager import AttributeEditorManager, AttributeNotFoundError
 from note_editor_manager import NoteEditorManager, NoteNotFoundError
+
+# ai/
+from ai.openai_ai_client import OpenaiAIClient
+from ai.mistral_ai_client import MistralAIClient
+from ai.site_prompt_builder import SitePromptBuilder
+from ai.site_prompt_request import SitePromptRequest
+from ai.place_history_prompt_builder import PlaceHistoryPromptBuilder
+from ai.place_history_request import PlaceHistoryRequest
+from ai.community_prompt_builder import CommunityPromptBuilder
+from ai.community_prompt_request import CommunityPromptRequest
 
 MODEL_SCHEMA = [
     ("icon_name", str),
@@ -512,13 +518,14 @@ class WebSearch(Gramplet):
     def refresh_ai_section(self):
         """Updates AI provider settings and fetches AI-recommended sites if necessary."""
         ai_domain_data = self.website_loader.get_domains_data(self.config_ini_manager)
+        ai_url_data = self.website_loader.get_urls_data(self.config_ini_manager)
 
         self.toggle_badges_visibility()
 
-        domain_url_pairs = self.getShuffledPendingDomains()
-        if len(domain_url_pairs) >= 10:
+        pending_domains = self.getShuffledPendingDomains()
+        if len(pending_domains) >= 10:
             GObject.idle_add(
-                self.signal_emitter.emit, "sites-fetched", json.dumps(domain_url_pairs)
+                self.signal_emitter.emit, "sites-fetched", json.dumps(pending_domains)
             )
             return
 
@@ -543,7 +550,10 @@ class WebSearch(Gramplet):
 
         threading.Thread(
             target=self.fetch_sites_in_background,
-            args=(ai_domain_data,),
+            args=(
+                ai_domain_data,
+                ai_url_data,
+            ),
             daemon=True,
         ).start()
 
@@ -557,20 +567,22 @@ class WebSearch(Gramplet):
             .get()
         )
 
-        domain_url_pairs = []
+        pending_domains = []
         for r in records:
             domain = r.get("domain")
             url = r.get("url")
-            if domain and url:
-                domain_url_pairs.append(
+            domain_type = r.get("domain_type")
+            if domain and url and domain_type:
+                pending_domains.append(
                     {
                         "domain": domain.strip(),
                         "url": url.strip(),
+                        "domain_type": domain_type,
                     }
                 )
 
-        random.shuffle(domain_url_pairs)
-        return domain_url_pairs[:10]
+        random.shuffle(pending_domains)
+        return pending_domains[:10]
 
     def refresh_place_history_section(self, place_history_request_data):
         """Refreshes the section displaying the historical administrative data for a place."""
@@ -656,29 +668,50 @@ class WebSearch(Gramplet):
             if not os.path.exists(directory):
                 os.makedirs(directory, exist_ok=True)
 
-    def fetch_sites_in_background(self, ai_domain_data: AIDomainData):
+    def fetch_sites_in_background(
+        self, ai_domain_data: AIDomainData, ai_url_data: AIUrlData
+    ):
         """Fetches AI-recommended genealogy sites in a background thread."""
-        ai_domain_data.skipped_domains = set(
-            self.domain_suggestions_model.query().all_values_list("domain")
-        )
         try:
-            prompt_builder = SitePromptBuilder()
-            request = SitePromptRequest(ai_domain_data, prompt_builder)
-            results = self.finder.request(request)
-            self.save_ai_domain_suggestions(results)
-            domain_url_pairs = self.getShuffledPendingDomains()
-            if len(domain_url_pairs) == 0:
-                print("⚠️ No valid AI domain suggestions available after filtering.")
-                return
+            ai_domain_data.skipped_domains = set(
+                self.domain_suggestions_model.query()
+                .where("domain_type", DomainType.RESOURCE.value)
+                .all_values_list("domain")
+            )
+            site_prompt_builder = SitePromptBuilder()
+            site_request = SitePromptRequest(ai_domain_data, site_prompt_builder)
+            site_results = self.finder.request(site_request)
+            self.save_ai_domain_suggestions(site_results, DomainType.RESOURCE.value)
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            print(f"❌ Error fetching RESOURCE sites: {e}", file=sys.stderr)
 
-            GObject.idle_add(
-                self.signal_emitter.emit, "sites-fetched", json.dumps(domain_url_pairs)
+        try:
+            ai_url_data.skipped_urls = set(
+                self.domain_suggestions_model.query()
+                .where("domain_type", DomainType.COMMUNITY.value)
+                .all_values_list("url")
+            )
+            community_prompt_builder = CommunityPromptBuilder()
+            community_request = CommunityPromptRequest(
+                ai_url_data, community_prompt_builder
+            )
+            community_results = self.finder.request(community_request)
+            self.save_ai_domain_suggestions(
+                community_results, DomainType.COMMUNITY.value
             )
         except Exception as e:  # pylint: disable=broad-exception-caught
-            print(f"❌ Error fetching sites: {e}", file=sys.stderr)
-            GObject.idle_add(self.signal_emitter.emit, "sites-fetched", None)
+            print(f"❌ Error fetching COMMUNITY sites: {e}", file=sys.stderr)
 
-    def save_ai_domain_suggestions(self, results):
+        pending_domains = self.getShuffledPendingDomains()
+        if len(pending_domains) == 0:
+            print("⚠️ No valid AI domain suggestions available after filtering.")
+            return
+
+        GObject.idle_add(
+            self.signal_emitter.emit, "sites-fetched", json.dumps(pending_domains)
+        )
+
+    def save_ai_domain_suggestions(self, results, domain_type):
         """Save AI-generated domain suggestions to the table with PENDING status."""
         saved_results = []
 
@@ -703,6 +736,7 @@ class WebSearch(Gramplet):
                     "url": url,
                     "status": DomainSuggestionStatus.PENDING.value,
                     "validation_status": DomainSuggestionValidationStatus.NOT_CHECKED.value,
+                    "domain_type": domain_type,
                 }
             )
             saved_results.append({"domain": domain, "url": url})
@@ -807,13 +841,17 @@ class WebSearch(Gramplet):
                 sites = json.loads(results)
                 if not isinstance(sites, list):
                     return
-                domain_url_pairs = [
-                    (site.get("domain", "").strip(), site.get("url", "").strip())
+                pending_domains = [
+                    (
+                        site.get("domain", "").strip(),
+                        site.get("url", "").strip(),
+                        site.get("domain_type", DomainType.RESOURCE.value),
+                    )
                     for site in sites
                     if site.get("domain") and site.get("url")
                 ]
-                if domain_url_pairs:
-                    self.populate_badges(domain_url_pairs)
+                if pending_domains:
+                    self.populate_badges(pending_domains)
             except json.JSONDecodeError as e:
                 print(f"❌ JSON Decode Error: {e}", file=sys.stderr)
             except Exception as e:  # pylint: disable=broad-exception-caught
@@ -1532,11 +1570,11 @@ class WebSearch(Gramplet):
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
 
-    def populate_badges(self, domain_url_pairs):
+    def populate_badges(self, pending_domains):
         """Displays AI-suggested site badges in the interface."""
         self.ui.boxes.badges.container.foreach(self.remove_widget)
-        for domain, url in domain_url_pairs:
-            badge = self.create_badge(domain, url)
+        for domain, url, domain_type in pending_domains:
+            badge = self.create_badge(domain, url, domain_type)
             self.ui.boxes.badges.container.add(badge)
         self.ui.boxes.badges.container.show_all()
 
@@ -1544,10 +1582,15 @@ class WebSearch(Gramplet):
         """Removes a widget from the container."""
         self.ui.boxes.badges.container.remove(widget)
 
-    def create_badge(self, domain, url):
+    def create_badge(self, domain, url, domain_type):
         """Creates a clickable badge widget for an AI-suggested domain."""
         badge_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         badge_box.get_style_context().add_class("badge")
+
+        if domain_type == DomainType.COMMUNITY.value:
+            badge_box.get_style_context().add_class("badge-community")
+        elif domain_type == DomainType.RESOURCE.value:
+            badge_box.get_style_context().add_class("badge-resource")
 
         label = Gtk.Label(label=domain)
         label.get_style_context().add_class("badge-label")

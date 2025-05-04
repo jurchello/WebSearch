@@ -70,12 +70,20 @@ class LinkContext:
 class AIDomainData:
     """Categorizes domains for AI-driven filtering of search results."""
 
-    community_country_codes: Set[str]
-    regular_country_codes: Set[str]
+    country_codes: Set[str]
+    include_global: bool
     regular_domains: Set[str]
+    skipped_domains: Set[str] = field(default_factory=set)
+
+
+@dataclass
+class AIUrlData:
+    """Categorizes urls for AI-driven filtering of search results."""
+
+    country_codes: Set[str]
     community_urls: Set[str]
     include_global: bool
-    skipped_domains: Set[str] = field(default_factory=set)
+    skipped_urls: Set[str] = field(default_factory=set)
 
 
 @dataclass
