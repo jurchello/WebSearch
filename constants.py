@@ -243,8 +243,23 @@ class DBFileTables(Enum):
     VISITS = "visits.json"
     SAVES = "saves.json"
     HIDDEN_LINKS = "hidden_links.json"
-    SKIPPED_DOMAIN_SUGGESTIONS = "skipped_domain_suggestions.json"
+    DOMAIN_SUGGESTIONS = "domain_suggestions.json"
     ACTIVITIES = "activities.json"
+
+
+class DomainSuggestionStatus(Enum):
+    """Status of domain suggestion processing."""
+
+    PENDING = "pending"
+    SKIPPED = "skipped"
+
+
+class DomainSuggestionValidationStatus(Enum):
+    """Validation result of a suggested domain."""
+
+    NOT_CHECKED = "not_checked"
+    VALID = "valid"
+    INVALID = "invalid"
 
 
 class HiddenLinksScope(Enum):

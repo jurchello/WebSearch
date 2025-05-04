@@ -35,6 +35,7 @@ with customizable URL templates.
 # --------------------------
 from functools import partial
 import json
+import random
 import os
 import subprocess
 import sys
@@ -109,6 +110,8 @@ from constants import (
     HiddenLinksScope,
     SavedTo,
     ActivityType,
+    DomainSuggestionStatus,
+    DomainSuggestionValidationStatus,
 )
 from models import (
     LinkContext,
@@ -400,12 +403,11 @@ class WebSearch(Gramplet):
             )
         )
 
-        self.skipped_domain_suggestions_model = DBFileTable(
+        self.domain_suggestions_model = DBFileTable(
             DBFileTableConfig(
-                filename=DBFileTables.SKIPPED_DOMAIN_SUGGESTIONS.value,
+                filename=DBFileTables.DOMAIN_SUGGESTIONS.value,
                 unique_fields=["id"],
-                required_fields=["domain"],
-                set_updated_at=False,
+                required_fields=["domain", "status", "validation_status"],
             )
         )
 
@@ -513,6 +515,13 @@ class WebSearch(Gramplet):
 
         self.toggle_badges_visibility()
 
+        domain_url_pairs = self.getShuffledPendingDomains()
+        if len(domain_url_pairs) >= 10:
+            GObject.idle_add(
+                self.signal_emitter.emit, "sites-fetched", json.dumps(domain_url_pairs)
+            )
+            return
+
         if self._ai_provider == AIProviders.DISABLED.value:
             return
 
@@ -537,6 +546,31 @@ class WebSearch(Gramplet):
             args=(ai_domain_data,),
             daemon=True,
         ).start()
+
+    def getShuffledPendingDomains(self):
+        """
+        Return up to 10 pending domain suggestions with non-empty domain and URL, in random order.
+        """
+        records = (
+            self.domain_suggestions_model.query()
+            .where("status", DomainSuggestionStatus.PENDING.value)
+            .get()
+        )
+
+        domain_url_pairs = []
+        for r in records:
+            domain = r.get("domain")
+            url = r.get("url")
+            if domain and url:
+                domain_url_pairs.append(
+                    {
+                        "domain": domain.strip(),
+                        "url": url.strip(),
+                    }
+                )
+
+        random.shuffle(domain_url_pairs)
+        return domain_url_pairs[:10]
 
     def refresh_place_history_section(self, place_history_request_data):
         """Refreshes the section displaying the historical administrative data for a place."""
@@ -625,19 +659,55 @@ class WebSearch(Gramplet):
     def fetch_sites_in_background(self, ai_domain_data: AIDomainData):
         """Fetches AI-recommended genealogy sites in a background thread."""
         ai_domain_data.skipped_domains = set(
-            self.skipped_domain_suggestions_model.query().all_values_list("domain")
+            self.domain_suggestions_model.query().all_values_list("domain")
         )
         try:
             prompt_builder = SitePromptBuilder()
             request = SitePromptRequest(ai_domain_data, prompt_builder)
             results = self.finder.request(request)
+            self.save_ai_domain_suggestions(results)
+            domain_url_pairs = self.getShuffledPendingDomains()
+            if len(domain_url_pairs) == 0:
+                print("⚠️ No valid AI domain suggestions available after filtering.")
+                return
 
             GObject.idle_add(
-                self.signal_emitter.emit, "sites-fetched", json.dumps(results)
+                self.signal_emitter.emit, "sites-fetched", json.dumps(domain_url_pairs)
             )
         except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"❌ Error fetching sites: {e}", file=sys.stderr)
             GObject.idle_add(self.signal_emitter.emit, "sites-fetched", None)
+
+    def save_ai_domain_suggestions(self, results):
+        """Save AI-generated domain suggestions to the table with PENDING status."""
+        saved_results = []
+
+        existing_domains = {
+            d.lower()
+            for d in self.domain_suggestions_model.query().all_values_list("domain")
+        }
+
+        for r in results:
+            domain = r.get("domain", "").strip().lower()
+            url = r.get("url", "").strip()
+
+            if not domain or not url:
+                continue
+
+            if domain in existing_domains:
+                continue
+
+            self.domain_suggestions_model.create(
+                {
+                    "domain": domain,
+                    "url": url,
+                    "status": DomainSuggestionStatus.PENDING.value,
+                    "validation_status": DomainSuggestionValidationStatus.NOT_CHECKED.value,
+                }
+            )
+            saved_results.append({"domain": domain, "url": url})
+
+        return saved_results
 
     def fetch_place_history_in_background(self, place_history_request_data):
         """Fetches historical place data using AI in a background thread."""
@@ -1516,15 +1586,34 @@ class WebSearch(Gramplet):
                         domain_label = sub_child.get_text().strip()
                         break
         if domain_label:
-            self.skipped_domain_suggestions_model.create({"domain": domain_label})
+            self.mark_domain_as_skipped(domain_label)
+
+            self.refresh_activities_tab()
+        self.ui.boxes.badges.container.remove(badge)
+
+    def mark_domain_as_skipped(self, domain: str):
+        """Mark an existing domain suggestion as skipped, if it exists."""
+        records = self.domain_suggestions_model.query().where("domain", domain).get()
+
+        if not records:
+            print(f"⚠️ Warning: domain '{domain}' not found in suggestions table.")
+            return
+
+        for record in records:
+
+            if record.get("status") == DomainSuggestionStatus.SKIPPED.value:
+                continue
+
+            self.domain_suggestions_model.update(
+                record["id"], {"status": DomainSuggestionStatus.SKIPPED.value}
+            )
+
             self.activities_model.create(
                 {
-                    "domain": domain_label,
+                    "domain": domain,
                     "activity_type": ActivityType.DOMAIN_SKIP.value,
                 }
             )
-            self.refresh_activities_tab()
-        self.ui.boxes.badges.container.remove(badge)
 
     def on_button_press(self, widget, event):
         """Handles right-click context menu activation in the treeview."""
