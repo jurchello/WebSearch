@@ -506,13 +506,13 @@ This prevents the generation of broken or incomplete URLs.
 #### 📌 Example UID Link Template for `uid-links.csv`
 
 ```csv
-People,Gedbas,1,https://gedbas.de/uid/?active=%(ActivePerson.Gedbas.ID)s&home=%(HomePerson.Gedbas.ID)s,
+People,WikiTree Connection,1,https://www.wikitree.com/index.php?title=Special:Connection&action=connect&person1Name=%(ActivePerson.WikiTree.ID)s&person2Name=%(HomePerson.WikiTree.ID)s
 ```
 
 or using the default context shortcut:
 
 ```csv
-People,Gedbas,1,https://gedbas.de/uid/?active=%(Gedbas.ID)s&home=%(HomePerson.Gedbas.ID)s,
+People,WikiTree Connection,1,https://www.wikitree.com/index.php?title=Special:Connection&action=connect&person1Name=%(WikiTree.ID)s&person2Name=%(HomePerson.WikiTree.ID)s
 ```
 
 ![Attribute Context](assets/img/attribute_context.jpg)
