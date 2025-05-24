@@ -39,6 +39,7 @@ from constants import (
     PersonDataKeys,
     PlaceDataKeys,
     SourceDataKeys,
+    UIDAttributeContext,
 )
 from event_data_extractor import EventDataExtractor
 from helpers import get_system_locale
@@ -142,11 +143,26 @@ class EntityDataBuilder:
             PersonDataKeys.SYSTEM_LOCALE.value: self.system_locale or "",
         }
 
-        attribute_keys = self.attribute_loader.get_attributes_for_nav_type(
-            "Person", person
+        attribute_keys = []
+        attribute_keys += (
+            self.attribute_loader.get_attributes_for_nav_type_with_context(
+                "Person", person, UIDAttributeContext.ACTIVE_PERSON.value
+            )
         )
 
+        home_person = self.get_home_person()
+        if home_person:
+            attribute_keys += (
+                self.attribute_loader.get_attributes_for_nav_type_with_context(
+                    "Person", home_person, UIDAttributeContext.HOME_PERSON.value
+                )
+            )
+
         return person_data, attribute_keys
+
+    def get_home_person(self):
+        """Get home person."""
+        return self.db.get_default_person()
 
     def get_family_data(self, family):
         """Extracts structured data related to a family, including parents and events."""

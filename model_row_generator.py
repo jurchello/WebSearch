@@ -162,6 +162,11 @@ class ModelRowGenerator:
                 website_data.country_code, website_data.source_type
             )
 
+            if self.is_incomplete_uid_link(
+                website_data.source_type, replaced_keys_count, total_keys_count
+            ):
+                return None
+
             return {
                 "icon_name": icon_name,
                 "title": website_data.title,
@@ -200,6 +205,18 @@ class ModelRowGenerator:
         except Exception:  # pylint: disable=broad-exception-caught
             print(traceback.format_exc(), file=sys.stderr)
             return None
+
+    def is_incomplete_uid_link(
+        self, source_type, replaced_keys_count, total_keys_count
+    ):
+        """
+        Returns True if the link is UID-based and not all required keys were replaced.
+        Used to skip incomplete UID links from the display.
+        """
+        return (
+            source_type == SourceTypes.UID.value
+            and replaced_keys_count < total_keys_count
+        )
 
     def should_be_hidden_link(self, url_pattern, nav_type, obj_handle):
         """Determine if a link should be skipped based on hidden hash entries."""

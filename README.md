@@ -472,6 +472,52 @@ Now, add the following JSON entry inside `attribute_mapping.json`:
 🚀 This method allows you to dynamically generate search links using any attribute stored in Gramps, making your genealogy research more effective!
 
 
+### 3.2.3. Support for Multiple Contexts in UID Links: `ActivePerson`, `HomePerson`
+
+#### ✅ What’s Implemented
+
+The **WebSearch Gramplet** now supports **multiple data contexts** for UID links. This allows you to substitute attributes from **multiple persons** within a single URL template.
+
+
+#### 🔑 How It Works
+
+**Contexts** are prefixes for keys in the URL template that indicate which person the attribute should come from:
+
+- `ActivePerson` — the person currently selected in the Gramps interface.
+- `HomePerson` — the default "home person" set in the database settings.
+
+URL templates can include:
+
+- **Unprefixed keys** — default to `ActivePerson`  
+  👉 `%(Gedbas.ID)s` ≡ `%(ActivePerson.Gedbas.ID)s`
+
+- **Prefixed keys** — explicitly indicate the context  
+  👉 `%(HomePerson.Gedbas.ID)s`
+
+**JSON attribute mappings** can also include a `"context"` field to specify which person the attribute value belongs to.
+
+
+#### ⚠️ Important Behavior
+
+If a URL template includes keys from **multiple contexts** (e.g., `ActivePerson` and `HomePerson`), but only **some of those keys are filled**, the link **will not be displayed**.  
+This prevents the generation of broken or incomplete URLs.
+
+
+#### 📌 Example UID Link Template for `uid-links.csv`
+
+```csv
+People,Gedbas,1,https://gedbas.de/uid/?active=%(ActivePerson.Gedbas.ID)s&home=%(HomePerson.Gedbas.ID)s,
+```
+
+or using the default context shortcut:
+
+```csv
+People,Gedbas,1,https://gedbas.de/uid/?active=%(Gedbas.ID)s&home=%(HomePerson.Gedbas.ID)s,
+```
+
+![Attribute Context](assets/img/attribute_context.jpg)
+
+
 ## 4. User Interface
 
 ![Settings](assets/img/ui.png)

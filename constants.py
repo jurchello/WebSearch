@@ -298,6 +298,15 @@ class SavedTo(Enum):
     ATTRIBUTE = "attribute"
 
 
+class UIDAttributeContext(Enum):
+    """
+    Enum to represent attribute key contexts for UID substitution.
+    """
+
+    ACTIVE_PERSON = "ActivePerson"
+    HOME_PERSON = "HomePerson"
+
+
 SUPPORTED_SOURCE_TYPE_VALUES = {st.value for st in SourceTypes}
 
 
