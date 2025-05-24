@@ -126,7 +126,7 @@ class DBFileTable:
     def _initialize_data(self):
         """Check if the file exists, initialize empty data."""
         if not os.path.exists(self.filepath):
-            self._save_data([])
+            self.save_data([])
 
     def _load_data(self):
         """
@@ -153,7 +153,32 @@ class DBFileTable:
                 self._data = content.get("data", [])
         return self._data
 
-    def _save_data(self, data):
+    def _sort_record_fields(self, record):
+        """Sort fields in a record: id → *_record_id → other → created_at → updated_at."""
+        id_part = [("id", record["id"])] if "id" in record else []
+
+        record_id_parts = [
+            (k, v) for k, v in record.items() if k.endswith("_record_id") and k != "id"
+        ]
+
+        tail_keys = []
+        if "created_at" in record:
+            tail_keys.append(("created_at", record["created_at"]))
+        if "updated_at" in record:
+            tail_keys.append(("updated_at", record["updated_at"]))
+
+        core_keys = [
+            (k, v)
+            for k, v in record.items()
+            if k != "id"
+            and not k.endswith("_record_id")
+            and k != "created_at"
+            and k != "updated_at"
+        ]
+
+        return OrderedDict(id_part + record_id_parts + core_keys + tail_keys)
+
+    def save_data(self, data):
         """Save data and meta to the file."""
         self._update_records_count()
         with open(self.filepath, "w", encoding="utf-8") as f:
@@ -213,12 +238,6 @@ class DBFileTable:
         self._meta["last_id"] = record_id
         return record_id
 
-    def _move_id_first(self, record):
-        """Ensure 'id' is the first field in the record."""
-        return OrderedDict(
-            [("id", record["id"])] + [(k, v) for k, v in record.items() if k != "id"]
-        )
-
     def create(self, record):
         """Create a new record with unique ID and enforce unique and required fields."""
 
@@ -229,9 +248,9 @@ class DBFileTable:
         self._set_timestamps(record, is_new=True)
         self._check_unique_fields(record)
         self._check_required_fields(record)
-        record = self._move_id_first(record)
+        record = self._sort_record_fields(record)
         self._data.append(record)
-        self._save_data(self._data)
+        self.save_data(self._data)
         return self.read_by_id(record_id)
 
     def bulk_create(self, records):
@@ -269,12 +288,12 @@ class DBFileTable:
                     record[key] = value
 
                 self._set_timestamps(record, is_new=False)
-                self._data[i] = self._move_id_first(record)
+                self._data[i] = self._sort_record_fields(record)
                 updated = True
                 break
 
         if updated:
-            self._save_data(self._data)
+            self.save_data(self._data)
         return updated
 
     def read_by_id(self, record_id):
@@ -301,7 +320,7 @@ class DBFileTable:
         new_data = [record for record in self._data if record.get("id") != record_id]
         if len(new_data) != len(self._data):
             self._data = new_data
-            self._save_data(self._data)
+            self.save_data(self._data)
             return True
         return False
 
@@ -310,7 +329,7 @@ class DBFileTable:
         new_data = [record for record in self._data if record.get(field_name) != value]
         if len(new_data) != len(self._data):
             self._data = new_data
-            self._save_data(self._data)
+            self.save_data(self._data)
             return True
         return False
 
@@ -335,8 +354,12 @@ class DBFileTable:
 
     def order_by(self, field_name, reverse=False):
         """Return all records ordered by a field."""
+
+        def get_sort_key(record):
+            return record.get(field_name, None)
+
         data = self._load_data()
-        return sorted(data, key=lambda x: x.get(field_name, None), reverse=reverse)
+        return sorted(data, key=get_sort_key, reverse=reverse)
 
     def migrate_add_field(self, field_name, default_value=None):
         """Add a new field to all records with a default value."""
@@ -344,14 +367,14 @@ class DBFileTable:
         for record in data:
             if field_name not in record:
                 record[field_name] = default_value
-        self._save_data(data)
+        self.save_data(data)
 
     def migrate_remove_field(self, field_name):
         """Remove a field from all records."""
         data = self._load_data()
         for record in data:
             record.pop(field_name, None)
-        self._save_data(data)
+        self.save_data(data)
 
     def all(self):
         """Return all records from the table."""
@@ -359,7 +382,7 @@ class DBFileTable:
 
     def query(self):
         """Start a new query chain from all records."""
-        return RecordQuery(self._data)
+        return RecordQuery(self._data, dbtable=self)
 
 
 class FileTableError(Exception):

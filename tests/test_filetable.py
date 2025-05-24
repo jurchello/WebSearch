@@ -39,6 +39,7 @@ Each test ensures that the file table behaves correctly according to its configu
 
 import unittest
 import os
+
 from models import DBFileTableConfig
 from constants import DuplicateHandlingMode, DB_FILE_TABLE_DIR
 from db_file_table import (
@@ -287,6 +288,43 @@ class TestDBFileTable(unittest.TestCase):
 
         result = self.db.query().all_values_list("name")
         self.assertEqual(set(result), {"John", "Alice", "Bob"})
+
+    def test_delete_persists_to_file(self):
+        """Test that deleting a record via query removes it from both memory and file."""
+        self.db.create({"name": "John", "id": 1})
+        self.db.create({"name": "Jane", "id": 2})
+
+        assert self.db.count() == 2
+        self.db.query().where("name", "John").delete()
+        assert self.db.count() == 1
+        remaining = self.db.all()
+        assert remaining[0]["name"] == "Jane"
+
+    def test_sorting_order(self):
+        """Test _sort_record_fields orders fields as expected."""
+
+        sorted_record = self.db.create(
+            {
+                "updated_at": "2025-05-03T10:00:00",
+                "name": "Example",
+                "saves_record_id": 22,
+                "created_at": "2025-05-03T09:00:00",
+                "source_file_path": "/tmp/file.csv",
+                "visits_record_id": 12,
+            }
+        )
+
+        expected_keys = [
+            "id",
+            "saves_record_id",
+            "visits_record_id",
+            "name",
+            "source_file_path",
+            "created_at",
+            "updated_at",
+        ]
+
+        self.assertEqual(list(sorted_record.keys()), expected_keys)
 
 
 if __name__ == "__main__":

@@ -39,10 +39,10 @@ Key functionalities:
 """
 
 from ai.base_prompt_builder import BasePromptBuilder
-from models import AIDomainData
+from models import AIUrlData
 
 
-class SitePromptBuilder(BasePromptBuilder):
+class CommunityPromptBuilder(BasePromptBuilder):
     """
     A concrete implementation of the BasePromptBuilder class that constructs prompts
     for generating genealogical research website suggestions through AI.
@@ -61,30 +61,28 @@ class SitePromptBuilder(BasePromptBuilder):
             "Do not include any additional text, explanations, or comments outside the JSON. "
         )
 
-    def get_user_message(self, data: AIDomainData) -> str:
+    def get_user_message(self, data: AIUrlData) -> str:
         """Constructs the system message for the AI, instructing it on how to respond."""
 
-        # Regular section
         if not data.country_codes:
             country_codes_text = "only globally used"
-            country_codes_str = "none"
+            country_codes_str = ""
         else:
             country_codes_text = (
                 "both regional and globally used" if data.include_global else "regional"
             )
             country_codes_str = ", ".join(sorted(data.country_codes))
 
-        # Skipped domains
-        excluded_domains_str = self.get_all_domains(data)
+        # Skipped urls
+        excluded_urls_str = self.get_all_urls(data)
 
         return (
             f"I am looking for additional genealogical research websites.\n"
             "Return exactly 10 websites, structured inside a JSON object with a key 'sites':\n"
-            f"- 10 relevant to {country_codes_text} resources including forums, archives, "
-            f"databases etc. (locales: {country_codes_str}).\n"
-            "Also exclude communities like telegram groups, facebook groups, reddit "
-            f"threads, discord servers, YouTube channels etc.\n"
-            f"Exclude the following domains: {excluded_domains_str}.\n"
+            f"- 10 {country_codes_text} community-curated sources like telegram groups, facebook "
+            "groups, reddit threads, discord servers, YouTube channels "
+            f"etc. (locales: {country_codes_str}), but excluding any forums, archives etc.\n"
+            f"Exclude also the following urls: {excluded_urls_str}.\n"
             "Each item in the 'sites' array must contain exactly two keys: 'domain' and 'url'.\n"
             'Example: {"sites": [{"domain": "example.com", "url": "https://example.com"}]}\n'
             "If no suitable websites are found, return an object with an empty "
@@ -92,18 +90,18 @@ class SitePromptBuilder(BasePromptBuilder):
             "Do not include any explanations or extra text outside the JSON object."
         )
 
-    def get_all_domains(self, data: AIDomainData):
+    def get_all_urls(self, data: AIUrlData):
         """
-        Combines skipped and regular domains into a single formatted string.
-        This method merges the sets of skipped and regular domains from the given AIDomainData
+        Combines skipped and regular urls into a single formatted string.
+        This method merges the sets of skipped and regular urls from the given AIDomainData
         and returns them as a sorted, comma-separated string. If both are empty, returns "none".
         """
-        skipped = set(data.skipped_domains or [])
-        regular = set(data.regular_domains or [])
-        all_excluded_domains = skipped | regular
+        skipped = set(data.skipped_urls or [])
+        regular = set(data.community_urls or [])
+        all_excluded_urls = skipped | regular
 
-        excluded_domains_str = (
-            ", ".join(sorted(all_excluded_domains)) if all_excluded_domains else "none"
+        excluded_urls_str = (
+            ", ".join(sorted(all_excluded_urls)) if all_excluded_urls else "none"
         )
 
-        return excluded_domains_str
+        return excluded_urls_str

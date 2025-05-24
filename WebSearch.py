@@ -33,7 +33,9 @@ with customizable URL templates.
 # --------------------------
 # Standard Python libraries
 # --------------------------
+from functools import partial
 import json
+import random
 import os
 import subprocess
 import sys
@@ -108,8 +110,12 @@ from constants import (
     HiddenLinksScope,
     SavedTo,
     ActivityType,
+    DomainSuggestionStatus,
+    DomainSuggestionValidationStatus,
+    DomainType,
 )
 from models import (
+    AIUrlData,
     LinkContext,
     AIDomainData,
     PlaceHistoryRequestData,
@@ -128,12 +134,6 @@ from url_formatter import UrlFormatter
 from website_loader import WebsiteLoader
 from gramplet_version_extractor import GrampletVersionExtractor
 from translation_helper import _
-from ai.openai_ai_client import OpenaiAIClient
-from ai.mistral_ai_client import MistralAIClient
-from ai.site_prompt_builder import SitePromptBuilder
-from ai.site_prompt_request import SitePromptRequest
-from ai.place_history_prompt_builder import PlaceHistoryPromptBuilder
-from ai.place_history_request import PlaceHistoryRequest
 from markdown_inserter import MarkdownInserter
 from markdown_place_history_formatter import MarkdownPlaceHistoryFormatter
 from place_history_storage import PlaceHistoryStorage
@@ -141,6 +141,18 @@ from db_file_table import DBFileTable
 from migration_manager import MigrationManager
 from info_panel import InfoPanel
 from activity_row_generator import ActivityRowGenerator
+from attribute_editor_manager import AttributeEditorManager, AttributeNotFoundError
+from note_editor_manager import NoteEditorManager, NoteNotFoundError
+
+# ai/
+from ai.openai_ai_client import OpenaiAIClient
+from ai.mistral_ai_client import MistralAIClient
+from ai.site_prompt_builder import SitePromptBuilder
+from ai.site_prompt_request import SitePromptRequest
+from ai.place_history_prompt_builder import PlaceHistoryPromptBuilder
+from ai.place_history_request import PlaceHistoryRequest
+from ai.community_prompt_builder import CommunityPromptBuilder
+from ai.community_prompt_request import CommunityPromptRequest
 
 MODEL_SCHEMA = [
     ("icon_name", str),
@@ -171,6 +183,11 @@ MODEL_SCHEMA = [
     ("source_type", str),
     ("country_code", str),
     ("source_file_path", str),
+    ("saved_record_id", int),
+    ("saved_attribute_type", str),
+    ("saved_attribute_value", str),
+    ("saved_to", str),
+    ("visited_record_id", int),
 ]
 
 ModelColumns = IntEnum(
@@ -218,6 +235,8 @@ class WebSearch(Gramplet):
         self.model_row_generator = None
         self.note_links_loader = None
         self._display_columns = []
+        self.attribute_editor_manager = None
+        self.note_editor_manager = None
         MigrationManager().migrate()
         self.version = GrampletVersionExtractor().get()
         self.make_directories()
@@ -264,6 +283,8 @@ class WebSearch(Gramplet):
                         copy_link=self.builder.get_object("copy_link"),
                         hide_selected=self.builder.get_object("hide_selected"),
                         hide_all=self.builder.get_object("hide_all"),
+                        edit_attribute=self.builder.get_object("edit_attribute"),
+                        edit_note=self.builder.get_object("edit_note"),
                     ),
                 ),
             ),
@@ -336,7 +357,7 @@ class WebSearch(Gramplet):
         self.url_formatter = UrlFormatter(self.config_ini_manager)
         Gramplet.__init__(self, gui)
         self.activity_row_generator = ActivityRowGenerator(self.activities_model)
-        self.populate_activities()
+        self.refresh_activities_tab()
 
     def init_database_models(self):
         """Init database models"""
@@ -388,12 +409,11 @@ class WebSearch(Gramplet):
             )
         )
 
-        self.skipped_domain_suggestions_model = DBFileTable(
+        self.domain_suggestions_model = DBFileTable(
             DBFileTableConfig(
-                filename=DBFileTables.SKIPPED_DOMAIN_SUGGESTIONS.value,
+                filename=DBFileTables.DOMAIN_SUGGESTIONS.value,
                 unique_fields=["id"],
-                required_fields=["domain"],
-                set_updated_at=False,
+                required_fields=["domain", "status", "validation_status"],
             )
         )
 
@@ -498,8 +518,16 @@ class WebSearch(Gramplet):
     def refresh_ai_section(self):
         """Updates AI provider settings and fetches AI-recommended sites if necessary."""
         ai_domain_data = self.website_loader.get_domains_data(self.config_ini_manager)
+        ai_url_data = self.website_loader.get_urls_data(self.config_ini_manager)
 
         self.toggle_badges_visibility()
+
+        pending_domains = self.getShuffledPendingDomains()
+        if len(pending_domains) >= 10:
+            GObject.idle_add(
+                self.signal_emitter.emit, "sites-fetched", json.dumps(pending_domains)
+            )
+            return
 
         if self._ai_provider == AIProviders.DISABLED.value:
             return
@@ -522,9 +550,39 @@ class WebSearch(Gramplet):
 
         threading.Thread(
             target=self.fetch_sites_in_background,
-            args=(ai_domain_data,),
+            args=(
+                ai_domain_data,
+                ai_url_data,
+            ),
             daemon=True,
         ).start()
+
+    def getShuffledPendingDomains(self):
+        """
+        Return up to 10 pending domain suggestions with non-empty domain and URL, in random order.
+        """
+        records = (
+            self.domain_suggestions_model.query()
+            .where("status", DomainSuggestionStatus.PENDING.value)
+            .get()
+        )
+
+        pending_domains = []
+        for r in records:
+            domain = r.get("domain")
+            url = r.get("url")
+            domain_type = r.get("domain_type")
+            if domain and url and domain_type:
+                pending_domains.append(
+                    {
+                        "domain": domain.strip(),
+                        "url": url.strip(),
+                        "domain_type": domain_type,
+                    }
+                )
+
+        random.shuffle(pending_domains)
+        return pending_domains[:10]
 
     def refresh_place_history_section(self, place_history_request_data):
         """Refreshes the section displaying the historical administrative data for a place."""
@@ -610,22 +668,80 @@ class WebSearch(Gramplet):
             if not os.path.exists(directory):
                 os.makedirs(directory, exist_ok=True)
 
-    def fetch_sites_in_background(self, ai_domain_data: AIDomainData):
+    def fetch_sites_in_background(
+        self, ai_domain_data: AIDomainData, ai_url_data: AIUrlData
+    ):
         """Fetches AI-recommended genealogy sites in a background thread."""
-        ai_domain_data.skipped_domains = set(
-            self.skipped_domain_suggestions_model.query().all_values_list("domain")
-        )
         try:
-            prompt_builder = SitePromptBuilder()
-            request = SitePromptRequest(ai_domain_data, prompt_builder)
-            results = self.finder.request(request)
+            ai_domain_data.skipped_domains = set(
+                self.domain_suggestions_model.query()
+                .where("domain_type", DomainType.RESOURCE.value)
+                .all_values_list("domain")
+            )
+            site_prompt_builder = SitePromptBuilder()
+            site_request = SitePromptRequest(ai_domain_data, site_prompt_builder)
+            site_results = self.finder.request(site_request)
+            self.save_ai_domain_suggestions(site_results, DomainType.RESOURCE.value)
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            print(f"❌ Error fetching RESOURCE sites: {e}", file=sys.stderr)
 
-            GObject.idle_add(
-                self.signal_emitter.emit, "sites-fetched", json.dumps(results)
+        try:
+            ai_url_data.skipped_urls = set(
+                self.domain_suggestions_model.query()
+                .where("domain_type", DomainType.COMMUNITY.value)
+                .all_values_list("url")
+            )
+            community_prompt_builder = CommunityPromptBuilder()
+            community_request = CommunityPromptRequest(
+                ai_url_data, community_prompt_builder
+            )
+            community_results = self.finder.request(community_request)
+            self.save_ai_domain_suggestions(
+                community_results, DomainType.COMMUNITY.value
             )
         except Exception as e:  # pylint: disable=broad-exception-caught
-            print(f"❌ Error fetching sites: {e}", file=sys.stderr)
-            GObject.idle_add(self.signal_emitter.emit, "sites-fetched", None)
+            print(f"❌ Error fetching COMMUNITY sites: {e}", file=sys.stderr)
+
+        pending_domains = self.getShuffledPendingDomains()
+        if len(pending_domains) == 0:
+            print("⚠️ No valid AI domain suggestions available after filtering.")
+            return
+
+        GObject.idle_add(
+            self.signal_emitter.emit, "sites-fetched", json.dumps(pending_domains)
+        )
+
+    def save_ai_domain_suggestions(self, results, domain_type):
+        """Save AI-generated domain suggestions to the table with PENDING status."""
+        saved_results = []
+
+        existing_domains = {
+            d.lower()
+            for d in self.domain_suggestions_model.query().all_values_list("domain")
+        }
+
+        for r in results:
+            domain = r.get("domain", "").strip().lower()
+            url = r.get("url", "").strip()
+
+            if not domain or not url:
+                continue
+
+            if domain in existing_domains:
+                continue
+
+            self.domain_suggestions_model.create(
+                {
+                    "domain": domain,
+                    "url": url,
+                    "status": DomainSuggestionStatus.PENDING.value,
+                    "validation_status": DomainSuggestionValidationStatus.NOT_CHECKED.value,
+                    "domain_type": domain_type,
+                }
+            )
+            saved_results.append({"domain": domain, "url": url})
+
+        return saved_results
 
     def fetch_place_history_in_background(self, place_history_request_data):
         """Fetches historical place data using AI in a background thread."""
@@ -667,7 +783,7 @@ class WebSearch(Gramplet):
                         "activity_type": ActivityType.PLACE_HISTORY_LOAD.value,
                     }
                 )
-                self.populate_activities()
+                self.refresh_activities_tab()
 
                 PlaceHistoryStorage().save_results_to_file(
                     place_history_record, results
@@ -725,13 +841,17 @@ class WebSearch(Gramplet):
                 sites = json.loads(results)
                 if not isinstance(sites, list):
                     return
-                domain_url_pairs = [
-                    (site.get("domain", "").strip(), site.get("url", "").strip())
+                pending_domains = [
+                    (
+                        site.get("domain", "").strip(),
+                        site.get("url", "").strip(),
+                        site.get("domain_type", DomainType.RESOURCE.value),
+                    )
                     for site in sites
                     if site.get("domain") and site.get("url")
                 ]
-                if domain_url_pairs:
-                    self.populate_badges(domain_url_pairs)
+                if pending_domains:
+                    self.populate_badges(pending_domains)
             except json.JSONDecodeError as e:
                 print(f"❌ JSON Decode Error: {e}", file=sys.stderr)
             except Exception as e:  # pylint: disable=broad-exception-caught
@@ -739,6 +859,12 @@ class WebSearch(Gramplet):
 
     def db_changed(self):
         """Responds to changes in the database and updates the active context accordingly."""
+        self.attribute_editor_manager = AttributeEditorManager(
+            self.dbstate, self.gui.uistate, self.activities_model
+        )
+        self.note_editor_manager = NoteEditorManager(
+            self.dbstate, self.gui.uistate, self.activities_model
+        )
         self.entity_data_builder = EntityDataBuilder(
             self.dbstate, self.config_ini_manager
         )
@@ -751,52 +877,66 @@ class WebSearch(Gramplet):
                 visits_model=self.visits_model,
                 saves_model=self.saves_model,
                 hidden_links_model=self.hidden_links_model,
+                activities_model=self.activities_model,
             )
         )
         self.note_links_loader = NoteLinksLoader(self.dbstate.db)
 
-        self.connect_signal("Person", self.active_person_changed)
-        self.connect_signal("Place", self.active_place_changed)
-        self.connect_signal("Source", self.active_source_changed)
-        self.connect_signal("Family", self.active_family_changed)
-        self.connect_signal("Event", self.active_event_changed)
-        self.connect_signal("Citation", self.active_citation_changed)
-        self.connect_signal("Media", self.active_media_changed)
-        self.connect_signal("Note", self.active_note_changed)
-        self.connect_signal("Repository", self.active_repository_changed)
+        # Connect signals for all supported types
+        for key, handler in {
+            "Person": self.active_person_changed,
+            "Place": self.active_place_changed,
+            "Source": self.active_source_changed,
+            "Family": self.active_family_changed,
+            "Event": self.active_event_changed,
+            "Citation": self.active_citation_changed,
+            "Media": self.active_media_changed,
+            "Note": self.active_note_changed,
+            "Repository": self.active_repository_changed,
+        }.items():
+            self.connect_signal(key, handler)
 
-        active_person_handle = self.gui.uistate.get_active("Person")
-        active_place_handle = self.gui.uistate.get_active("Place")
-        active_source_handle = self.gui.uistate.get_active("Source")
-        active_family_handle = self.gui.uistate.get_active("Family")
-        active_event_handle = self.gui.uistate.get_active("Event")
-        active_citation_handle = self.gui.uistate.get_active("Citation")
-        active_media_handle = self.gui.uistate.get_active("Media")
-        active_note_handle = self.gui.uistate.get_active("Note")
-        active_repository_handle = self.gui.uistate.get_active("Repository")
+        # Determine which handle is currently active
+        handle_map = {
+            SupportedNavTypes.PEOPLE.value: self.gui.uistate.get_active("Person"),
+            SupportedNavTypes.PLACES.value: self.gui.uistate.get_active("Place"),
+            SupportedNavTypes.SOURCES.value: self.gui.uistate.get_active("Source"),
+            SupportedNavTypes.FAMILIES.value: self.gui.uistate.get_active("Family"),
+            SupportedNavTypes.EVENTS.value: self.gui.uistate.get_active("Event"),
+            SupportedNavTypes.CITATIONS.value: self.gui.uistate.get_active("Citation"),
+            SupportedNavTypes.MEDIA.value: self.gui.uistate.get_active("Media"),
+            SupportedNavTypes.NOTES.value: self.gui.uistate.get_active("Note"),
+            SupportedNavTypes.REPOSITORIES.value: self.gui.uistate.get_active(
+                "Repository"
+            ),
+        }
 
-        if active_person_handle:
-            self.active_person_changed(active_person_handle)
-        elif active_place_handle:
-            self.active_place_changed(active_place_handle)
-        elif active_source_handle:
-            self.active_source_changed(active_source_handle)
-        elif active_family_handle:
-            self.active_family_changed(active_family_handle)
-        elif active_event_handle:
-            self.active_event_changed(active_event_handle)
-        elif active_citation_handle:
-            self.active_citation_changed(active_citation_handle)
-        elif active_media_handle:
-            self.active_media_changed(active_media_handle)
-        elif active_note_handle:
-            self.active_note_changed(active_note_handle)
-        elif active_repository_handle:
-            self.active_repository_changed(active_repository_handle)
+        for nav_type, handle in handle_map.items():
+            if handle:
+                self.refresh_main_treeview_tab(nav_type, handle)
+                break
 
         notebook = self.gui.uistate.viewmanager.notebook
         if notebook:
             notebook.connect("switch-page", self.on_category_changed)
+
+    def refresh_main_treeview_tab(self, nav_type, obj_handle):
+        """Dispatch refresh logic depending on entity type."""
+        dispatcher = {
+            SupportedNavTypes.PEOPLE.value: self.active_person_changed,
+            SupportedNavTypes.PLACES.value: self.active_place_changed,
+            SupportedNavTypes.SOURCES.value: self.active_source_changed,
+            SupportedNavTypes.FAMILIES.value: self.active_family_changed,
+            SupportedNavTypes.EVENTS.value: self.active_event_changed,
+            SupportedNavTypes.CITATIONS.value: self.active_citation_changed,
+            SupportedNavTypes.MEDIA.value: self.active_media_changed,
+            SupportedNavTypes.NOTES.value: self.active_note_changed,
+            SupportedNavTypes.REPOSITORIES.value: self.active_repository_changed,
+        }
+
+        handler = dispatcher.get(nav_type)
+        if handler:
+            handler(obj_handle)
 
     def on_category_changed(self, unused_notebook, unused_page, page_num, *unused_args):
         """Handle changes in the selected category and update the context."""
@@ -833,11 +973,8 @@ class WebSearch(Gramplet):
         websites = self.collect_all_websites(context)
         self.insert_websites_into_model(websites, context)
 
-        websites = self.collect_all_websites(context)
-        self.insert_websites_into_model(websites, context)
-
-    def populate_activities(self):
-        """Populates the activity log model with the latest 1000 activity records."""
+    def refresh_activities_tab(self):
+        """Refreshes the activity log model with the latest 1000 activity records."""
         self.activity_model.clear()
 
         records = self.activity_row_generator.generate_rows()
@@ -935,59 +1072,48 @@ class WebSearch(Gramplet):
             .exists()
         ):
 
+            data = {
+                "link": url,
+                "nav_type": nav_type,
+                "obj_handle": obj_handle,
+                "obj_gramps_id": obj_gramps_id,
+                "source_file_path": source_file_path,
+            }
+
             if saved_to:
 
-                model.create(
-                    {
-                        "link": url,
-                        "nav_type": nav_type,
-                        "obj_handle": obj_handle,
-                        "obj_gramps_id": obj_gramps_id,
-                        "source_file_path": source_file_path,
-                        "saved_to": saved_to,
-                    }
-                )
+                activity_data = dict(data)
+                data["saved_to"] = saved_to
 
                 if saved_to == SavedTo.NOTE.value:
-                    activity_type = ActivityType.LINK_SAVE_TO_NOTE.value
+                    activity_data["activity_type"] = (
+                        ActivityType.LINK_SAVE_TO_NOTE.value
+                    )
+                    activity_data["note_gramps_id"] = settings.note_gramps_id
+                    activity_data["note_handle"] = settings.note_handle
+                    data["note_gramps_id"] = settings.note_gramps_id
+                    data["note_handle"] = settings.note_handle
                 elif saved_to == SavedTo.ATTRIBUTE.value:
-                    activity_type = ActivityType.LINK_SAVE_TO_ATTRIBUTE.value
-                else:
-                    activity_type = None
+                    activity_data["activity_type"] = (
+                        ActivityType.LINK_SAVE_TO_ATTRIBUTE.value
+                    )
+                    data["attribute_type"] = settings.attribute_type
+                    data["attribute_value"] = settings.attribute_value
+                    activity_data["attribute_type"] = settings.attribute_type
+                    activity_data["attribute_value"] = settings.attribute_value
 
-                self.activities_model.create(
-                    {
-                        "link": url,
-                        "nav_type": nav_type,
-                        "obj_handle": obj_handle,
-                        "obj_gramps_id": obj_gramps_id,
-                        "activity_type": activity_type,
-                        "saved_to": saved_to,
-                    }
-                )
-                self.populate_activities()
+                record = model.create(data)
+                activity_data["saves_record_id"] = record.get("id")
+                self.activities_model.create(activity_data)
+                self.refresh_activities_tab()
 
             else:
-                model.create(
-                    {
-                        "link": url,
-                        "nav_type": nav_type,
-                        "obj_handle": obj_handle,
-                        "obj_gramps_id": obj_gramps_id,
-                        "source_file_path": source_file_path,
-                    }
-                )
-
-                self.activities_model.create(
-                    {
-                        "link": url,
-                        "nav_type": nav_type,
-                        "obj_handle": obj_handle,
-                        "obj_gramps_id": obj_gramps_id,
-                        "activity_type": ActivityType.LINK_VISIT.value,
-                    }
-                )
-                self.populate_activities()
+                record = model.create(data)
+                activity_data = dict(data)
+                activity_data["activity_type"] = ActivityType.LINK_VISIT.value
+                activity_data["visits_record_id"] = record.get("id")
+                self.activities_model.create(activity_data)
+                self.refresh_activities_tab()
 
             try:
                 pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(
@@ -1412,6 +1538,14 @@ class WebSearch(Gramplet):
             _("Hide link for all items")
         )
 
+        self.ui.context_menus.main.items.edit_attribute.set_label(
+            _("Edit Attribute with the Link")
+        )
+
+        self.ui.context_menus.main.items.edit_note.set_label(
+            _("Edit Note with the Link")
+        )
+
         self.ui.ai_recommendations_label.set_text(_("🔍 AI Suggestions"))
 
     def toggle_badges_visibility(self):
@@ -1436,11 +1570,11 @@ class WebSearch(Gramplet):
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
         )
 
-    def populate_badges(self, domain_url_pairs):
+    def populate_badges(self, pending_domains):
         """Displays AI-suggested site badges in the interface."""
         self.ui.boxes.badges.container.foreach(self.remove_widget)
-        for domain, url in domain_url_pairs:
-            badge = self.create_badge(domain, url)
+        for domain, url, domain_type in pending_domains:
+            badge = self.create_badge(domain, url, domain_type)
             self.ui.boxes.badges.container.add(badge)
         self.ui.boxes.badges.container.show_all()
 
@@ -1448,10 +1582,15 @@ class WebSearch(Gramplet):
         """Removes a widget from the container."""
         self.ui.boxes.badges.container.remove(widget)
 
-    def create_badge(self, domain, url):
+    def create_badge(self, domain, url, domain_type):
         """Creates a clickable badge widget for an AI-suggested domain."""
         badge_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         badge_box.get_style_context().add_class("badge")
+
+        if domain_type == DomainType.COMMUNITY.value:
+            badge_box.get_style_context().add_class("badge-community")
+        elif domain_type == DomainType.RESOURCE.value:
+            badge_box.get_style_context().add_class("badge-resource")
 
         label = Gtk.Label(label=domain)
         label.get_style_context().add_class("badge-label")
@@ -1490,15 +1629,34 @@ class WebSearch(Gramplet):
                         domain_label = sub_child.get_text().strip()
                         break
         if domain_label:
-            self.skipped_domain_suggestions_model.create({"domain": domain_label})
+            self.mark_domain_as_skipped(domain_label)
+
+            self.refresh_activities_tab()
+        self.ui.boxes.badges.container.remove(badge)
+
+    def mark_domain_as_skipped(self, domain: str):
+        """Mark an existing domain suggestion as skipped, if it exists."""
+        records = self.domain_suggestions_model.query().where("domain", domain).get()
+
+        if not records:
+            print(f"⚠️ Warning: domain '{domain}' not found in suggestions table.")
+            return
+
+        for record in records:
+
+            if record.get("status") == DomainSuggestionStatus.SKIPPED.value:
+                continue
+
+            self.domain_suggestions_model.update(
+                record["id"], {"status": DomainSuggestionStatus.SKIPPED.value}
+            )
+
             self.activities_model.create(
                 {
-                    "domain": domain_label,
+                    "domain": domain,
                     "activity_type": ActivityType.DOMAIN_SKIP.value,
                 }
             )
-            self.populate_activities()
-        self.ui.boxes.badges.container.remove(badge)
 
     def on_button_press(self, widget, event):
         """Handles right-click context menu activation in the treeview."""
@@ -1558,7 +1716,116 @@ class WebSearch(Gramplet):
                 else:
                     self.ui.context_menus.main.items.add_attribute.hide()
 
+                # attributes
+                saved_type = self.model.get_value(
+                    tree_iter, ModelColumns.SAVED_ATTRIBUTE_TYPE.value
+                )
+                saved_value = self.model.get_value(
+                    tree_iter, ModelColumns.SAVED_ATTRIBUTE_VALUE.value
+                )
+                if saved_type and saved_value:
+                    self.ui.context_menus.main.items.edit_attribute.show()
+                else:
+                    self.ui.context_menus.main.items.edit_attribute.hide()
+
+                # notes
+                saved_to = self.model.get_value(tree_iter, ModelColumns.SAVED_TO.value)
+                if saved_to == SavedTo.NOTE.value:
+                    self.ui.context_menus.main.items.edit_note.show()
+                else:
+                    self.ui.context_menus.main.items.edit_note.hide()
+
                 self.ui.context_menus.main.menu.popup_at_pointer(event)
+
+    def on_edit_attribute(self, unused_widget):
+        """Opens the attribute editor for the saved attribute."""
+        path = self._context.active_tree_path
+        tree_iter = self.get_active_tree_iter(path)
+        nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
+        obj_handle = self.model.get_value(tree_iter, ModelColumns.OBJ_HANDLE.value)
+        saved_record_id = self.model.get_value(
+            tree_iter, ModelColumns.SAVED_RECORD_ID.value
+        )
+        attr_type = self.model.get_value(
+            tree_iter, ModelColumns.SAVED_ATTRIBUTE_TYPE.value
+        )
+        attr_value = self.model.get_value(
+            tree_iter, ModelColumns.SAVED_ATTRIBUTE_VALUE.value
+        )
+        try:
+            self.attribute_editor_manager.edit_by_obj_handle_and_attr_name(
+                SimpleNamespace(
+                    nav_type=nav_type,
+                    obj_handle=obj_handle,
+                    attr_type=attr_type,
+                    attr_value=attr_value,
+                    callback=partial(
+                        self.on_attribute_updated_via_editor_manager, saved_record_id
+                    ),
+                )
+            )
+        except AttributeNotFoundError:
+            self.show_notification(
+                _("Attribute no longer exists. The extra icon is removed")
+            )
+            if saved_record_id:
+                self.saves_model.query().where("id", saved_record_id).delete()
+            self.refresh_main_treeview_tab(nav_type, obj_handle)
+
+    def on_attribute_updated_via_editor_manager(self, saved_record_id, result):
+        """
+        Callback method invoked after the attribute editor is closed and an attribute is updated.
+        """
+        unused_attr_obj, name, value = result
+        if saved_record_id:
+            record = self.saves_model.read_by_id(saved_record_id)
+            record["attribute_type"] = name
+            record["attribute_value"] = value
+            self.saves_model.update(saved_record_id, record)
+            nav_type = record.get("nav_type")
+            obj_handle = record.get("obj_handle")
+            self.refresh_main_treeview_tab(nav_type, obj_handle)
+            self.refresh_activities_tab()
+
+    def on_edit_note(self, unused_widget):
+        """Opens the note editor for the saved note."""
+        path = self._context.active_tree_path
+        tree_iter = self.get_active_tree_iter(path)
+        nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
+        obj_handle = self.model.get_value(tree_iter, ModelColumns.OBJ_HANDLE.value)
+        saved_record_id = self.model.get_value(
+            tree_iter, ModelColumns.SAVED_RECORD_ID.value
+        )
+        record = self.saves_model.read_by_id(saved_record_id)
+        if not record:
+            return
+        try:
+            self.note_editor_manager.edit_by_obj_handle_and_note_handle(
+                SimpleNamespace(
+                    nav_type=nav_type,
+                    obj_handle=obj_handle,
+                    note_handle=record.get("note_handle", ""),
+                    callback=partial(
+                        self.on_note_updated_via_editor_manager, saved_record_id
+                    ),
+                )
+            )
+        except NoteNotFoundError:
+            self.show_notification(
+                _("Note no longer exists. The extra icon is removed")
+            )
+            if saved_record_id:
+                self.saves_model.query().where("id", saved_record_id).delete()
+            self.refresh_main_treeview_tab(nav_type, obj_handle)
+
+    def on_note_updated_via_editor_manager(self, saved_record_id):
+        """
+        Callback method invoked after the note editor is closed and a note is updated.
+        """
+        if saved_record_id:
+            record = self.saves_model.read_by_id(saved_record_id)
+            self.saves_model.update(saved_record_id, record)
+            self.refresh_activities_tab()
 
     def on_add_note(self, unused_widget):
         """Adds the current selected URL as a note to the person record."""
@@ -1643,20 +1910,23 @@ class WebSearch(Gramplet):
                 model_icon_pos=ModelColumns.SAVED_ICON.value,
                 model_visibility_pos=ModelColumns.SAVED_ICON_VISIBLE.value,
                 model=self.saves_model,
+                note_handle=note_handle,
+                note_gramps_id=note.get_gramps_id(),
                 saved_to=SavedTo.NOTE.value,
             )
         )
 
+        handle = self.model.get_value(tree_iter, ModelColumns.OBJ_HANDLE.value)
+        self.refresh_main_treeview_tab(nav_type, handle)
+
         try:
             note_obj = self.dbstate.db.get_note_from_handle(note_handle)
             note_gramps_id = note_obj.get_gramps_id()
-            notification = self.show_notification(
+            self.show_notification(
                 _("Note #%(id)s has been successfully added") % {"id": note_gramps_id}
             )
-            notification.show_all()
         except Exception:  # pylint: disable=broad-exception-caught
-            notification = self.show_notification(_("Error creating note"))
-            notification.show_all()
+            self.show_notification(_("Error creating note"))
 
     def on_show_qr_code(self, unused_widget):
         """Opens a window showing the QR code for the selected URL."""
@@ -1676,8 +1946,7 @@ class WebSearch(Gramplet):
             clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
             clipboard.set_text(url, -1)
             clipboard.store()
-            notification = self.show_notification(_("URL is copied to the Clipboard"))
-            notification.show_all()
+            self.show_notification(_("URL is copied to the Clipboard"))
 
     def on_hide_link_for_selected_item(self, unused_widget):
         """Hides the selected link only for the current Gramps object."""
@@ -1714,7 +1983,7 @@ class WebSearch(Gramplet):
                         "activity_type": ActivityType.HIDE_LINK_FOR_OBJECT.value,
                     }
                 )
-                self.populate_activities()
+                self.refresh_activities_tab()
             model.remove(tree_iter)
 
     def on_hide_link_for_all_items(self, unused_widget):
@@ -1746,7 +2015,7 @@ class WebSearch(Gramplet):
                         "activity_type": ActivityType.HIDE_LINK_FOR_ALL.value,
                     }
                 )
-                self.populate_activities()
+                self.refresh_activities_tab()
             model.remove(tree_iter)
 
     def show_notification(self, message):
@@ -1796,8 +2065,10 @@ class WebSearch(Gramplet):
         if not attribute:
             return
 
-        attribute.set_type(_("WebSearch Link"))
-        attribute.set_value(self._context.active_url)
+        attribute_type = _("WebSearch Link")
+        attribute_value = self._context.active_url
+        attribute.set_type(attribute_type)
+        attribute.set_value(attribute_value)
         attribute.set_privacy(True)
 
         with DbTxn("Add Web Link Attribute", self.dbstate.db) as trans:
@@ -1831,13 +2102,15 @@ class WebSearch(Gramplet):
                 model_visibility_pos=ModelColumns.SAVED_ICON_VISIBLE.value,
                 model=self.saves_model,
                 saved_to=SavedTo.ATTRIBUTE.value,
+                attribute_type=attribute_type,
+                attribute_value=attribute_value,
             )
         )
 
-        notification = self.show_notification(
-            _("Attribute has been successfully added")
-        )
-        notification.show_all()
+        self.show_notification(_("Attribute has been successfully added"))
+
+        handle = self.model.get_value(tree_iter, ModelColumns.OBJ_HANDLE.value)
+        self.refresh_main_treeview_tab(nav_type, handle)
 
     def on_query_tooltip(self, widget, x, y, unused_keyboard_mode, tooltip):
         """Displays a tooltip with key and comment information."""

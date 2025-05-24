@@ -446,7 +446,9 @@ disable=raw-checker-failed,
         too-many-lines,
         too-many-public-methods,
         too-many-branches,
-
+        too-many-arguments,
+        too-many-positional-arguments,
+        R0801,
 
 
 # Enable the message, report, category or checker with the given id(s). You can

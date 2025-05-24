@@ -190,6 +190,7 @@ class PlaceDataKeys(Enum):
     LONGITUDE = "longitude"
     TYPE = "type"
     TITLE = "title"
+    UNDERSCORED_PLACE = "underscored_place"
     SYSTEM_LOCALE = "locale"
 
 
@@ -243,8 +244,30 @@ class DBFileTables(Enum):
     VISITS = "visits.json"
     SAVES = "saves.json"
     HIDDEN_LINKS = "hidden_links.json"
-    SKIPPED_DOMAIN_SUGGESTIONS = "skipped_domain_suggestions.json"
+    DOMAIN_SUGGESTIONS = "domain_suggestions.json"
     ACTIVITIES = "activities.json"
+
+
+class DomainSuggestionStatus(Enum):
+    """Status of domain suggestion processing."""
+
+    PENDING = "pending"
+    SKIPPED = "skipped"
+
+
+class DomainSuggestionValidationStatus(Enum):
+    """Validation result of a suggested domain."""
+
+    NOT_CHECKED = "not_checked"
+    VALID = "valid"
+    INVALID = "invalid"
+
+
+class DomainType(Enum):
+    """Enum representing the type of domain suggested by the AI."""
+
+    RESOURCE = "resource"
+    COMMUNITY = "community"
 
 
 class HiddenLinksScope(Enum):
@@ -264,6 +287,8 @@ class ActivityType(Enum):
     DOMAIN_SKIP = "domain_skip"
     HIDE_LINK_FOR_OBJECT = "hide_link_for_object"
     HIDE_LINK_FOR_ALL = "hide_link_for_all"
+    ATTRIBUTE_EDIT = "attribute_edit"
+    NOTE_EDIT = "note_edit"
 
 
 class SavedTo(Enum):
@@ -271,6 +296,15 @@ class SavedTo(Enum):
 
     NOTE = "note"
     ATTRIBUTE = "attribute"
+
+
+class UIDAttributeContext(Enum):
+    """
+    Enum to represent attribute key contexts for UID substitution.
+    """
+
+    ACTIVE_PERSON = "ActivePerson"
+    HOME_PERSON = "HomePerson"
 
 
 SUPPORTED_SOURCE_TYPE_VALUES = {st.value for st in SourceTypes}
