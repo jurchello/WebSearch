@@ -124,7 +124,7 @@ No setup is needed. Just click and go.
 
 
 
-## 1.2. Interface Overview: The Four Tabs
+## 1.2. Interface Overview
 
 WebSearch includes **four tabs**, each showing different types of information.
 
@@ -285,7 +285,7 @@ The Gramplet supports the following **Navigation Types**, which correspond to th
 
 These **Navigation Types** support dynamic URL generation based on real entity data (e.g., names, years, locations). For other types, links may still appear if they are static or based on metadata (attributes, notes, etc.), but no substitution of template **keys** is performed.
 
-#### 2.2.1.1. **Keys** for the "People" **Navigation Type**:
+#### 2.2.1.1. Keys for the "People" Navigation Type:
 
 - `given`: This field represents the first name of a person.
 - `middle`: Middle name. This field represents the middle name of a person. The handling of middle names is configurable, and the exact mechanics for extracting and displaying the middle name are described in more detail in the Settings section of the Gramplet. In the settings, you can choose how middle names should be processed, such as separating the first and middle names or removing the middle name entirely.
@@ -306,7 +306,7 @@ These **Navigation Types** support dynamic URL generation based on real entity d
 - `birth_root_place`: This field represents the "root" birth place, which is the highest-level location in the place hierarchy. The `birth_root_place` encompasses the `birth_place`, meaning it includes the broader geographic area (e.g., a region, state, or country) that the specific `birth_place` falls under. The `birth_root_place` helps identify the broader context or administrative region to which the birth place belongs.
 - `death_root_place`: Just like `birth_root_place`, this field represents the "root" death place, which is the highest-level location in the place hierarchy. It encompasses the `death_place`, representing the broader geographic region (e.g., region, state, or country) that the `death_place` is part of. The `death_root_place` provides context for the `death_place` by identifying the larger geographical area or administrative region it belongs to.
 
-#### 2.2.1.2. **Keys** for the "Places" **Navigation Type**:
+#### 2.2.1.2. Keys for the "Places" Navigation Type:
 
 - `place`: The specific location associated with an event (e.g., birth, death, marriage). For a more detailed explanation, including a visual demonstration, see [**Keys for the "People" Navigation Type**](#2211-keys-for-the-people-navigation-type).
 - `root_place`: The highest-level location in the place hierarchy that encompasses the `place`. For a more detailed explanation, including a visual demonstration, see [**Keys for the "People" Navigation Type**](#2211-keys-for-the-people-navigation-type).
@@ -317,7 +317,7 @@ These **Navigation Types** support dynamic URL generation based on real entity d
 - `underscored_place`: Place in format like this: New_York. Similar formats are often used in urls.
 - `locale`: The system locale detected in Gramps. Some examples of locale values: `en`, `de`, `fr`, `uk`, `es`, `it`, `pl`, `nl`, ...
 
-#### 2.2.1.3. **Keys** for the "Families" **Navigation Type**:
+#### 2.2.1.3. Keys for the "Families" Navigation Type:
 
 - `father_given` – This field represents the first name of the father.
 - `father_middle` – Middle name. This field represents the middle name of the father. The handling of middle names is configurable, and the exact mechanics for extracting and displaying the middle name are described in more detail in the Settings section of the Gramplet.
@@ -369,7 +369,7 @@ These **Navigation Types** support dynamic URL generation based on real entity d
 - `divorce_root_place` – The "root" place of the divorce, representing the highest-level location in the place hierarchy.
 - `locale` – The system locale detected in Gramps. Some examples of locale values: `en`, `de`, `fr`, `uk`, `es`, `it`, `pl`, `nl`, ...
 
-#### 2.2.1.4. **Keys** for the "Sources" **Navigation Type**:
+#### 2.2.1.4. Keys for the "Sources" Navigation Type:
 - `source_title`: Source title.
 - `full_abbreviation`: The full content of the **Abbreviation** field in the source.
 - `archive_code`: Archive code (e.g. `ДАЧО`, `TNA`, `NARA`), parsed from abbreviation, attribute, or repository.
@@ -378,7 +378,7 @@ These **Navigation Types** support dynamic URL generation based on real entity d
 - `file_number`: Case/file number (e.g. `15`), parsed from abbreviation or attribute.
 - `locale`: The system locale detected in Gramps. Some examples of locale values: `en`, `de`, `fr`, `uk`, `es`, `it`, `pl`, `nl`, ...
 
-### 2.2.2 More details about some **Keys**
+### 2.2.2 More details about some Keys
 #### 2.2.2.1 `place` VS `root_place`
 To better understand the difference between `place` and `root place`, see the example below:
 
@@ -387,12 +387,12 @@ To better understand the difference between `place` and `root place`, see the ex
 - The **place** (e.g., "Los Angeles") refers to the specific city, town, or village.
 - The **root place** (e.g., "USA") represents the highest-level geographical entity containing the place.
 
-#### 2.2.2.2 The `middle` **Key**
+#### 2.2.2.2 The `middle` Key
 The `middle` **Key** is not used everywhere. It represents the **middle name** of a person and is typically relevant in cultures and naming conventions where middle names play an important role. Some cultures frequently use middle names, while others may not.
 It is expected that users enter middle names in the **Given** field, separated by a space from the first name.
 If other methods of storing middle names are used, such as including them in the **Surnames** field, the middle name detection mechanism will not work, and the 'middle' **Key** will remain empty.
 
-##### **Configuring Middle Name Handling**
+##### Configuring "Middle Name Handling"
 The way the `middle` **Key** is extracted from personal data **can be configured** in the settings interface. This setting is called **Middle Name Handling** and allows users to adjust how middle names appear in search queries.
 
 For a more detailed explanation of this configuration, see the section [**config.ini – General Configuration**](#231-configini--general-configuration).
@@ -408,7 +408,7 @@ Users can assign any name to the output **Key**. Here are some examples, though 
 
 In the JSON file, these names should be specified in the `key_name` field. Users can utilize them like any other **Keys** listed in [**2.2. Navigation Types and Supported Keys**](#22-navigation-types-and-supported-keys).
 
-##### **Example of using a custom Key**
+##### Example of using a custom Key
 A user-defined **Key** can be inserted into a URL template of a csv file as follows:
 ```
 https://www.familysearch.org/en/tree/person/details/%(FamilySearch.UID)s
@@ -451,32 +451,32 @@ These configuration files are located in the `configs` directory:
 
 The `config.ini` file contains various settings that control how the Gramplet operates. Here are the key options:
 
-#### **Enable CSV Files (`websearch.enabled_files`)**
+#### Enable CSV Files (`websearch.enabled_files`)
 A list of CSV files that store website templates. The selected files define which sources are available for search queries.
 
-#### **Middle Name Handling (`websearch.middle_name_handling`)**
+#### Middle Name Handling (`websearch.middle_name_handling`)
 Defines how middle names should be handled in URL templates:
 - **Leave Alone** – Keep the middle name unchanged.
 - **Separate** – Separate the first and middle names with a space.
 - **Remove** – Remove the middle name entirely.
 
-#### **Show Shortened URL (`websearch.show_short_url`)**
+#### Show Shortened URL (`websearch.show_short_url`)
 If enabled, URLs will be displayed in a shortened format. Corresponds to `websearch.show_short_url = true/false` in the configuration file.
 
-#### **URL Compactness Level (`websearch.url_compactness_level`)**
+#### URL Compactness Level (`websearch.url_compactness_level`)
 Controls how URLs are formatted:
 - **Shortest** – Minimal URL, no prefix and no extra parameters.
 - **Compact - No Prefix, Keys Without Attributes** – Compact format, excludes attributes.
 - **Compact - With Attributes** – Compact format, includes attributes.
 - **Long** – Full URL with all details.
 
-#### **URL Prefix Replacement (`websearch.url_prefix_replacement`)**
+#### URL Prefix Replacement (`websearch.url_prefix_replacement`)
 Allows users to replace or remove certain URL prefixes (e.g., removing `https://www.`).
 
-#### **Use OpenAI (`websearch.use_openai`)**
+#### Use OpenAI (`websearch.use_openai`)
 If enabled, OpenAI will be used to generate additional genealogy research suggestions.
 
-#### **AI API Key (`websearch.ai_api_key`)**
+#### AI API Key (`websearch.ai_api_key`)
 The API key required to use OpenAI services for generating additional research links.
 
 Most settings take effect immediately. However, the following two settings require a restart, as OpenAI is only initialized once when the application starts:
