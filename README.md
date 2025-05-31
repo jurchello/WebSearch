@@ -4,28 +4,28 @@
 
 - [📘 1. WebSearch Gramplet for Regular Users](#-1-websearch-gramplet-for-regular-users)
   - [1.1. What is WebSearch?](#11-what-is-websearch)
-  - [1.2. Interface Overview](#12-interface-overview)
+  - [1.2. Interface Overview (Tabs)](#12-interface-overview-tabs)
     - [1.2.1. The "Search Links" Tab](#121-the-search-links-tab)
-  - [Table Columns Overview](#table-columns-overview)
-  - [Source Type / Locale Icons](#source-type--locale-icons)
+      - [Table Columns Overview](#table-columns-overview)
+      - [Source Type / Locale Icons](#source-type--locale-icons)
     - [1.2.2. The "Historical Administrative Divisions" Tab](#122-the-historical-administrative-divisions-tab)
     - [1.2.3. The "Activity Log" Tab](#123-the-activity-log-tab)
       - [Tracked Activity Types](#tracked-activity-types)
     - [1.2.4. The "Info" Tab](#124-the-info-tab)
-    - [1.3. Basic Usage (Step by Step)](#13-basic-usage-step-by-step)
+  - [1.3. Basic Usage (Step by Step)](#13-basic-usage-step-by-step)
 - [📘 2. WebSearch Gramplet for Advanced Users](#-2-websearch-gramplet-for-advanced-users)
   - [2.1. Purpose](#21-purpose)
   - [2.2. Navigation types and Supported Keys](#22-navigation-types-and-supported-keys)
     - [2.2.1. Navigation types](#221-navigation-types)
-      - [2.2.1.1. Keys for the "People" Navigation Type:](#2211-keys-for-the-people-navigation-type)
-      - [2.2.1.2. Keys for the "Places" Navigation Type:](#2212-keys-for-the-places-navigation-type)
-      - [2.2.1.3. Keys for the "Families" Navigation Type:](#2213-keys-for-the-families-navigation-type)
-      - [2.2.1.4. Keys for the "Sources" Navigation Type:](#2214-keys-for-the-sources-navigation-type)
+      - [Keys for the "People" Navigation Type:](#keys-for-the-people-navigation-type)
+      - [Keys for the "Places" Navigation Type:](#keys-for-the-places-navigation-type)
+      - [Keys for the "Families" Navigation Type:](#keys-for-the-families-navigation-type)
+      - [Keys for the "Sources" Navigation Type:](#keys-for-the-sources-navigation-type)
     - [2.2.2 More details about some Keys](#222-more-details-about-some-keys)
-      - [2.2.2.1 `place` VS `root_place`](#2221-place-vs-root_place)
-      - [2.2.2.2 The `middle` Key](#2222-the-middle-key)
+      - [`place` VS `root_place`](#place-vs-root_place)
+      - [The `middle` Key](#the-middle-key)
         - [Configuring "Middle Name Handling"](#configuring-middle-name-handling)
-      - [2.2.2.3 Custom Keys](#2223-custom-keys)
+      - [Custom Keys](#custom-keys)
         - [Example of using a custom Key](#example-of-using-a-custom-key)
     - [2.2.3 Navigation Type Wildcards and Multiple Types](#223-navigation-type-wildcards-and-multiple-types)
       - [Example](#example)
@@ -39,17 +39,17 @@
       - [Use OpenAI (`websearch.use_openai`)](#use-openai-websearchuse_openai)
       - [AI API Key (`websearch.ai_api_key`)](#ai-api-key-websearchai_api_key)
     - [2.3.2. attribute_mapping.json – Attribute Mapping Rules](#232-attribute_mappingjson--attribute-mapping-rules)
-      - [2.3.2.1. User-defined `attribute_mapping.json` File](#2321-user-defined-attribute_mappingjson-file)
-        - [2.3.2.1.1. Purpose and Protection from Data Loss](#23211-purpose-and-protection-from-data-loss)
-        - [2.3.2.1.2. Copy Example:](#23212-copy-example)
-        - [2.3.2.1.3. Directory Information Panel](#23213-directory-information-panel)
-      - [2.3.2.2. Attribute Mapping Rules](#2322-attribute-mapping-rules)
-      - [2.3.2.1. How Attribute Mapping Works](#2321-how-attribute-mapping-works)
+      - [User-defined `attribute_mapping.json` File](#user-defined-attribute_mappingjson-file)
+        - [Purpose and Protection from Data Loss](#purpose-and-protection-from-data-loss)
+        - [Copy Example:](#copy-example)
+        - [Directory Information Panel](#directory-information-panel)
+      - [Attribute Mapping Rules](#attribute-mapping-rules)
+      - [How Attribute Mapping Works](#how-attribute-mapping-works)
         - [Examples of Configuration and Expected Output](#examples-of-configuration-and-expected-output)
           - [Example 1: Integrating PersonFS FamilySearch Identifiers into WebSearch Gramplet](#example-1-integrating-personfs-familysearch-identifiers-into-websearch-gramplet)
           - [Example 2: Using the Same Identifier for a Different FamilySearch Link](#example-2-using-the-same-identifier-for-a-different-familysearch-link)
           - [Example 3: Using Custom Attributes in Search Queries](#example-3-using-custom-attributes-in-search-queries)
-      - [2.3.2.3. Support for Multiple Contexts in UID Links: `ActivePerson`, `HomePerson`](#2323-support-for-multiple-contexts-in-uid-links-activeperson-homeperson)
+      - [Support for Multiple Contexts in UID Links: `ActivePerson`, `HomePerson`](#support-for-multiple-contexts-in-uid-links-activeperson-homeperson)
         - [What’s Implemented](#whats-implemented)
         - [How It Works](#how-it-works)
         - [Important Behavior](#important-behavior)
@@ -57,19 +57,19 @@
   - [2.4. User Interface](#24-user-interface)
     - [Tooltip Information](#tooltip-information)
   - [2.5. Context Menu](#25-context-menu)
-    - [**2.5.1 Add link to note**](#251-add-link-to-note)
-    - [**2.5.2 Show QR-code**](#252-show-qr-code)
-    - [**2.5.3 Copy link to clipboard**](#253-copy-link-to-clipboard)
-    - [**2.5.4 Hide link for selected item**](#254-hide-link-for-selected-item)
-    - [**2.5.5 Hide link for all items**](#255-hide-link-for-all-items)
+    - [2.5.1 Add link to note](#251-add-link-to-note)
+    - [2.5.2 Show QR-code](#252-show-qr-code)
+    - [2.5.3 Copy link to clipboard](#253-copy-link-to-clipboard)
+    - [2.5.4 Hide link for selected item](#254-hide-link-for-selected-item)
+    - [2.5.5 Hide link for all items](#255-hide-link-for-all-items)
   - [2.6. Handling CSV Files](#26-handling-csv-files)
     - [2.6.1. Default CSV Files](#261-default-csv-files)
     - [2.6.2. User-defined CSV Files](#262-user-defined-csv-files)
-      - [2.6.2.1. Purpose and Protection from Data Loss](#2621-purpose-and-protection-from-data-loss)
-      - [2.6.2.2. Usage Options](#2622-usage-options)
-      - [6.2.3. Supported CSV File Names](#623-supported-csv-file-names)
-      - [2.6.2.4. Copy Example](#2624-copy-example)
-      - [2.6.2.5. Directory Information Panel](#2625-directory-information-panel)
+      - [Purpose and Protection from Data Loss](#purpose-and-protection-from-data-loss-1)
+      - [Usage Options](#usage-options)
+      - [Supported CSV File Names](#supported-csv-file-names)
+      - [Copy Example](#copy-example)
+      - [Directory Information Panel](#directory-information-panel-1)
     - [2.6.3. Enabling Files](#263-enabling-files)
   - [2.7. AI Usage](#27-ai-usage)
     - [2.7.1 OpenAI Usage](#271-openai-usage)
@@ -83,21 +83,6 @@
     - [3.1.3 Compiling Translations (Creating MO Files)](#313-compiling-translations-creating-mo-files)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -124,7 +109,7 @@ No setup is needed. Just click and go.
 
 
 
-## 1.2. Interface Overview
+## 1.2. Interface Overview (Tabs)
 
 WebSearch includes **four tabs**, each showing different types of information.
 
@@ -138,7 +123,7 @@ Each time you click on an entity, the links are updated automatically.
 To open a link — simply **double-click** on it.
 
 
-## Table Columns Overview
+#### Table Columns Overview
 
 | Column             | Description                                                                                                                                       |
 |--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -148,7 +133,7 @@ To open a link — simply **double-click** on it.
 | **Comment**        | Optional. Shows a description or note about the link if defined in the CSV file. Most links will leave this blank unless customized.             |
 | **Website URL**    | The actual web address. **Double-click** to open in your default browser.                                                                         |
 
-## Source Type / Locale Icons
+#### Source Type / Locale Icons
 
 These icons appear in the **second column** and indicate **where the link comes from** or **how it was generated**:
 
@@ -227,7 +212,7 @@ This tab includes several sections:
 | **Support and Credits**     | Contact details, support links, author information, and the currently installed version of WebSearch. |
 
 
-### 1.3. Basic Usage (Step by Step)
+## 1.3. Basic Usage (Step by Step)
 
 1. **Start Gramps** and make sure the **WebSearch Gramplet** is installed.
 2. **Add the Gramplet** to your right or bottom sidebar.
@@ -285,7 +270,7 @@ The Gramplet supports the following **Navigation Types**, which correspond to th
 
 These **Navigation Types** support dynamic URL generation based on real entity data (e.g., names, years, locations). For other types, links may still appear if they are static or based on metadata (attributes, notes, etc.), but no substitution of template **keys** is performed.
 
-#### 2.2.1.1. Keys for the "People" Navigation Type:
+#### Keys for the "People" Navigation Type:
 
 - `given`: This field represents the first name of a person.
 - `middle`: Middle name. This field represents the middle name of a person. The handling of middle names is configurable, and the exact mechanics for extracting and displaying the middle name are described in more detail in the Settings section of the Gramplet. In the settings, you can choose how middle names should be processed, such as separating the first and middle names or removing the middle name entirely.
@@ -306,7 +291,7 @@ These **Navigation Types** support dynamic URL generation based on real entity d
 - `birth_root_place`: This field represents the "root" birth place, which is the highest-level location in the place hierarchy. The `birth_root_place` encompasses the `birth_place`, meaning it includes the broader geographic area (e.g., a region, state, or country) that the specific `birth_place` falls under. The `birth_root_place` helps identify the broader context or administrative region to which the birth place belongs.
 - `death_root_place`: Just like `birth_root_place`, this field represents the "root" death place, which is the highest-level location in the place hierarchy. It encompasses the `death_place`, representing the broader geographic region (e.g., region, state, or country) that the `death_place` is part of. The `death_root_place` provides context for the `death_place` by identifying the larger geographical area or administrative region it belongs to.
 
-#### 2.2.1.2. Keys for the "Places" Navigation Type:
+#### Keys for the "Places" Navigation Type:
 
 - `place`: The specific location associated with an event (e.g., birth, death, marriage). For a more detailed explanation, including a visual demonstration, see [**Keys for the "People" Navigation Type**](#2211-keys-for-the-people-navigation-type).
 - `root_place`: The highest-level location in the place hierarchy that encompasses the `place`. For a more detailed explanation, including a visual demonstration, see [**Keys for the "People" Navigation Type**](#2211-keys-for-the-people-navigation-type).
@@ -317,7 +302,7 @@ These **Navigation Types** support dynamic URL generation based on real entity d
 - `underscored_place`: Place in format like this: New_York. Similar formats are often used in urls.
 - `locale`: The system locale detected in Gramps. Some examples of locale values: `en`, `de`, `fr`, `uk`, `es`, `it`, `pl`, `nl`, ...
 
-#### 2.2.1.3. Keys for the "Families" Navigation Type:
+#### Keys for the "Families" Navigation Type:
 
 - `father_given` – This field represents the first name of the father.
 - `father_middle` – Middle name. This field represents the middle name of the father. The handling of middle names is configurable, and the exact mechanics for extracting and displaying the middle name are described in more detail in the Settings section of the Gramplet.
@@ -369,7 +354,7 @@ These **Navigation Types** support dynamic URL generation based on real entity d
 - `divorce_root_place` – The "root" place of the divorce, representing the highest-level location in the place hierarchy.
 - `locale` – The system locale detected in Gramps. Some examples of locale values: `en`, `de`, `fr`, `uk`, `es`, `it`, `pl`, `nl`, ...
 
-#### 2.2.1.4. Keys for the "Sources" Navigation Type:
+#### Keys for the "Sources" Navigation Type:
 - `source_title`: Source title.
 - `full_abbreviation`: The full content of the **Abbreviation** field in the source.
 - `archive_code`: Archive code (e.g. `ДАЧО`, `TNA`, `NARA`), parsed from abbreviation, attribute, or repository.
@@ -379,7 +364,7 @@ These **Navigation Types** support dynamic URL generation based on real entity d
 - `locale`: The system locale detected in Gramps. Some examples of locale values: `en`, `de`, `fr`, `uk`, `es`, `it`, `pl`, `nl`, ...
 
 ### 2.2.2 More details about some Keys
-#### 2.2.2.1 `place` VS `root_place`
+#### `place` VS `root_place`
 To better understand the difference between `place` and `root place`, see the example below:
 
 ![Place vs Root Place](assets/img/place.png)
@@ -387,7 +372,7 @@ To better understand the difference between `place` and `root place`, see the ex
 - The **place** (e.g., "Los Angeles") refers to the specific city, town, or village.
 - The **root place** (e.g., "USA") represents the highest-level geographical entity containing the place.
 
-#### 2.2.2.2 The `middle` Key
+#### The `middle` Key
 The `middle` **Key** is not used everywhere. It represents the **middle name** of a person and is typically relevant in cultures and naming conventions where middle names play an important role. Some cultures frequently use middle names, while others may not.
 It is expected that users enter middle names in the **Given** field, separated by a space from the first name.
 If other methods of storing middle names are used, such as including them in the **Surnames** field, the middle name detection mechanism will not work, and the 'middle' **Key** will remain empty.
@@ -397,7 +382,7 @@ The way the `middle` **Key** is extracted from personal data **can be configured
 
 For a more detailed explanation of this configuration, see the section [**config.ini – General Configuration**](#231-configini--general-configuration).
 
-#### 2.2.2.3 Custom Keys
+#### Custom Keys
 
 Users can define their own **Keys** in the `attribute_mapping.json` file. These **Keys** will store values from the attributes of the active object. Currently, only **Person** attributes are supported.
 
@@ -491,9 +476,9 @@ For details on how OpenAI is used, the costs associated with it, and what data i
 
 However, users can create their own custom `attribute_mapping.json` file and place it in a special directory that is preserved across updates and reinstallations. 
 
-#### 2.3.2.1. User-defined `attribute_mapping.json` File
+#### User-defined `attribute_mapping.json` File
 
-##### 2.3.2.1.1. Purpose and Protection from Data Loss
+##### Purpose and Protection from Data Loss
 
 WebSearch supports a user-defined `attribute_mapping.json` file stored in a special system-specific location that is protected from being lost during updates or reinstallation.
 
@@ -509,23 +494,23 @@ The behavior of the user-defined `attribute_mapping.json` file is as follows:
 - Changes persist after updates.
 - Allows customization for your own attributes.
 
-##### 2.3.2.1.2. Copy Example:
+##### Copy Example:
 
 - Step 1: Copy from the system path: `{path to gramplet}/configs/attribute_mapping.json`
 - Step 2: Paste to the user-defined path: `{path to user directory}/json/attribute_mapping.json`
 
-##### 2.3.2.1.3. Directory Information Panel
+##### Directory Information Panel
 
 To help users navigate these locations, the Gramplet provides a dedicated information tab with clickable links to:
 
 - System directories with default files
 - User-specific directories
 
-In the image below, the highlighted links correspond to the paths mentioned in [**3.2.1.2. Copy Example**](#23212-copy-example), showing both the system and user-defined directories.
+In the image below, the highlighted links correspond to the paths mentioned in **Copy Example**, showing both the system and user-defined directories.
 
 ![info_panel_json.png](assets/img/info_panel_json.jpg)
 
-#### 2.3.2.2. Attribute Mapping Rules
+#### Attribute Mapping Rules
 
 The `attribute_mapping.json` file defines how attributes from Gramps **Navigation Types** are mapped to URL **Keys**. It ensures that specific fields (such as user-defined attributes) are correctly included in search queries.
 
@@ -557,7 +542,7 @@ After making changes, restart Gramps for them to take effect.
 By default, the attribute_mapping.json file contains a large number of pre-configured services, such as WikiTree, Geni, Geneee, Find a Grave, Wikipedia, and others. Most likely, if you need to use them, you will only need to adjust the attribute_name field, as the current one is a placeholder.
 More details on how this mechanism works, including how identifiers from attributes are used in links, can be found [here](#how-attribute-mapping-works).
 
-#### 2.3.2.1. How Attribute Mapping Works
+#### How Attribute Mapping Works
 
 The URL templates added in CSV files are validated against the specified regex patterns. If a URL matches a defined pattern, the system will check whether the active person has an attribute with the name specified in `attribute_name`.
 - If such an attribute exists, a new **Key** will be created with the name specified in `key_name`, containing the value from that attribute.
@@ -725,7 +710,7 @@ Now, add the following JSON entry inside `attribute_mapping.json`:
 🚀 This method allows you to dynamically generate search links using any attribute stored in Gramps, making your genealogy research more effective!
 
 
-#### 2.3.2.3. Support for Multiple Contexts in UID Links: `ActivePerson`, `HomePerson`
+#### Support for Multiple Contexts in UID Links: `ActivePerson`, `HomePerson`
 
 ##### What’s Implemented
 
@@ -819,7 +804,7 @@ When hovering over a row in the table, the tooltip will display:
 
 Right-clicking on an active link within the Gramplet opens the **context menu**, which provides additional actions for working with the selected link. The following options are available:
 
-### **2.5.1 Add link to note**
+### 2.5.1 Add link to note
 This option allows the user to add the selected link directly to a note in Gramps. This can be useful for storing references to relevant research materials, websites, or sources associated with a person, place, or event. The link will be saved in the notes section of the active entity.
 
 After saving a link to a note, a **floppy disk icon** appears in the icons column, indicating that the link has been stored.  
@@ -827,7 +812,7 @@ After saving a link to a note, a **floppy disk icon** appears in the icons colum
 
 Generated notes contain plain text only.
 
-### **2.5.2 Show QR-code**
+### 2.5.2 Show QR-code
 Selecting this option generates and displays a **QR code** for the selected link. This enables users to quickly scan the QR code with a mobile device and open the link on a phone or tablet without manually copying and pasting it.
 
 ![QR](assets/img/qr.png)
@@ -836,15 +821,15 @@ If the required qrcode library is not installed, a window will still open, but i
 
 ![QR](assets/img/missing_qrcode.jpg)
 
-### **2.5.3 Copy link to clipboard**
+### 2.5.3 Copy link to clipboard
 This option copies the selected link to the clipboard, allowing the user to easily paste it into another application, browser, or document. This is useful for quickly sharing or storing links outside of Gramps.
 
 The **context menu** enhances usability by providing quick access to commonly used actions related to genealogy research links.
 
-### **2.5.4 Hide link for selected item**
+### 2.5.4 Hide link for selected item
 This option allows the user to temporarily hide a specific link associated with the selected item in the Gramplet. The link is not deleted but will no longer be displayed until the user restores it. This can be useful for decluttering the interface by hiding irrelevant or less frequently used links.
 
-### **2.5.5 Hide link for all items**
+### 2.5.5 Hide link for all items
 This option hides all displayed links in the Gramplet, making the interface cleaner. Like the previous option, it does not delete the links but only removes them from view. This feature is helpful when the user wants to focus on other elements of the interface without being distracted by the list of links.
 
 ## 2.6. Handling CSV Files
@@ -860,7 +845,7 @@ The Gramplet will automatically load these files and display the URLs based on t
 
 ### 2.6.2. User-defined CSV Files
 
-#### 2.6.2.1. Purpose and Protection from Data Loss
+#### Purpose and Protection from Data Loss
 
 WebSearch supports user-defined CSV files stored in a special system-specific location that is protected from being lost during updates or reinstallation.
 
@@ -870,7 +855,7 @@ To help you distinguish such links, a spreadsheet icon ![](assets/icons/user-fil
 
 If the directory does not yet exist, it will be created automatically the first time WebSearch is launched. This helps users quickly understand where to copy or create their own files.
 
-#### 2.6.2.2. Usage Options
+#### Usage Options
 
 The user can:
 
@@ -879,7 +864,7 @@ The user can:
 
 - **Create new CSV files** — either with new names or using the supported file names hardcoded in the plugin.
 
-#### 6.2.3. Supported CSV File Names
+#### Supported CSV File Names
 
 - `common-links.csv` – Global links for all regions with automatic value substitution
 - `uid-links.csv` – Links with substituted values from person attributes
@@ -890,19 +875,19 @@ The user can:
 - `{country_code}-community-links.csv` – Facebook/Telegram communities and more
 - `{country_code}-forum-links.csv` – Regional forums
 
-#### 2.6.2.4. Copy Example
+#### Copy Example
 
 - Step 1: Copy from the system path: `{path to gramplet}/assets/csv/static-links.csv`
 - Step 2: Paste to the user-defined path: `{path to user directory}/csv/static-links.csv`
 
-#### 2.6.2.5. Directory Information Panel
+#### Directory Information Panel
 
 To help users navigate these locations, the Gramplet provides a dedicated information tab with clickable links to:
 
 - System directories with default files
 - User-specific directories
 
-In the image below, the highlighted links correspond to the paths mentioned in [**6.2.4. Copy Example**](#2624-copy-example), showing both the system and user-defined directories.
+In the image below, the highlighted links correspond to the paths mentioned in **Copy Example**, showing both the system and user-defined directories.
 
 ![info_panel_csv.png](assets/img/info_panel_csv.jpg)
 
