@@ -293,8 +293,8 @@ These **Navigation Types** support dynamic URL generation based on real entity d
 
 #### Keys for the "Places" Navigation Type:
 
-- `place`: The specific location associated with an event (e.g., birth, death, marriage). For a more detailed explanation, including a visual demonstration, see [**Keys for the "People" Navigation Type**](#2211-keys-for-the-people-navigation-type).
-- `root_place`: The highest-level location in the place hierarchy that encompasses the `place`. For a more detailed explanation, including a visual demonstration, see [**Keys for the "People" Navigation Type**](#2211-keys-for-the-people-navigation-type).
+- `place`: The specific location associated with an event (e.g., birth, death, marriage). For a more detailed explanation, including a visual demonstration, see [**Keys for the "People" Navigation Type**](#keys-for-the-people-navigation-type).
+- `root_place`: The highest-level location in the place hierarchy that encompasses the `place`. For a more detailed explanation, including a visual demonstration, see [**Keys for the "People" Navigation Type**](#keys-for-the-people-navigation-type).
 - `latitude`: The latitude of the place, if available.
 - `longitude`: The longitude of the place, if available.
 - `type`: The type of the place (e.g., city, village, region, etc.).
