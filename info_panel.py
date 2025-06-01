@@ -200,9 +200,9 @@ class InfoPanel:
         markdown_parts.append(
             "📖 View detailed usage in: "
             "[Section 3.2. attribute_mapping.json](https://github.com/jurchello/WebSearch/"
-            "blob/main/README.md#32-attributemappingjson--attribute-mapping-rules), "
+            "blob/main/README.md#232-attribute_mappingjson--attribute-mapping-rules), "
             "[Section 6.2. User-defined CSV Files](https://github.com/jurchello/WebSearch/"
-            "blob/main/README.md#62-user-defined-csv-files)"
+            "blob/main/README.md#262-user-defined-csv-files)"
         )
         markdown_parts.append("")
 
