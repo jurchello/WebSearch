@@ -1,3 +1,26 @@
+#
+# Gramps - a GTK+/GNOME based genealogy program
+#
+# Copyright (C) 2025 Yurii Liubymyi <jurchello@gmail.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+
+# ----------------------------------------------------------------------------
+
+
 """
 Module to launch the GTK attribute editor in Gramps for various supported object types.
 
@@ -46,7 +69,7 @@ class AttributeEditorManager:
         """Edit attribute by object handle and attribute name (via context object)."""
         obj = self._get_object_by_handle(ctx.nav_type, ctx.obj_handle)
         if obj is None:
-            print(f"Warning. Object by handle '{ctx.obj_handle}' not found")
+            print(f"❌ Error. Object by handle '{ctx.obj_handle}' not found")
             return False
         matches = self._find_attributes_by_name(obj, ctx.attr_type, ctx.attr_value)
         for index, attr_obj in matches:
@@ -57,7 +80,7 @@ class AttributeEditorManager:
         """Edit attribute by object handle and attribute object."""
         obj = self._get_object_by_handle(ctx.nav_type, ctx.obj_handle)
         if obj is None:
-            print(f"Warning. Object by handle '{ctx.obj_handle}' not found")
+            print(f"❌ Error. Object by handle '{ctx.obj_handle}' not found")
             return False
         index = self._find_attribute_index(obj, attr_obj)
         self._edit(ctx, obj, attr_obj, index)

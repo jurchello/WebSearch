@@ -92,9 +92,7 @@ class MarkdownPlaceHistoryFormatter(PlaceHistoryFormatter):
                 f"📍 {coordinates_label} [{latitude}, {longitude}]({map_link})"
             )
 
-        place_type = results.get(
-            "place_type", "Unknown"
-        )  # Default to 'Unknown' if not found
+        place_type = results.get("place_type", _("Unknown"))
         parts.append(f"🔠 **{place_type_label}** {place_type}")
         formatted_updated_at = format_iso_datetime(
             place_history_record.get("updated_at")

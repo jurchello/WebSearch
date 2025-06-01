@@ -107,39 +107,43 @@ class ActivityRowGenerator:
 
     def _build_link_visit_details(self, record):
 
-        return f"Visited: {record.get('link', '')}"
+        return _("Visited: %s") % record.get("link", "")
 
     def _build_link_save_details(self, record):
-        parts = [f"Link: {record.get('link', '')}"]
+
+        parts = [_("Link: %s") % record.get("link", "")]
         if "attribute_type" in record:
-            parts.append(f"Attribute: {record['attribute_type']}")
+            parts.append(_("Attribute: %s") % record["attribute_type"])
         if "attribute_value" in record:
-            parts.append(f"Value: {record['attribute_value']}")
+            parts.append(_("Value: %s") % record["attribute_value"])
         return " | ".join(parts)
 
     def _build_place_history_details(self, record):
         file_path = os.path.basename(record.get("file_path", ""))
-        return f"Loaded from file: {file_path}"
+        return _("Loaded from file: %s") % file_path
 
     def _build_domain_skip_details(self, record):
-        return f"Domain: {record.get('domain', '')}"
+        return _("Domain: %s") % record.get("domain", "")
 
     def _build_hide_link_for_object_details(self, record):
-        parts = [f"Link: {record.get('link', '')}"]
+        parts = [_("Link: %s") % record.get("link", "")]
         if "obj_gramps_id" in record:
-            parts.append(f"Object: {record['obj_gramps_id']}")
+            parts.append(_("Object: %s") % record["obj_gramps_id"])
         return " | ".join(parts)
 
     def _build_hide_link_for_all_details(self, record):
-        return f"Pattern: {record.get('url_pattern', '')}"
+        return _("Pattern: %s") % record.get("url_pattern", "")
 
     def _build_note_edit_details(self, record):
-        return f"Object Gramps ID: {record.get('obj_gramps_id', '')} "
+        return _("Object Gramps ID: %s") % record.get("obj_gramps_id", "")
 
     def _build_attribute_edit_details(self, record):
-        return (
-            f"{record.get('old_attr_name', '')}: {record.get('old_attr_value', '')} "
-            f"→ {record.get('updated_attr_name', '')}: {record.get('updated_attr_value', '')}"
+
+        return _("%s: %s → %s: %s") % (
+            record.get("old_attr_name", ""),
+            record.get("old_attr_value", ""),
+            record.get("updated_attr_name", ""),
+            record.get("updated_attr_value", ""),
         )
 
     def get_activity_label(self, activity_type: str) -> str:

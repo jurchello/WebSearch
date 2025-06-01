@@ -533,7 +533,7 @@ class WebSearch(Gramplet):
             return
 
         if not self._ai_api_key:
-            print("❌ ERROR: No AI API Key found.", file=sys.stderr)
+            print("❌ Error. No AI API Key found.", file=sys.stderr)
             return
 
         if self._context.previous_ai_site_provider == self._ai_provider:
@@ -545,7 +545,7 @@ class WebSearch(Gramplet):
         elif self._ai_provider == AIProviders.MISTRAL.value:
             self.finder = MistralAIClient(self._ai_api_key, self._ai_model)
         else:
-            print(f"⚠ Unknown AI provider: {self._ai_provider}", file=sys.stderr)
+            print(f"❌ Error. Unknown AI provider: {self._ai_provider}", file=sys.stderr)
             return
 
         threading.Thread(
@@ -611,7 +611,7 @@ class WebSearch(Gramplet):
 
         if not self._ai_api_key:
             self.update_message_in_ai_notes(_("No AI API key provided"))
-            print("❌ ERROR: No AI API Key found.", file=sys.stderr)
+            print("❌ Error. No AI API Key found.", file=sys.stderr)
             return
 
         if not self._enabled_place_history:
@@ -704,7 +704,6 @@ class WebSearch(Gramplet):
 
         pending_domains = self.getShuffledPendingDomains()
         if len(pending_domains) == 0:
-            print("⚠️ No valid AI domain suggestions available after filtering.")
             return
 
         GObject.idle_add(
@@ -853,9 +852,9 @@ class WebSearch(Gramplet):
                 if pending_domains:
                     self.populate_badges(pending_domains)
             except json.JSONDecodeError as e:
-                print(f"❌ JSON Decode Error: {e}", file=sys.stderr)
+                print(f"❌ Error. JSON Decode Error: {e}", file=sys.stderr)
             except Exception as e:  # pylint: disable=broad-exception-caught
-                print(f"❌ Error processing sites: {e}", file=sys.stderr)
+                print(f"❌ Error. Error processing sites: {e}", file=sys.stderr)
 
     def db_changed(self):
         """Responds to changes in the database and updates the active context accordingly."""
@@ -1639,7 +1638,6 @@ class WebSearch(Gramplet):
         records = self.domain_suggestions_model.query().where("domain", domain).get()
 
         if not records:
-            print(f"⚠️ Warning: domain '{domain}' not found in suggestions table.")
             return
 
         for record in records:
@@ -2040,7 +2038,7 @@ class WebSearch(Gramplet):
     def on_add_attribute(self, unused_widget):
         """(Unused) Adds the selected URL as an attribute to the person."""
         if not self._context.active_tree_path:
-            print("❌ Error: No saved path to the iterator!", file=sys.stderr)
+            print("❌ Error. No saved path to the iterator!", file=sys.stderr)
             return
 
         tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
@@ -2243,15 +2241,14 @@ class WebSearch(Gramplet):
         method_name = f"active_{entity_type}_changed"
         method = getattr(self, method_name, None)
         if self._context.last_active_entity_handle is None:
-            print("⚠ last_active_entity_handle is empty")
             return
         if method is not None and callable(method):
             try:
                 method(self._context.last_active_entity_handle)  # pylint: disable=E1102
             except HandleError as e:
-                print(f"⚠ Warning: {e}")
+                print(f"❌ Error. {e}")
             except Exception as e:  # pylint: disable=broad-exception-caught
-                print(f"❌ Error: {e}", file=sys.stderr)
+                print(f"❌ Error. {e}", file=sys.stderr)
         else:
             print(f"❌ Method '{method_name}' not found or not callable")
 

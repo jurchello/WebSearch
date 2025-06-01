@@ -64,7 +64,7 @@ class MistralAIClient:
             import requests  # pylint: disable=import-outside-toplevel
         except ImportError:
             print(
-                "⚠ The 'requests' module is missing. Install it using: `pip install requests`.",
+                "❌ Error. The 'requests' module is missing. Install it: `pip install requests`.",
                 file=sys.stderr,
             )
             return base_request.parse_response("{}")
@@ -94,7 +94,7 @@ class MistralAIClient:
             raw_text = data["choices"][0]["message"]["content"]
 
             if not raw_text or not raw_text.strip():
-                print("⚠ Received empty response from AI.", file=sys.stderr)
+                print("❌ Error. Received empty response from AI.", file=sys.stderr)
                 return base_request.parse_response("{}")
 
             return base_request.parse_response(raw_text)
