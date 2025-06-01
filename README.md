@@ -986,3 +986,8 @@ Testing the Gramplet in Ukrainian
 ```
 LANG=uk_UA.utf8 gramps
 ```
+
+### 3.1.4 Update README.md table of contents 
+```
+doctoc README.md
+```
