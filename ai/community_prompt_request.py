@@ -63,7 +63,7 @@ class CommunityPromptRequest(BaseRequest):
             data = json.loads(response)
             if not isinstance(data, dict):
                 print(
-                    "⚠ Invalid JSON structure: expected a JSON object.", file=sys.stderr
+                    "❌ Error. Invalid JSON structure: expected a JSON object.", file=sys.stderr
                 )
                 return []
 
@@ -74,10 +74,10 @@ class CommunityPromptRequest(BaseRequest):
             if isinstance(sites, list):
                 return sites
 
-            print("⚠ 'sites' key missing or invalid.", file=sys.stderr)
+            print("❌ Error. 'sites' key missing or invalid.", file=sys.stderr)
             return []
         except json.JSONDecodeError:
-            print("⚠ Failed to decode JSON.", file=sys.stderr)
+            print("❌ Error. Failed to decode JSON.", file=sys.stderr)
             return []
 
     def task_id(self):

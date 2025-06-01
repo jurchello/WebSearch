@@ -241,8 +241,8 @@ class DBFileTable:
     def create(self, record):
         """Create a new record with unique ID and enforce unique and required fields."""
 
-        if "id" in record:
-            print("⚠️  Warning: external 'id' will be ignored in create()")
+        #if "id" in record:
+        #    print("❌ Error. external 'id' will be ignored in create()")
 
         record_id = self._set_id(record)
         self._set_timestamps(record, is_new=True)

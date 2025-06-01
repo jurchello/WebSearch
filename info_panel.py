@@ -30,6 +30,8 @@ This module creates a Markdown-based info panel in the Gramplet that reports:
 - support and contact information.
 """
 
+from translation_helper import _
+
 from constants import (
     CONFIGS_DIR,
     CSV_DIR,
@@ -103,103 +105,124 @@ class InfoPanel:
         markdown_parts = []
 
         # --- About section
-        markdown_parts.append("## 🧩 About WebSearch")
+        markdown_parts.append(_("## 🧩 About WebSearch"))
         markdown_parts.append(
-            "WebSearch is a Gramplet for Gramps that helps you search genealogy-related websites."
+            _(
+                "WebSearch is a Gramplet for Gramps that helps you search "
+                "genealogy-related websites."
+            )
         )
         markdown_parts.append(
-            "It supports CSV-based link templates, AI-assisted site discovery, and "
-            "direct integration with notes and attributes."
+            _(
+                "It supports CSV-based link templates, AI-assisted site discovery, and "
+                "direct integration with notes and attributes."
+            )
         )
         markdown_parts.append("")
 
         # --- System info
         if not QR_AVAILABLE or not OPENAI_AVAILABLE or not REQUESTS_AVAILABLE:
-            markdown_parts.append("## ⚙️ System Information")
+            markdown_parts.append(_("## ⚙️ System Information"))
 
             if not QR_AVAILABLE:
-                markdown_parts.append("🔻 **Missing:** `qrcode`")
+                markdown_parts.append(_("🔻 **Missing:** `qrcode`"))
                 markdown_parts.append(
-                    "ℹ️ This Python library is not available in your system."
-                )
-                markdown_parts.append("Without it, QR code generation will not work.")
-                markdown_parts.append(
-                    "💡 Usually installed with: `pip install qrcode[pil]`"
+                    _("ℹ️ This Python library is not available in your system.")
                 )
                 markdown_parts.append(
-                    "*Note: Some operating systems or environments may require alternative "
-                    "installation methods.*"
+                    _("Without it, QR code generation will not work.")
+                )
+                markdown_parts.append(
+                    _("💡 Usually installed with: `pip install qrcode[pil]`")
+                )
+                markdown_parts.append(
+                    _(
+                        "*Note: Some operating systems or environments may require alternative "
+                        "installation methods.*"
+                    )
                 )
                 markdown_parts.append("")
 
             if not OPENAI_AVAILABLE:
-                markdown_parts.append("🔻 **Missing:** `openai`")
+                markdown_parts.append(_("🔻 **Missing:** `openai`"))
                 markdown_parts.append(
-                    "ℹ️ This library is required for accessing OpenAI-based features."
+                    _("ℹ️ This library is required for accessing OpenAI-based features.")
                 )
                 markdown_parts.append(
-                    "Without it, AI-generated site suggestions and place history will be disabled."
+                    _(
+                        "Without it, AI-generated site suggestions and place history "
+                        "will be disabled."
+                    )
                 )
-                markdown_parts.append("💡 Usually installed with: `pip install openai`")
                 markdown_parts.append(
-                    "*Note: Some operating systems or environments may require alternative "
-                    "installation methods.*"
+                    _("💡 Usually installed with: `pip install openai`")
+                )
+                markdown_parts.append(
+                    _(
+                        "*Note: Some operating systems or environments may require alternative "
+                        "installation methods.*"
+                    )
                 )
                 markdown_parts.append("")
 
             if not REQUESTS_AVAILABLE:
-                markdown_parts.append("🔻 **Missing:** `requests`")
+                markdown_parts.append(_("🔻 **Missing:** `requests`"))
                 markdown_parts.append(
-                    "ℹ️ This library is used to communicate with web APIs."
+                    _("ℹ️ This library is used to communicate with web APIs.")
                 )
                 markdown_parts.append(
-                    "Without it, external data sources may not be accessible."
+                    _("Without it, external data sources may not be accessible.")
                 )
                 markdown_parts.append(
-                    "💡 Usually installed with: `pip install requests`"
+                    _("💡 Usually installed with: `pip install requests`")
                 )
                 markdown_parts.append(
-                    "*Note: Some operating systems or environments may require alternative "
-                    "installation methods.*"
+                    _(
+                        "*Note: Some operating systems or environments may require alternative "
+                        "installation methods.*"
+                    )
                 )
                 markdown_parts.append("")
 
         # --- File paths section
-        markdown_parts.append("## 📂 Data File Locations")
+        markdown_parts.append(_("## 📂 Data File Locations"))
         markdown_parts.append(
-            "Below are the paths to system and user-defined data files used by WebSearch."
+            _(
+                "Below are the paths to system and user-defined data files used by WebSearch."
+            )
         )
         markdown_parts.append("")
-        markdown_parts.append("#### CSV File Paths")
+        markdown_parts.append(_("#### CSV File Paths"))
         markdown_parts.append(
-            "- **System path:** `{dir|"
-            + CSV_DIR
-            + "}` – contains the built-in CSV files"
+            _("- **System path:** `{dir|%s}` – contains the built-in CSV files")
+            % CSV_DIR
         )
         markdown_parts.append(
-            "- **User-defined path:** `{dir|"
-            + USER_DATA_CSV_DIR
-            + "}` – for custom user-defined CSV files"
+            _("- **User-defined path:** `{dir|%s}` – for custom user-defined CSV files")
+            % USER_DATA_CSV_DIR
         )
         markdown_parts.append("")
-        markdown_parts.append("#### JSON File Paths")
+        markdown_parts.append(_("#### JSON File Paths"))
         markdown_parts.append(
-            "- **System path:** `{dir|"
-            + CONFIGS_DIR
-            + "}` – contains the built-in attribute_mapping.json file"
+            _(
+                "- **System path:** `{dir|%s}` – contains the built-in attribute_mapping.json file"
+            )
+            % CONFIGS_DIR
         )
         markdown_parts.append(
-            "- **User-defined path:** `{dir|"
-            + USER_DATA_JSON_DIR
-            + "}` – for custom user-defined attribute_mapping.json file"
+            _(
+                "- **User-defined path:** `{dir|%s}` – for custom user-defined "
+                "attribute_mapping.json file"
+            )
+            % USER_DATA_JSON_DIR
         )
         markdown_parts.append("")
         markdown_parts.append(
-            "  💡 *Tip: click any path above to open it in your file manager.*"
+            _("  💡 *Tip: click any path above to open it in your file manager.*")
         )
         markdown_parts.append(
-            "📖 View detailed usage in: "
-            "[Section 3.2. attribute_mapping.json](https://github.com/jurchello/WebSearch/"
+            _("📖 View detailed usage in: ")
+            + "[Section 3.2. attribute_mapping.json](https://github.com/jurchello/WebSearch/"
             "blob/main/README.md#232-attribute_mappingjson--attribute-mapping-rules), "
             "[Section 6.2. User-defined CSV Files](https://github.com/jurchello/WebSearch/"
             "blob/main/README.md#262-user-defined-csv-files)"
@@ -207,25 +230,29 @@ class InfoPanel:
         markdown_parts.append("")
 
         # --- Support section
-        markdown_parts.append("## 💬 Support")
-        markdown_parts.append("👤 Created and maintained by Yurii Liubymyi")
+        markdown_parts.append(_("## 💬 Support"))
+        markdown_parts.append(_("👤 Created and maintained by Yurii Liubymyi"))
         markdown_parts.append(
-            "💬 For help or feedback, feel free to mention `@Urchello` on the Gramps forum:"
+            _(
+                "💬 For help or feedback, feel free to mention `@Urchello` on the Gramps forum:"
+            )
         )
         markdown_parts.append(
-            "- [Gramps Forum (Discourse)](https://gramps.discourse.group/)"
-        )
-        markdown_parts.append("")
-        markdown_parts.append(
-            "✅ Bug reports and feature requests are completely **free of charge**."
+            f"[{_('Gramps Forum (Discourse)')}](https://gramps.discourse.group/)"
         )
         markdown_parts.append("")
         markdown_parts.append(
-            "- [GitHub Issues](https://github.com/jurchello/WebSearch/issues)"
+            _("✅ Bug reports and feature requests are completely **free of charge**.")
         )
-        markdown_parts.append("- [Gramps Bug Tracker](https://gramps-project.org/bugs)")
         markdown_parts.append("")
-        markdown_parts.append(f"🧩 **WebSearch Gramplet version:** `{self.version}`")
+        markdown_parts.append(
+            f"- [{_('GitHub Issues')}](https://github.com/jurchello/WebSearch/issues)"
+        )
+        markdown_parts.append(
+            f"- [{_('Gramps Bug Tracker')}](https://gramps-project.org/bugs)"
+        )
+        markdown_parts.append("")
+        markdown_parts.append(_("🧩 WebSearch Gramplet version: `%s`") % self.version)
 
         full_markdown = "\n".join(markdown_parts)
         self.markdown.insert_markdown(full_markdown)

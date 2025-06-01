@@ -81,7 +81,7 @@ class OpenaiAIClient:
             raw_data_text = response.choices[0].message.content
 
             if not raw_data_text or not raw_data_text.strip():
-                print("⚠ Received empty AI response.", file=sys.stderr)
+                print("❌ Error. Received empty AI response.", file=sys.stderr)
                 return base_request.parse_response("{}")
 
             return base_request.parse_response(raw_data_text)

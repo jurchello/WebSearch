@@ -145,7 +145,7 @@ class ConfigINIManager:
             self.config.set(key, order)
             self.save()
         else:
-            print("❌ Invalid data format. Must be a list.")
+            print("❌ Error. Invalid data format. Must be a list.")
 
     def get_list(self, key, default=None):
         """Returns a list from the config, or a default list if the value is invalid."""
@@ -166,4 +166,4 @@ class ConfigINIManager:
             self.config.set(key, values)
             self.save()
         else:
-            print(f"❌ ERROR: {key}: {type(values)}")
+            print(f"❌ Error. {key}: {type(values)}")

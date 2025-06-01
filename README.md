@@ -963,7 +963,7 @@ For developers working on the WebSearch Gramplet, here are some frequently used 
 ### 3.1.1 Updating the POT File
 
 ```
-xgettext -o po/template.pot --from-code=UTF-8 -L Python $(find . -name "*.py")
+xgettext -o po/template.pot --from-code=UTF-8 -L Python --package-name="gramps" --copyright-holder="Yurii Liubymyi <jurchello@gmail.com>" $(find . -name "*.py")
 ```
 
 This command extracts translatable strings from all .py files and updates the POT template.

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gramps 52\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-01 14:55+0300\n"
+"POT-Creation-Date: 2025-06-01 14:32+0300\n"
 "PO-Revision-Date: 2025-03-18 10:24+0200\n"
 "Last-Translator: yurii <jurchello@gmail.com>\n"
 "Language-Team: Ukrainian <trans-uk@lists.fedoraproject.org>\n"
@@ -365,36 +365,46 @@ msgstr ""
 "- **Користувацький шлях:** `{dir|%s}` – для власного attribute_mapping.json "
 "користувача"
 
-#: info_panel.py:221
+#: info_panel.py:220
 msgid "  💡 *Tip: click any path above to open it in your file manager.*"
-msgstr ""
-"  💡 *Порада: натисніть на будь-який шлях вище, щоб відкрити його у "
+msgstr "  💡 *Порада: натисніть на будь-який шлях вище, щоб відкрити його у "
 "файловому менеджері.*"
 
-#: info_panel.py:224
+#: info_panel.py:223
 msgid "📖 View detailed usage in: "
 msgstr "📖 Докладний опис використання:"
 
-#: info_panel.py:233
+#: info_panel.py:232
 msgid "## 💬 Support"
 msgstr "## 💬 Підтримка"
 
-#: info_panel.py:234
+#: info_panel.py:233
 msgid "👤 Created and maintained by Yurii Liubymyi"
 msgstr "👤 Автор і підтримка: Юрій Любимий"
 
-#: info_panel.py:237
+#: info_panel.py:236
 msgid ""
 "💬 For help or feedback, feel free to mention `@Urchello` on the Gramps "
 "forum:"
 msgstr "💬 Для допомоги чи відгуків згадайте `@Urchello` на форумі Gramps:"
 
-#: info_panel.py:245
-msgid "✅ Bug reports and feature requests are completely **free of charge**."
-msgstr ""
-"✅ Звіти про помилки та запити на функції є абсолютно **безкоштовними**."
+#: info_panel.py:240
+msgid "Gramps Forum (Discourse)"
+msgstr "Форум Gramps (Discourse)"
 
-#: info_panel.py:255
+#: info_panel.py:244
+msgid "✅ Bug reports and feature requests are completely **free of charge**."
+msgstr "✅ Звіти про помилки та запити на функції є абсолютно **безкоштовними**."
+
+#: info_panel.py:248
+msgid "GitHub Issues"
+msgstr "Проблеми на GitHub"
+
+#: info_panel.py:251
+msgid "Gramps Bug Tracker"
+msgstr "Система відстеження помилок Gramps"
+
+#: info_panel.py:254
 #, python-format
 msgid "🧩 WebSearch Gramplet version: `%s`"
 msgstr "🧩 Версія грамплета WebSearch: `%s`"
@@ -561,8 +571,7 @@ msgstr "Генерація історичних даних про місце з�
 
 #: WebSearch.py:629
 msgid "AI provider is unknown. Please check your AI provider settings."
-msgstr ""
-"Невідомий провайдер AI. Будь ласка, перевірте налаштування провайдера AI."
+msgstr "Невідомий провайдер AI. Будь ласка, перевірте налаштування провайдера AI."
 
 #: WebSearch.py:649
 msgid "⏳ Generating historical place data, please wait..."
@@ -688,11 +697,3 @@ msgstr "Порожні: {keys}"
 msgid "Comment: {comment}"
 msgstr "Коментар: {comment}"
 
-#~ msgid "Gramps Forum (Discourse)"
-#~ msgstr "Форум Gramps (Discourse)"
-
-#~ msgid "GitHub Issues"
-#~ msgstr "Проблеми на GitHub"
-
-#~ msgid "Gramps Bug Tracker"
-#~ msgstr "Система відстеження помилок Gramps"

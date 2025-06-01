@@ -80,4 +80,3 @@ class MigrationManager:
         migration_module.migrate()
         self.db_file_table.create({"migration_name": migration_name})
         self.applied_migrations.append(migration_name)
-        print(f"✅ Applied migration: {migration_name}")

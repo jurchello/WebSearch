@@ -36,7 +36,7 @@ try:
     import qrcode
 except ImportError:
     print(
-        "⚠ QR codes are disabled. Install it using: `pip install qrcode[pil]`.",
+        "❌ Error. QR codes are disabled. Install it using: `pip install qrcode[pil]`.",
         file=sys.stderr,
     )
 
@@ -47,7 +47,7 @@ try:
 except ImportError:
     QR_AVAILABLE = False
     print(
-        "⚠ QR codes are disabled. Install it using: `pip install qrcode[pil]`.",
+        "❌ Error. QR codes are disabled. Install it using: `pip install qrcode[pil]`.",
         file=sys.stderr,
     )
 

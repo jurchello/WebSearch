@@ -60,7 +60,6 @@ class PlaceHistoryStorage:
         try:
             with open(file_path, "w", encoding="utf-8") as file:
                 json.dump(results, file, ensure_ascii=False, indent=4)
-            print(f"Results saved to {file_path}")
         except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"❌ Error saving results to file: {e}", file=sys.stderr)
 
