@@ -103,7 +103,10 @@ class ModelRowGenerator:
             obj_handle = link_context.obj.get_handle()
             obj_gramps_id = link_context.obj.get_gramps_id()
             if self.should_be_hidden_link(
-                website_data.url_pattern, link_context.nav_type, obj_handle
+                website_data.url_pattern,
+                website_data.url_pattern,
+                link_context.nav_type,
+                obj_handle,
             ):
                 return []
 
@@ -153,6 +156,14 @@ class ModelRowGenerator:
                         matched_attribute_keys,
                     )
                     if should_skip:
+                        continue
+
+                    if self.should_be_hidden_link(
+                        website_data.url_pattern,
+                        final_url,
+                        link_context.nav_type,
+                        obj_handle,
+                    ):
                         continue
 
                     row = self._build_model_row(
@@ -277,7 +288,7 @@ class ModelRowGenerator:
             and replaced_keys_count < total_keys_count
         )
 
-    def should_be_hidden_link(self, url_pattern, nav_type, obj_handle):
+    def should_be_hidden_link(self, url_pattern, final_url, nav_type, obj_handle):
         """Determine if a link should be skipped based on hidden hash entries."""
 
         all_scope_records = (
@@ -287,7 +298,10 @@ class ModelRowGenerator:
             .where("scope", HiddenLinksScope.ALL.value)
             .get()
         )
-        if any(self.hidden_record_matches(record) for record in all_scope_records):
+        if any(
+            self.hidden_record_matches(record, final_url)
+            for record in all_scope_records
+        ):
             return True
 
         object_scope_records = (
@@ -298,15 +312,22 @@ class ModelRowGenerator:
             .where("scope", HiddenLinksScope.OBJECT.value)
             .get()
         )
-        if any(self.hidden_record_matches(record) for record in object_scope_records):
+        if any(
+            self.hidden_record_matches(record, final_url)
+            for record in object_scope_records
+        ):
             return True
 
         return False
 
-    def hidden_record_matches(self, record):
-        """Match legacy hidden records or records from the current database."""
+    def hidden_record_matches(self, record, final_url):
+        """Match exact-url hidden records, or legacy pattern-only records."""
         record_database_id = record.get("database_id")
-        return not record_database_id or record_database_id == self.database_id
+        if record_database_id and record_database_id != self.database_id:
+            return False
+
+        hidden_final_url = record.get("final_url")
+        return not hidden_final_url or hidden_final_url == final_url
 
     def prepare_data_keys(self, core_keys, attribute_keys, url_pattern):
         """

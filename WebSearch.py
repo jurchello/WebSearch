@@ -2067,12 +2067,14 @@ class WebSearch(Gramplet):
         model, tree_iter = selection.get_selected()
         if tree_iter is not None:
             url_pattern = model[tree_iter][ModelColumns.URL_PATTERN.value]
+            final_url = model[tree_iter][ModelColumns.FINAL_URL.value]
             obj_handle = model[tree_iter][ModelColumns.OBJ_HANDLE.value]
             obj_gramps_id = model[tree_iter][ModelColumns.OBJ_GRAMPS_ID.value]
             nav_type = model[tree_iter][ModelColumns.NAV_TYPE.value]
             existing_records = (
                 self.hidden_links_model.query()
                 .where("url_pattern", url_pattern)
+                .where("final_url", final_url)
                 .where("obj_handle", obj_handle)
                 .where("nav_type", nav_type)
                 .where("scope", HiddenLinksScope.OBJECT.value)
@@ -2087,6 +2089,7 @@ class WebSearch(Gramplet):
                 self.hidden_links_model.create(
                     {
                         "url_pattern": url_pattern,
+                        "final_url": final_url,
                         "obj_handle": obj_handle,
                         "obj_gramps_id": obj_gramps_id,
                         "nav_type": nav_type,
@@ -2097,6 +2100,7 @@ class WebSearch(Gramplet):
                 self.activities_model.create(
                     {
                         "url_pattern": url_pattern,
+                        "final_url": final_url,
                         "nav_type": nav_type,
                         "obj_handle": obj_handle,
                         "obj_gramps_id": obj_gramps_id,
