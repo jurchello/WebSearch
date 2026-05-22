@@ -271,6 +271,8 @@ class ModelRowGenerator:
                 "saved_attribute_value": saved_attribute_value,
                 "saved_to": saved_to,
                 "visited_record_id": visited_record_id,
+                "reference_type": website_data.reference_type,
+                "reference_data_json": json.dumps(website_data.reference_data or {}),
             }
         except Exception:  # pylint: disable=broad-exception-caught
             print(traceback.format_exc(), file=sys.stderr)
