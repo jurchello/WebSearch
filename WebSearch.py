@@ -248,6 +248,7 @@ class WebSearch(Gramplet):
             source=None,
             active_url=None,
             active_tree_path=None,
+            active_link_data=None,
             last_active_entity_handle=None,
             last_active_entity_type=None,
             previous_ai_site_provider=None,
@@ -1127,6 +1128,56 @@ class WebSearch(Gramplet):
             except Exception as e:  # pylint: disable=broad-exception-caught
                 print(f"❌ Error loading icon: {e}", file=sys.stderr)
 
+    def add_saved_link_from_snapshot(self, link_data, settings):
+        """Records a saved link using row data captured before any DB refresh."""
+        if not link_data:
+            print("❌ Error: No saved link data!", file=sys.stderr)
+            return
+
+        if (
+            self.saves_model.query()
+            .where("link", link_data["link"])
+            .where("obj_handle", link_data["obj_handle"])
+            .exists()
+        ):
+            return
+
+        data = {
+            "link": link_data["link"],
+            "nav_type": link_data["nav_type"],
+            "obj_handle": link_data["obj_handle"],
+            "obj_gramps_id": link_data["obj_gramps_id"],
+            "source_file_path": link_data["source_file_path"],
+            "saved_to": settings.saved_to,
+        }
+        activity_data = {
+            "link": link_data["link"],
+            "nav_type": link_data["nav_type"],
+            "obj_handle": link_data["obj_handle"],
+            "obj_gramps_id": link_data["obj_gramps_id"],
+            "source_file_path": link_data["source_file_path"],
+        }
+
+        if settings.saved_to == SavedTo.NOTE.value:
+            data["note_gramps_id"] = settings.note_gramps_id
+            data["note_handle"] = settings.note_handle
+            activity_data["activity_type"] = ActivityType.LINK_SAVE_TO_NOTE.value
+            activity_data["note_gramps_id"] = settings.note_gramps_id
+            activity_data["note_handle"] = settings.note_handle
+        elif settings.saved_to == SavedTo.ATTRIBUTE.value:
+            data["attribute_type"] = settings.attribute_type
+            data["attribute_value"] = settings.attribute_value
+            activity_data["activity_type"] = ActivityType.LINK_SAVE_TO_ATTRIBUTE.value
+            activity_data["attribute_type"] = settings.attribute_type
+            activity_data["attribute_value"] = settings.attribute_value
+        else:
+            return
+
+        record = self.saves_model.create(data)
+        activity_data["saves_record_id"] = record.get("id")
+        self.activities_model.create(activity_data)
+        self.refresh_activities_tab()
+
     def active_person_changed(self, handle):
         """Handles updates when the active person changes in the GUI."""
         self._context.last_active_entity_handle = handle
@@ -1677,6 +1728,20 @@ class WebSearch(Gramplet):
 
                 self._context.active_tree_path = path
                 self._context.active_url = url
+                self._context.active_link_data = {
+                    "title": self.model.get_value(tree_iter, ModelColumns.TITLE.value),
+                    "link": url,
+                    "nav_type": nav_type,
+                    "obj_handle": self.model.get_value(
+                        tree_iter, ModelColumns.OBJ_HANDLE.value
+                    ),
+                    "obj_gramps_id": self.model.get_value(
+                        tree_iter, ModelColumns.OBJ_GRAMPS_ID.value
+                    ),
+                    "source_file_path": self.model.get_value(
+                        tree_iter, ModelColumns.SOURCE_FILE_PATH.value
+                    ),
+                }
                 self.ui.context_menus.main.menu.show_all()
 
                 if (
@@ -1828,12 +1893,12 @@ class WebSearch(Gramplet):
 
     def on_add_note(self, unused_widget):
         """Adds the current selected URL as a note to the person record."""
-        if not self._context.active_tree_path:
-            print("❌ Error: No saved path to the iterator!", file=sys.stderr)
+        link_data = self._context.active_link_data
+        if not link_data:
+            print("❌ Error: No saved link data!", file=sys.stderr)
             return
 
         note = Note()
-        tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
         note.set(
             _(
                 "📌 This '{title}' web link was archived for future reference by the "
@@ -1842,14 +1907,14 @@ class WebSearch(Gramplet):
                 "You can use this link to revisit the source and verify the information "
                 "related to this entity."
             ).format(
-                title=self.model.get_value(tree_iter, ModelColumns.TITLE.value),
+                title=link_data["title"],
                 version=self.version,
-                url=self._context.active_url,
+                url=link_data["link"],
             )
         )
 
         note.set_privacy(True)
-        nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
+        nav_type = link_data["nav_type"]
         note_handle = None
 
         with DbTxn("Add Web Link Note", self.dbstate.db) as trans:
@@ -1901,21 +1966,16 @@ class WebSearch(Gramplet):
                 self._context.media.add_note(note_handle)
                 self.dbstate.db.commit_media(self._context.media, trans)
 
-        tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
-        self.add_icon_event(
+        self.add_saved_link_from_snapshot(
+            link_data,
             SimpleNamespace(
-                icon_path=ICON_SAVED_PATH,
-                tree_iter=tree_iter,
-                model_icon_pos=ModelColumns.SAVED_ICON.value,
-                model_visibility_pos=ModelColumns.SAVED_ICON_VISIBLE.value,
-                model=self.saves_model,
                 note_handle=note_handle,
                 note_gramps_id=note.get_gramps_id(),
                 saved_to=SavedTo.NOTE.value,
-            )
+            ),
         )
 
-        handle = self.model.get_value(tree_iter, ModelColumns.OBJ_HANDLE.value)
+        handle = link_data["obj_handle"]
         self.refresh_main_treeview_tab(nav_type, handle)
 
         try:
@@ -2038,12 +2098,12 @@ class WebSearch(Gramplet):
 
     def on_add_attribute(self, unused_widget):
         """(Unused) Adds the selected URL as an attribute to the person."""
-        if not self._context.active_tree_path:
-            print("❌ Error. No saved path to the iterator!", file=sys.stderr)
+        link_data = self._context.active_link_data
+        if not link_data:
+            print("❌ Error: No saved link data!", file=sys.stderr)
             return
 
-        tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
-        nav_type = self.model.get_value(tree_iter, ModelColumns.NAV_TYPE.value)
+        nav_type = link_data["nav_type"]
 
         attribute = None
 
@@ -2065,7 +2125,7 @@ class WebSearch(Gramplet):
             return
 
         attribute_type = _("WebSearch Link")
-        attribute_value = self._context.active_url
+        attribute_value = link_data["link"]
         attribute.set_type(attribute_type)
         attribute.set_value(attribute_value)
         attribute.set_privacy(True)
@@ -2092,23 +2152,18 @@ class WebSearch(Gramplet):
             else:
                 return
 
-        tree_iter = self.get_active_tree_iter(self._context.active_tree_path)
-        self.add_icon_event(
+        self.add_saved_link_from_snapshot(
+            link_data,
             SimpleNamespace(
-                icon_path=ICON_SAVED_PATH,
-                tree_iter=tree_iter,
-                model_icon_pos=ModelColumns.SAVED_ICON.value,
-                model_visibility_pos=ModelColumns.SAVED_ICON_VISIBLE.value,
-                model=self.saves_model,
                 saved_to=SavedTo.ATTRIBUTE.value,
                 attribute_type=attribute_type,
                 attribute_value=attribute_value,
-            )
+            ),
         )
 
         self.show_notification(_("Attribute has been successfully added"))
 
-        handle = self.model.get_value(tree_iter, ModelColumns.OBJ_HANDLE.value)
+        handle = link_data["obj_handle"]
         self.refresh_main_treeview_tab(nav_type, handle)
 
     def on_query_tooltip(self, widget, x, y, unused_keyboard_mode, tooltip):
