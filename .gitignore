@@ -6,5 +6,6 @@ locale
 scripts
 pyproject.toml
 RELEASE_WORKFLOW.local.md
+po/*~
 db/*
 !db/migrations
