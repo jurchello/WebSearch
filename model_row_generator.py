@@ -83,6 +83,7 @@ class ModelRowGenerator:
         self.saves_model = deps.saves_model
         self.hidden_links_model = deps.hidden_links_model
         self.activities_model = deps.activities_model
+        self.database_id = getattr(deps, "database_id", None)
         self._display_icons = []
 
     def generate(self, link_context: LinkContext, website_data: WebsiteEntry):
@@ -279,26 +280,33 @@ class ModelRowGenerator:
     def should_be_hidden_link(self, url_pattern, nav_type, obj_handle):
         """Determine if a link should be skipped based on hidden hash entries."""
 
-        if (
+        all_scope_records = (
             self.hidden_links_model.query()
             .where("url_pattern", url_pattern)
             .where("nav_type", nav_type)
             .where("scope", HiddenLinksScope.ALL.value)
-            .exists()
-        ):
+            .get()
+        )
+        if any(self.hidden_record_matches(record) for record in all_scope_records):
             return True
 
-        if (
+        object_scope_records = (
             self.hidden_links_model.query()
             .where("url_pattern", url_pattern)
             .where("obj_handle", obj_handle)
             .where("nav_type", nav_type)
             .where("scope", HiddenLinksScope.OBJECT.value)
-            .exists()
-        ):
+            .get()
+        )
+        if any(self.hidden_record_matches(record) for record in object_scope_records):
             return True
 
         return False
+
+    def hidden_record_matches(self, record):
+        """Match legacy hidden records or records from the current database."""
+        record_database_id = record.get("database_id")
+        return not record_database_id or record_database_id == self.database_id
 
     def prepare_data_keys(self, core_keys, attribute_keys, url_pattern):
         """
@@ -572,11 +580,8 @@ class ModelRowGenerator:
         if not self.display_icon("visited"):
             return visited_icon, visited_icon_visible, visited_record_id
 
-        record = (
-            self.visits_model.query()
-            .where("link", final_url)
-            .where("obj_handle", obj_handle)
-            .first()
+        record = self.get_current_or_legacy_link_record(
+            self.visits_model, final_url, obj_handle
         )
 
         if record:
@@ -609,11 +614,8 @@ class ModelRowGenerator:
                 saved_to,
             )
 
-        record = (
-            self.saves_model.query()
-            .where("link", final_url)
-            .where("obj_handle", obj_handle)
-            .first()
+        record = self.get_current_or_legacy_link_record(
+            self.saves_model, final_url, obj_handle
         )
 
         if record:
@@ -636,6 +638,20 @@ class ModelRowGenerator:
             attribute_value,
             saved_to,
         )
+
+    def get_current_or_legacy_link_record(self, model, final_url, obj_handle):
+        """Return the first legacy record or record matching the current database."""
+        records = (
+            model.query()
+            .where("link", final_url)
+            .where("obj_handle", obj_handle)
+            .get()
+        )
+        for record in records:
+            record_database_id = record.get("database_id")
+            if not record_database_id or record_database_id == self.database_id:
+                return record
+        return None
 
     def display_icon(self, icon_name):
         """Check if the given icon is in the list of display icons."""
