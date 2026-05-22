@@ -87,19 +87,26 @@ class ModelRowGenerator:
 
     def generate(self, link_context: LinkContext, website_data: WebsiteEntry):
         """Generates a structured data row for the ListStore model."""
+        rows = self.generate_many(link_context, website_data)
+        return rows[0] if rows else None
+
+    def generate_many(self, link_context: LinkContext, website_data: WebsiteEntry):
+        """Generates one or more structured data rows for the ListStore model."""
         # pylint: disable=too-many-locals
         try:
             if website_data.nav_type != link_context.nav_type or not is_true(
                 website_data.is_enabled
             ):
-                return None
+                return []
 
             obj_handle = link_context.obj.get_handle()
             obj_gramps_id = link_context.obj.get_gramps_id()
             if self.should_be_hidden_link(
                 website_data.url_pattern, link_context.nav_type, obj_handle
             ):
-                return None
+                return []
+
+            rows = []
 
             if website_data.source_type in SOURCE_TYPES_WITH_FIXED_LINKS:
                 final_url = formatted_url = website_data.url_pattern
@@ -109,28 +116,79 @@ class ModelRowGenerator:
                     replaced_keys_count,
                     total_keys_count,
                 ) = self.get_empty_keys()
+                row = self._build_model_row(
+                    link_context,
+                    website_data,
+                    website_data.source_type,
+                    obj_handle,
+                    obj_gramps_id,
+                    final_url,
+                    formatted_url,
+                    pattern_keys_info,
+                    pattern_keys_json,
+                    replaced_keys_count,
+                    total_keys_count,
+                )
+                return [row] if row else []
             else:
-                (
+                for (
                     combined_keys,
                     matched_attribute_keys,
                     pattern_keys_info,
                     pattern_keys_json,
-                ) = self.prepare_data_keys(
+                ) in self.prepare_data_key_variants(
                     link_context.core_keys,
                     link_context.attribute_keys,
                     website_data.url_pattern,
-                )
+                ):
 
-                final_url, formatted_url = self.prepare_urls(
-                    website_data.url_pattern, combined_keys, pattern_keys_info
-                )
+                    final_url, formatted_url = self.prepare_urls(
+                        website_data.url_pattern, combined_keys, pattern_keys_info
+                    )
 
-                website_data.source_type, should_skip = self.evaluate_uid_source_type(
-                    website_data.source_type, pattern_keys_info, matched_attribute_keys
-                )
-                if should_skip:
-                    return None
+                    source_type, should_skip = self.evaluate_uid_source_type(
+                        website_data.source_type,
+                        pattern_keys_info,
+                        matched_attribute_keys,
+                    )
+                    if should_skip:
+                        continue
 
+                    row = self._build_model_row(
+                        link_context,
+                        website_data,
+                        source_type,
+                        obj_handle,
+                        obj_gramps_id,
+                        final_url,
+                        formatted_url,
+                        pattern_keys_info,
+                        pattern_keys_json,
+                    )
+                    if row:
+                        rows.append(row)
+
+            return rows
+        except Exception:  # pylint: disable=broad-exception-caught
+            print(traceback.format_exc(), file=sys.stderr)
+            return []
+
+    def _build_model_row(
+        self,
+        link_context,
+        website_data,
+        source_type,
+        obj_handle,
+        obj_gramps_id,
+        final_url,
+        formatted_url,
+        pattern_keys_info,
+        pattern_keys_json,
+        replaced_keys_count=None,
+        total_keys_count=None,
+    ):
+        """Build one model row after the URL and key data have been prepared."""
+        try:
             icon_name = CATEGORY_ICON.get(link_context.nav_type, DEFAULT_CATEGORY_ICON)
             visited_icon, visited_icon_visible, visited_record_id = (
                 self.get_visited_icon_data(final_url, obj_handle)
@@ -147,23 +205,23 @@ class ModelRowGenerator:
                 website_data.is_custom_file
             )
             file_identifier_icon, file_identifier_icon_visible = (
-                self.get_file_identifier_icon_data(
-                    website_data.country_code, website_data.source_type
-                )
+                self.get_file_identifier_icon_data(website_data.country_code, source_type)
             )
-            replaced_keys_count = len(pattern_keys_info["replaced_keys"])
-            total_keys_count = self.get_total_keys_count(pattern_keys_info)
+            if replaced_keys_count is None:
+                replaced_keys_count = len(pattern_keys_info["replaced_keys"])
+            if total_keys_count is None:
+                total_keys_count = self.get_total_keys_count(pattern_keys_info)
             keys_color = self.get_keys_color(replaced_keys_count, total_keys_count)
             file_identifier_text = self.get_file_identifier_text(
-                website_data.country_code, website_data.source_type
+                website_data.country_code, source_type
             )
-            display_keys_count = self.get_display_keys_count(website_data.source_type)
+            display_keys_count = self.get_display_keys_count(source_type)
             file_identifier_sort = self.get_file_identifier_sort(
-                website_data.country_code, website_data.source_type
+                website_data.country_code, source_type
             )
 
             if self.is_incomplete_uid_link(
-                website_data.source_type, replaced_keys_count, total_keys_count
+                source_type, replaced_keys_count, total_keys_count
             ):
                 return None
 
@@ -193,7 +251,7 @@ class ModelRowGenerator:
                 "file_identifier_icon": file_identifier_icon,
                 "file_identifier_icon_visible": file_identifier_icon_visible,
                 "file_identifier_sort": file_identifier_sort,
-                "source_type": website_data.source_type,
+                "source_type": source_type,
                 "country_code": website_data.country_code,
                 "source_file_path": website_data.source_file_path,
                 "saved_record_id": saved_record_id,
@@ -261,6 +319,72 @@ class ModelRowGenerator:
             pattern_keys_info,
             pattern_keys_json,
         )
+
+    def prepare_data_key_variants(self, core_keys, attribute_keys, url_pattern):
+        """
+        Build key sets for a URL pattern, expanding repeated UID values only when safe.
+        """
+        grouped_attribute_keys = (
+            self.attribute_loader.get_matching_key_values_for_url(
+                attribute_keys, url_pattern
+            )
+        )
+        pattern_keys = list(dict.fromkeys(re.findall(r"%\((.*?)\)s", url_pattern)))
+        uid_pattern_keys = [
+            key for key in pattern_keys if key in grouped_attribute_keys
+        ]
+
+        if not uid_pattern_keys:
+            return [self.prepare_data_keys(core_keys, attribute_keys, url_pattern)]
+
+        uid_values = {
+            key: [
+                value
+                for value in grouped_attribute_keys.get(key, [])
+                if value not in (None, "")
+            ]
+            for key in uid_pattern_keys
+        }
+
+        if any(not values for values in uid_values.values()):
+            return []
+
+        if len(uid_pattern_keys) > 1 and any(
+            len(values) > 1 for values in uid_values.values()
+        ):
+            return []
+
+        if len(uid_pattern_keys) == 1:
+            key = uid_pattern_keys[0]
+            values = uid_values[key]
+        else:
+            values = [None]
+
+        variants = []
+        for value in values:
+            combined_keys = core_keys.copy()
+            matched_attribute_keys = {}
+
+            for key in uid_pattern_keys:
+                selected_value = (
+                    value if len(uid_pattern_keys) == 1 else uid_values[key][0]
+                )
+                combined_keys[key] = selected_value
+                matched_attribute_keys[key] = selected_value
+
+            pattern_keys_info = self.url_formatter.check_pattern_keys(
+                url_pattern, combined_keys
+            )
+            variants.append(
+                (
+                    combined_keys,
+                    matched_attribute_keys,
+                    pattern_keys_info,
+                    json.dumps(pattern_keys_info),
+                )
+            )
+
+        return variants
 
     def prepare_urls(self, url_pattern, combined_keys, keys):
         """Generate final and formatted URLs using combined keys and pattern keys info."""

@@ -1011,8 +1011,9 @@ class WebSearch(Gramplet):
     def insert_websites_into_model(self, websites, link_context: LinkContext):
         """Formats each website entry and appends it to the Gtk model."""
         for website_data in websites:
-            model_row = self.model_row_generator.generate(link_context, website_data)
-            if model_row:
+            for model_row in self.model_row_generator.generate_many(
+                link_context, website_data
+            ):
                 self.model.append([model_row[name] for name, _ in MODEL_SCHEMA])
 
     def on_link_clicked(self, unused_tree_view, path, unused_column):
